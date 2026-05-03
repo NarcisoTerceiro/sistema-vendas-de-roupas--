@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Benedictus Camisaria · Acesso Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+[data-theme="dark"]{
+  --bg:#0a0f1e;--bg2:#0f1624;--navy:#141c30;--navy2:#1a2540;--navy3:#1f2d4e;
+  --ink:#f2ede5;--ink2:#e0d9ce;--muted:#8a90a2;--muted2:#545d70;
+  --gold:#c8a96e;--gold2:#a08050;--gold3:#e8c98e;--gold4:#f2daa2;
+  --surface:#141c30;--surface2:#1a2540;--surface3:#1f2d4e;
+  --nav-bg:rgba(10,15,30,0.97);--border:rgba(200,169,110,0.18);--border2:rgba(200,169,110,0.09);
+  --sh:rgba(0,0,0,0.65);--sh2:rgba(0,0,0,0.85);--sh-gold:rgba(200,169,110,0.18);--sh-navy:rgba(20,28,48,0.7);
+  --danger:#e05555;--danger-dim:rgba(224,85,85,0.12);--success:#6dbf7e;--success-dim:rgba(109,191,126,0.1);
+  --warn:#c8a046;--warn-dim:rgba(200,160,70,0.1);
+  --glass:rgba(20,28,48,0.6);
+}
+[data-theme="light"]{
+  --bg:#eef1f7;--bg2:#e4e8f2;--navy:#161e33;--navy2:#1e2a42;--navy3:#243050;
+  --ink:#161e33;--ink2:#243050;--muted:#5a6480;--muted2:#8a90aa;
+  --gold:#9a7440;--gold2:#7a5830;--gold3:#c8a96e;--gold4:#b89050;
+  --surface:#ffffff;--surface2:#f4f6fc;--surface3:#e8edf8;
+  --nav-bg:rgba(255,255,255,0.97);--border:rgba(22,30,51,0.14);--border2:rgba(22,30,51,0.07);
+  --sh:rgba(22,30,51,0.1);--sh2:rgba(22,30,51,0.18);--sh-gold:rgba(154,116,64,0.18);--sh-navy:rgba(22,30,51,0.12);
+  --danger:#c84040;--danger-dim:rgba(200,64,64,0.08);--success:#3a8e4e;--success-dim:rgba(58,142,78,0.08);
+  --warn:#b08030;--warn-dim:rgba(176,128,48,0.08);
+  --glass:rgba(255,255,255,0.6);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);overflow-x:hidden;min-height:100vh;transition:background .4s,color .4s;}
+[data-theme="dark"] body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 10% 0%,rgba(20,28,48,0.95) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 90% 100%,rgba(200,169,110,0.04) 0%,transparent 60%);}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px;}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;transition:font-variation-settings .2s;}
+
+:root {
+  --logo-h: 72px;
+}
+@media (max-width: 1024px) { :root { --logo-h: 64px; } }
+@media (max-width: 640px) { :root { --logo-h: 150px; } }
+
+.logo-wrap {
+  display: flex;align-items: center;justify-content: center;
+  height: var(--logo-h);flex-shrink: 0;cursor: pointer;transition: opacity .25s;
+}
+.logo-wrap:hover { opacity: .8; }
+.logo-wrap img { height: var(--logo-h);width: auto;display: block;object-fit: contain; }
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);transition:background .4s;}
+.login-wrap{width:100%;max-width:420px;animation:fadeUp .7s ease both;position:relative;z-index:1;}
+.login-logo-area{text-align:center;margin-bottom:32px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.login-logo-area .logo-wrap{--logo-h:120px;}
+@media(max-width:640px){.login-logo-area .logo-wrap{--logo-h:140px;}}
+.login-divider{display:flex;align-items:center;gap:14px;width:100%;}
+.login-divider-line{flex:1;height:1px;background:var(--border);}
+.login-badge{font-size:8px;letter-spacing:0.55em;text-transform:uppercase;color:var(--gold);border:1px solid var(--border);padding:5px 14px;border-radius:2px;white-space:nowrap;font-family:'Cinzel',serif;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px 36px;position:relative;overflow:hidden;box-shadow:0 40px 100px var(--sh2);}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold2) 25%,var(--gold) 50%,var(--gold3) 75%,transparent);}
+.login-section-label{font-size:8px;letter-spacing:0.5em;text-transform:uppercase;color:var(--gold);margin-bottom:26px;display:flex;align-items:center;gap:10px;}
+.login-section-label::before{content:'';display:block;width:20px;height:1px;background:var(--gold);}
+.login-field{margin-bottom:18px;}
+.login-label{font-size:8px;letter-spacing:0.32em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;}
+.login-input-wrap{position:relative;}
+.login-input{width:100%;background:var(--bg2);border:1px solid var(--border2);color:var(--ink);padding:13px 42px 13px 15px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s;border-radius:8px;}
+.login-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sh-gold);}
+.login-input::placeholder{color:var(--muted2);}
+.login-input-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--muted2);pointer-events:none;}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--navy2),var(--navy3));color:var(--gold3);padding:14px;font-size:9px;letter-spacing:0.42em;text-transform:uppercase;border:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .35s;border-radius:8px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;}
+.login-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gold2),var(--gold));opacity:0;transition:opacity .35s;}
+.login-btn:hover::before{opacity:1;}
+.login-btn:hover{color:var(--navy);box-shadow:0 8px 28px var(--sh-gold);transform:translateY(-2px);}
+.login-btn>*{position:relative;z-index:1;}
+.login-err{font-size:12px;color:var(--danger);text-align:center;margin-top:12px;display:none;background:var(--danger-dim);border:1px solid rgba(200,64,64,0.2);padding:10px;border-radius:8px;}
+.login-theme-row{display:flex;justify-content:center;margin-top:18px;}
+.login-theme-btn{background:var(--surface2);border:1px solid var(--border);border-radius:24px;padding:8px 18px;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;font-family:'DM Sans',sans-serif;transition:all .3s;}
+.login-theme-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);overflow-x:hidden;min-height:100vh;transition:background .4s,color .4s;}
+[data-theme="dark"] body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 10% 0%,rgba(20,28,48,0.95) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 90% 100%,rgba(200,169,110,0.04) 0%,transparent 60%);}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;transition:font-variation-settings .2s;}
+:root { --logo-h: 72px; }
+@media (max-width: 640px) { :root { --logo-h: 150px; } }
+.logo-wrap { display: flex;align-items: center;justify-content: center;height: var(--logo-h);flex-shrink: 0;cursor: pointer;transition: opacity .25s; }
+.logo-wrap:hover { opacity: .8; }
+.logo-wrap img { height: var(--logo-h);width: auto;display: block;object-fit: contain; }
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:30px;height:30px;border:2px solid rgba(200,169,110,.12);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+.spin{animation:spin .8s linear infinite;display:inline-block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(1.3);}}
+
+/* RESPONSIVE */
+@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(2,1fr);}.quick-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:1024px){
+  .sidebar{transform:translateX(-100%);top:88px;}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;}
+  .hamburger-btn{display:flex;}
+  .topbar{padding:0 18px;}
+  .topbar-badge,.topbar-divider{display:none;}
+  .topbar-btn span:not(.mat){display:none;}
+  .topbar-btn{padding:8px 10px;}
+}
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .quick-grid{grid-template-columns:repeat(2,1fr);}
+  .modal{max-width:100%;}
+  .form-row{grid-template-columns:1fr;}
+  .sec-header{flex-direction:column;align-items:stretch;}
+  .btn-add{width:100%;justify-content:center;}
+}
+@media(max-width:640px){
+  .main{padding:16px 12px 70px;overflow-x:hidden;max-width:100vw;}
+  .topbar{padding:0 12px;height:68px;}
+  .topbar-left{gap:8px;}
+  .topbar-right{gap:2px;}
+  .topbar-btn span:not(.mat){display:none;}
+  .topbar-btn{padding:7px;}
+  .theme-toggle-btn{width:34px;height:34px;}
+  .sidebar{top:68px;}
+  .page-header{margin-bottom:18px;}
+  .page-title{font-size:24px;}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px;}
+  .stat-card{padding:13px 11px;}
+  .stat-val{font-size:30px;}
+  .stat-bg-num{font-size:44px;}
+  .quick-grid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px;}
+  .quick-card{padding:13px 11px;}
+  .actions-bar{flex-direction:column;align-items:stretch;gap:8px;margin-bottom:12px;}
+  .search-wrap{min-width:0;width:100%;}
+  .filter-chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .chip{text-align:center;padding:9px 6px;font-size:7px;}
+  .table-wrap{margin:0 -12px;width:calc(100% + 24px);border-radius:0;border-left:none;border-right:none;}
+  table{min-width:520px;}
+  .modal-overlay{padding:0;align-items:flex-end;}
+  .modal{border-radius:20px 20px 0 0;max-width:100%;width:100%;max-height:94dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:slideUpSheet .45s cubic-bezier(0.32,0.72,0,1) both;}
+  @keyframes slideUpSheet{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal::after{content:'';display:block;width:36px;height:4px;background:var(--border);border-radius:2px;position:absolute;top:9px;left:50%;transform:translateX(-50%);pointer-events:none;}
+  .modal-head{padding:26px 16px 14px;}
+  .modal-title{font-size:21px;}
+  .modal-body{padding:14px;gap:12px;}
+  .modal-foot{padding:12px 14px;padding-bottom:calc(12px + env(safe-area-inset-bottom));flex-direction:column-reverse;gap:7px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border2);z-index:2;}
+  [data-theme="dark"] .modal-foot{background:var(--navy);}
+  .btn-primary,.btn-ghost{width:100%;justify-content:center;padding:14px;}
+  .form-input,.form-select,.form-textarea{font-size:16px;}
+  .form-section{padding:14px;}
+  .tags-input-row{gap:6px;}
+  .tag-add-btn{padding:0 14px;min-width:56px;}
+  .confirm-inner{padding:26px 16px;}
+  .confirm-acts{flex-direction:column;}
+  .confirm-acts .btn-danger,.confirm-acts .btn-ghost{width:100%;justify-content:center;}
+  .login-box{padding:22px 16px;}
+  .login-input{font-size:16px;}
+  .toast{top:auto;bottom:max(14px,env(safe-area-inset-bottom));right:10px;left:10px;min-width:0;max-width:none;border-radius:12px;border-left:none;border-top:3px solid var(--gold);transform:translateY(calc(100% + 28px));}
+  .toast.show{transform:translateY(0);}
+  .toast.err{border-top-color:var(--danger);border-left:none;}
+  .toast.warn{border-top-color:var(--warn);border-left:none;}
+  .cor-item-thumbs{display:none;}
+  .cor-add-tabs{gap:4px;}
+  .cor-add-tab{padding:6px 10px;font-size:7px;}
+}
+@media(max-width:390px){
+  .main{padding:14px 10px 70px;}
+  .stats-grid,.quick-grid{gap:7px;}
+  .stat-val{font-size:26px;}
+  .page-title{font-size:22px;}
+}
+
+@media(max-width:640px){
+  .login-box{padding:22px 16px;}
+  .login-input{font-size:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-logo-area">
+      <div class="logo-wrap" onclick="null">
+        <img src="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png" alt="Benedictus Camisaria"/>
+      </div>
+      <div class="login-divider">
+        <div class="login-divider-line"></div>
+        <div class="login-badge">Painel Admin</div>
+        <div class="login-divider-line"></div>
+      </div>
+    </div>
+    <div class="login-box">
+      <!-- ETAPA 1: USUÁRIO -->
+      <div id="login-step-1">
+        <div class="login-section-label">Acesso Restrito</div>
+        <div class="login-field" style="margin-bottom:0;">
+          <label class="login-label">Usuário</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="l-user" type="text" placeholder="admin" autocomplete="username"/>
+            <div class="login-input-icon"><span class="mat">person</span></div>
+          </div>
+        </div>
+        <button class="login-btn" onclick="loginStep1()">
+          <span class="mat" style="font-size:16px;">arrow_forward</span>
+          <span>Continuar</span>
+        </button>
+        <div class="login-err" id="l-err-user">
+          <span class="mat" style="font-size:15px;vertical-align:middle;margin-right:5px;">error_outline</span>Usuário não encontrado.
+        </div>
+      </div>
+      <!-- ETAPA 2: SENHA -->
+      <div id="login-step-2" style="display:none;">
+        <div class="login-section-label">Bem-vindo, <span id="login-user-label" style="color:var(--gold);font-style:normal;"></span></div>
+        <div class="login-field" style="margin-bottom:0;">
+          <label class="login-label">Senha</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+            <div class="login-input-icon"><span class="mat">lock</span></div>
+          </div>
+        </div>
+        <button class="login-btn" onclick="doLogin()">
+          <span class="mat" style="font-size:16px;">lock_open</span>
+          <span>Entrar no Painel</span>
+        </button>
+        <button onclick="voltarStep1()" style="width:100%;margin-top:8px;background:none;border:1px solid var(--border2);color:var(--muted);padding:10px;border-radius:8px;cursor:pointer;font-size:11px;letter-spacing:0.15em;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .25s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
+          <span class="mat" style="font-size:15px;">arrow_back</span>Trocar usuário
+        </button>
+        <div class="login-err" id="l-err">
+          <span class="mat" style="font-size:15px;vertical-align:middle;margin-right:5px;">error_outline</span>Senha incorreta.
+        </div>
+      </div>
+    </div>
+    <div class="login-theme-row">
+      <button class="login-theme-btn" onclick="toggleTheme()">
+        <span class="mat" id="login-theme-icon" style="font-size:15px;">light_mode</span>
+        <span id="login-theme-txt">Modo Claro</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function applyStoredTheme() {
+  const t = localStorage.getItem('bened_theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+})();
+
+// ── CONFIGURAÇÃO SUPABASE ─────────────────────────────────
+const SUPABASE_URL = 'https://vtdhpnzpwemvvmhhomsg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0ZGhwbnpwd2VtdnZtaGhvbXNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MDEyNTYsImV4cCI6MjA5MzI3NzI1Nn0.3x3AD0jiFHCChrfoalkRdAqepWhJLWwDTJjnP3OjSWY';
+
+// ── CREDENCIAIS DO ADMIN ──────────────────────────────────
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = '2026';
+
+// ── CLIENTE SUPABASE ──────────────────────────────────────
+// IMPORTANTE: variável nomeada "db" para não conflitar com o SDK global "supabase"
+let db = null;
+
+function initSupabase() {
+  try {
+    // O SDK UMD do Supabase v2 expõe window.supabase.createClient
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+      console.error('Supabase SDK não encontrado!');
+      showToast('SDK do banco não carregado', 'err');
+    }
+  } catch (e) {
+    console.error('Erro ao inicializar Supabase:', e);
+  }
+}
+
+
+function updateThemeIcons() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const icon   = isDark ? 'light_mode' : 'dark_mode';
+  const txt    = isDark ? 'Modo Claro'  : 'Modo Escuro';
+  const el1 = document.getElementById('login-theme-icon');
+  const el2 = document.getElementById('login-theme-txt');
+  if (el1) el1.textContent = icon;
+  if (el2) el2.textContent = txt;
+}
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('bened_theme', next);
+  updateThemeIcons();
+}
+
+function loginStep1() {
+  const user    = document.getElementById('l-user').value.trim();
+  const errUser = document.getElementById('l-err-user');
+  if (user === ADMIN_USER) {
+    errUser.style.display = 'none';
+    document.getElementById('login-step-1').style.display = 'none';
+    document.getElementById('login-step-2').style.display = '';
+    document.getElementById('login-user-label').textContent = user;
+    document.getElementById('l-pass').value = '';
+    document.getElementById('l-pass').focus();
+  } else {
+    errUser.style.display = 'block';
+    document.getElementById('l-user').focus();
+  }
+}
+
+function voltarStep1() {
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('login-step-1').style.display = '';
+  document.getElementById('l-err').style.display = 'none';
+  document.getElementById('l-pass').value = '';
+  document.getElementById('l-user').focus();
+}
+
+function doLogin() {
+  const pass = document.getElementById('l-pass').value;
+  const err  = document.getElementById('l-err');
+  if (pass === ADMIN_PASS) {
+    err.style.display = 'none';
+    sessionStorage.setItem('bened_auth', '1');
+    window.location.href = 'admin.html';
+  } else {
+    err.style.display = 'block';
+    document.getElementById('l-pass').value = '';
+    document.getElementById('l-pass').focus();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Se já estiver logado, vai direto pro admin
+  if (sessionStorage.getItem('bened_auth') === '1') {
+    window.location.href = 'admin.html';
+    return;
+  }
+
+  const t = localStorage.getItem('bened_theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  updateThemeIcons();
+
+  document.getElementById('l-user')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') loginStep1();
+  });
+  document.getElementById('l-pass')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+</script>
+</body>
+</html>
