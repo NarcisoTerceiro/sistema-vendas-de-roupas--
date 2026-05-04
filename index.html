@@ -23,15 +23,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
 .mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;}
 
 
-/* ══ STATUS BANNER ══ */
-.loja-status-banner{display:none;padding:12px 48px;text-align:center;font-size:12px;letter-spacing:0.08em;position:sticky;top:0;z-index:999;transition:background .4s,border-color .4s;}
-.loja-status-banner.show{display:flex;align-items:center;justify-content:center;gap:10px;}
-.loja-status-banner.aberta{background:#16a34a;color:#fff;border-bottom:2px solid #15803d;}
-.loja-status-banner.fechada{background:#dc2626;color:#fff;border-bottom:2px solid #b91c1c;}
-[data-theme="dark"] .loja-status-banner.aberta{background:#166534;border-bottom-color:#15803d;}
-[data-theme="dark"] .loja-status-banner.fechada{background:#991b1b;border-bottom-color:#b91c1c;}
-.loja-status-banner .mat{vertical-align:middle;font-size:17px;color:#fff;}
-@media(max-width:640px){.loja-status-banner{padding:10px 16px;font-size:11px;}}
+/* ══ STATUS BANNER — removido ══ */
 
 /* ══ TOP BAR ══ */
 .top-bar{background:var(--ink);font-size:11px;letter-spacing:0.18em;text-align:center;padding:8px 16px;display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;overflow:hidden;}
@@ -579,17 +571,11 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 </head>
 <body>
 
-<!-- STATUS LOJA BANNER -->
-<div class="loja-status-banner" id="loja-status-banner">
-  <span class="mat" id="loja-status-icon">store</span>
-  <span id="loja-status-txt">Carregando status…</span>
-</div>
-
 <!-- TOAST -->
 <div id="toast" class="toast"><span class="mat" id="toast-icon">check_circle</span><span id="toast-msg">Produto adicionado!</span></div>
 
 <!-- WA FLOAT -->
-<a class="wa-float" href="https://wa.me/5583998015544" target="_blank" title="WhatsApp">
+<a class="wa-float" href="https://api.whatsapp.com/send?phone=5583998015544" onclick="var isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);if(isIOS){event.preventDefault();window.location.href='whatsapp://send?phone=5583998015544';}" target="_blank" title="WhatsApp">
   <div class="wa-pulse"></div>
   <span class="mat">chat</span>
 </a>
@@ -654,7 +640,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <span class="mat">support_agent</span>Atendimento
     </div>
     <div class="mobile-nav-divider"></div>
-    <a class='mobile-nav-link' href='admin.html'>
+    <a class='mobile-nav-link' href='adminsenha.html'>
       <span class="mat">admin_panel_settings</span>ADM
     </a>
   </div>
@@ -726,7 +712,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <button class="nav-link cat-btn" data-cat="Formal" onclick="catFilter('Formal')">Formal</button>
     <button class="nav-link" onclick="sc('secao-promos')">Promoções</button>
     <button class="nav-link" onclick="sc('quem-somos')">Quem Somos</button>
-    <a href="admin.html" class="nav-link nav-link-adm">
+    <a href="adminsenha.html" class="nav-link nav-link-adm">
       <span class="mat">admin_panel_settings</span>ADM
     </a>
   </div>
@@ -1139,7 +1125,7 @@ let vmTamanho = null;
 let vmCor     = null;
 
 // Dados do checkout
-let checkoutData = { nome:'', endereco:'', bairro:'', complemento:'', pagamento:'' };
+let checkoutData = { nome:'', endereco:'', numero:'', bairro:'', complemento:'', celular:'', pagamento:'' };
 
 // ════════════════════════════════════════════════════════════
 //  INIT
@@ -1157,7 +1143,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
   renderColecao();       // monta carrosséis
   renderPromoCarousel();
-  verificarStatusLoja();
 });
 
 // ════════════════════════════════════════════════════════════
@@ -1823,8 +1808,18 @@ function showStepDados() {
         <input class="form-input" id="f-nome" type="text" placeholder="Ex: Maria Joaquina" value="${esc(checkoutData.nome)}"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Endereço (rua + número) *</label>
-        <input class="form-input" id="f-end" type="text" placeholder="Ex: Rua das Flores, 123" value="${esc(checkoutData.endereco)}"/>
+        <label class="form-label">Celular (WhatsApp) *</label>
+        <input class="form-input" id="f-celular" type="tel" placeholder="Ex: (83) 99999-9999" value="${esc(checkoutData.celular)}"/>
+      </div>
+      <div class="form-row" style="grid-template-columns:2fr 1fr;">
+        <div class="form-group">
+          <label class="form-label">Rua / Avenida *</label>
+          <input class="form-input" id="f-end" type="text" placeholder="Ex: Rua das Flores" value="${esc(checkoutData.endereco)}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número *</label>
+          <input class="form-input" id="f-numero" type="text" placeholder="Ex: 123" value="${esc(checkoutData.numero)}"/>
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -1843,14 +1838,16 @@ function showStepDados() {
 }
 
 function validarDados() {
-  const nome   = document.getElementById('f-nome')?.value.trim()   || '';
-  const end    = document.getElementById('f-end')?.value.trim()    || '';
-  const bairro = document.getElementById('f-bairro')?.value.trim() || '';
-  const comp   = document.getElementById('f-comp')?.value.trim()   || '';
+  const nome    = document.getElementById('f-nome')?.value.trim()    || '';
+  const celular = document.getElementById('f-celular')?.value.trim() || '';
+  const end     = document.getElementById('f-end')?.value.trim()     || '';
+  const numero  = document.getElementById('f-numero')?.value.trim()  || '';
+  const bairro  = document.getElementById('f-bairro')?.value.trim()  || '';
+  const comp    = document.getElementById('f-comp')?.value.trim()    || '';
 
-  if (!nome || !end || !bairro) {
-    showToast('Preencha nome, endereço e bairro', 'error');
-    [['f-nome', nome], ['f-end', end], ['f-bairro', bairro]].forEach(([id, val]) => {
+  if (!nome || !celular || !end || !numero || !bairro) {
+    showToast('Preencha todos os campos obrigatórios (*)', 'error');
+    [['f-nome', nome], ['f-celular', celular], ['f-end', end], ['f-numero', numero], ['f-bairro', bairro]].forEach(([id, val]) => {
       if (!val) document.getElementById(id)?.animate(
         [{outline:'2px solid #c84040'}, {outline:'2px solid transparent'}],
         {duration:600, fill:'forwards'}
@@ -1858,7 +1855,7 @@ function validarDados() {
     });
     return false;
   }
-  checkoutData = { nome, endereco: end, bairro, complemento: comp, pagamento: checkoutData.pagamento };
+  checkoutData = { nome, celular, endereco: end, numero, bairro, complemento: comp, pagamento: checkoutData.pagamento };
   return true;
 }
 
@@ -1947,7 +1944,8 @@ function finalizarPedido() {
 
   let msg  = `🛍️ *Novo Pedido — Benedictus Camisaria*\n\n`;
   msg     += `👤 *Cliente:* ${checkoutData.nome}\n`;
-  msg     += `📍 *Endereço:* ${checkoutData.endereco}, ${checkoutData.bairro}`;
+  msg     += `📱 *Celular:* ${checkoutData.celular}\n`;
+  msg     += `📍 *Endereço:* ${checkoutData.endereco}, Nº ${checkoutData.numero}, ${checkoutData.bairro}`;
   if (checkoutData.complemento) msg += ` — ${checkoutData.complemento}`;
   msg     += `\n\n🛒 *Itens:*\n${linhas.join('\n')}\n\n`;
   msg     += `💰 *Subtotal:* R$ ${formatPrice(sub)}\n`;
@@ -1960,7 +1958,12 @@ function finalizarPedido() {
   const _cartSnap = cart.map(x => ({ id: x.produto.id, nome: x.produto.nome, qty: x.qty }));
 
   setTimeout(() => {
-    window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(msg)}`, '_blank');
+    // Link universal: abre o app no iPhone E no Android
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const waUrl = isIOS
+      ? `whatsapp://send?phone=${WHATSAPP_NUM}&text=${encodeURIComponent(msg)}`
+      : `https://api.whatsapp.com/send?phone=${WHATSAPP_NUM}&text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
     decrementarEstoque(_cartSnap);
     showSuccessScreen();
     cart = [];

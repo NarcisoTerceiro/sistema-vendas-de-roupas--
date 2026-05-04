@@ -689,7 +689,7 @@ async function loadProduct(id) {
   try {
     const { data, error } = await db
       .from('produtos')
-      .select('id,nome,categoria,preco,estoque,descricao,promocao,tamanhos,cores,cor_imagens,created_at')
+      .select('id,nome,categoria,preco,estoque,descricao,composicao,cuidados,promocao,tamanhos,cores,cor_imagens,created_at')
       .eq('id', id)
       .single();
 

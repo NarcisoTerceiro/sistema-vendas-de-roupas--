@@ -352,33 +352,7 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
 .cor-add-img-head-txt{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);}
 .cor-add-img-body{padding:12px;display:flex;flex-direction:column;gap:10px;}
 
-/* STATUS LOJA */
-.status-card{background:var(--surface);border:2px solid rgba(34,197,94,.35);border-radius:12px;padding:16px 18px;margin-bottom:24px;position:relative;overflow:hidden;transition:border-color .5s,box-shadow .5s;box-shadow:0 0 0 4px rgba(34,197,94,.07);max-width:600px;}
-[data-theme="dark"] .status-card{background:linear-gradient(135deg,rgba(34,197,94,.08) 0%,var(--navy2) 100%);}
-[data-theme="light"] .status-card{background:rgba(34,197,94,.06);}
-.status-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#22c55e,transparent);transition:background .5s;}
-.status-card.fechado{border-color:rgba(239,68,68,.4);box-shadow:0 0 0 4px rgba(239,68,68,.07);}
-[data-theme="dark"] .status-card.fechado{background:linear-gradient(135deg,rgba(239,68,68,.09) 0%,var(--navy2) 100%);}
-[data-theme="light"] .status-card.fechado{background:rgba(239,68,68,.06);}
-.status-card.fechado::before{background:linear-gradient(90deg,transparent,#ef4444,transparent);}
-.status-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.status-eyebrow{font-size:8px;letter-spacing:.44em;text-transform:uppercase;color:var(--muted);}
-.status-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:.08em;padding:4px 11px;border-radius:20px;background:rgba(34,197,94,.15);color:#16a34a;border:1px solid rgba(34,197,94,.3);transition:all .4s;}
-[data-theme="dark"] .status-badge{color:#4ade80;}
-.status-card.fechado .status-badge{background:rgba(239,68,68,.13);color:#dc2626;border-color:rgba(239,68,68,.3);}
-[data-theme="dark"] .status-card.fechado .status-badge{color:#f87171;}
-.status-badge .mat{font-size:13px;}
-.status-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.status-opt{display:flex;align-items:center;justify-content:center;gap:9px;padding:13px 10px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .3s;background:var(--surface2);color:var(--muted);}
-.status-opt .mat{font-size:18px;}
-.status-opt.ativo-aberta{background:#22c55e;color:#fff;border-color:#22c55e;box-shadow:0 4px 14px rgba(34,197,94,.35);}
-.status-opt.ativo-fechada{background:#ef4444;color:#fff;border-color:#ef4444;box-shadow:0 4px 14px rgba(239,68,68,.35);}
-.status-opt:not([class*="ativo"]):hover{border-color:var(--border);color:var(--ink2);}
-.status-bottom{display:flex;gap:8px;align-items:stretch;}
-.status-bottom .form-input{flex:1;margin:0;font-size:13px;padding:11px 13px;}
-.status-save-btn{flex-shrink:0;padding:0 20px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .3s;white-space:nowrap;background:#22c55e;color:#fff;}
-.status-card.fechado .status-save-btn{background:#ef4444;}
-.status-save-btn:hover{transform:translateY(-1px);filter:brightness(1.1);}
+/* STATUS LOJA — removido */
 
 /* 3 abas: URL, Galeria, Web */
 .cor-add-tabs{display:flex;gap:5px;flex-wrap:wrap;}
@@ -704,48 +678,6 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
           <h2 class="page-title">Visão <em>Geral</em></h2>
           <div class="page-subtitle">Bem-vindo ao painel Benedictus</div>
           <div class="page-divider"></div>
-        </div>
-        <!-- STATUS DA LOJA -->
-        <div class="status-card" id="status-card">
-          <div class="status-header">
-            <div class="status-eyebrow">Status da Loja</div>
-            <div class="status-badge" id="status-badge">
-              <span class="mat" id="status-badge-icon">check_circle</span>
-              <span id="status-badge-txt">Aberta</span>
-            </div>
-          </div>
-          <div class="status-btns">
-            <div class="status-opt ativo-aberta" id="opt-aberta" onclick="setStatusLoja(true)">
-              <span class="mat">check_circle</span>Aberta
-            </div>
-            <div class="status-opt" id="opt-fechada" onclick="setStatusLoja(false)">
-              <span class="mat">lock</span>Fechada
-            </div>
-          </div>
-          <!-- Campos ABERTA -->
-          <div id="status-fields-aberta">
-            <div style="font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Horário de funcionamento</div>
-            <div class="status-bottom">
-              <input class="form-input" id="status-horario-abertura" type="text" placeholder="Abertura (ex: 09:00)"/>
-              <input class="form-input" id="status-horario-fechamento" type="text" placeholder="Fechamento (ex: 22:00)"/>
-            </div>
-            <div style="margin-top:8px;" class="status-bottom">
-              <input class="form-input" id="status-motivo" type="text" placeholder="Observação — opcional"/>
-              <button class="status-save-btn" onclick="salvarStatusOnline()">Salvar</button>
-            </div>
-          </div>
-          <!-- Campos FECHADA -->
-          <div id="status-fields-fechada" style="display:none;">
-            <div style="font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Motivo do fechamento</div>
-            <div class="status-bottom">
-              <input class="form-input" id="status-motivo-fechado" type="text" placeholder="Ex: Feriado, Manutenção, Pausa…"/>
-            </div>
-            <div style="font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin:8px 0 6px;">Previsão de reabertura</div>
-            <div class="status-bottom">
-              <input class="form-input" id="status-reabertura" type="text" placeholder="Ex: Amanhã às 09:00, Segunda-feira…"/>
-              <button class="status-save-btn" onclick="salvarStatusOnline()">Salvar</button>
-            </div>
-          </div>
         </div>
         <!-- PAINEL DE ALERTAS — estoque zerado em tempo real -->
         <div class="alert-panel" id="alert-panel">
@@ -1215,7 +1147,7 @@ let _lastCoresKey = '';
 
 async function initApp() {
   updateThemeIcons();
-  await carregarStatusLoja();
+  // status removido
   await loadProducts();
   renderDashboard();
   renderTable();
@@ -1605,7 +1537,7 @@ async function editarProduto(id) {
 
   if (!db) return;
   try {
-    const { data, error } = await db.from('produtos').select('id,nome,categoria,preco,estoque,descricao,promocao,tamanhos,cores,cor_imagens,created_at').eq('id', id).single();
+    const { data, error } = await db.from('produtos').select('id,nome,categoria,preco,estoque,descricao,composicao,cuidados,promocao,tamanhos,cores,cor_imagens,created_at').eq('id', id).single();
     if (error) throw error;
     abrirModal(data);
   } catch (e) {
@@ -2105,103 +2037,8 @@ function addCorImgFromWebSelected(cor, sid) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  STATUS DA LOJA (Supabase online)
+//  STATUS DA LOJA — removido
 // ════════════════════════════════════════════════════════════
-let _statusAberta = true;
-
-async function carregarStatusLoja() {
-  try {
-    if (!db) return;
-    const { data, error } = await db.from('config').select('valor').eq('chave','loja_status').single();
-    if (error && error.code !== 'PGRST116') throw error;
-    if (data) {
-      const s = JSON.parse(data.valor);
-      _statusAberta = s.aberta !== false;
-      if (_statusAberta) {
-        const motivoEl = document.getElementById('status-motivo');
-        if (motivoEl) motivoEl.value = s.motivo || '';
-        if (s.horario) {
-          const partes = s.horario.split(' – ');
-          const abEl = document.getElementById('status-horario-abertura');
-          const fEl  = document.getElementById('status-horario-fechamento');
-          if (abEl) abEl.value = partes[0] || '';
-          if (fEl)  fEl.value  = partes[1] || '';
-        }
-      } else {
-        const motivoFEl = document.getElementById('status-motivo-fechado');
-        if (motivoFEl) motivoFEl.value = s.motivo || '';
-        const reaEl = document.getElementById('status-reabertura');
-        if (reaEl) reaEl.value = s.reabertura || '';
-      }
-    }
-  } catch(e) {
-    console.error('Erro ao carregar status da loja:', e);
-    showToast('Erro ao carregar status da loja: ' + (e.message || e), 'err');
-  }
-  _renderStatusUI();
-}
-
-function setStatusLoja(aberta) {
-  _statusAberta = aberta;
-  _renderStatusUI();
-}
-
-async function salvarStatusOnline() {
-  let motivo = '';
-  let extra  = {};
-  if (_statusAberta) {
-    motivo = document.getElementById('status-motivo')?.value.trim() || '';
-    const abertura   = document.getElementById('status-horario-abertura')?.value.trim() || '';
-    const fechamento = document.getElementById('status-horario-fechamento')?.value.trim() || '';
-    if (abertura || fechamento) extra.horario = [abertura, fechamento].filter(Boolean).join(' – ');
-  } else {
-    motivo = document.getElementById('status-motivo-fechado')?.value.trim() || '';
-    const reabertura = document.getElementById('status-reabertura')?.value.trim() || '';
-    if (reabertura) extra.reabertura = reabertura;
-  }
-  const s = { aberta: _statusAberta, motivo, ...extra };
-  const btn = document.querySelector('.status-save-btn');
-  const btnOrigHtml = btn ? btn.innerHTML : null;
-  if (btn) { btn.innerHTML = '<span class="mat" style="font-size:15px;vertical-align:middle;">hourglass_empty</span> Salvando…'; btn.disabled = true; }
-  try {
-    if (!db) { showToast('Banco não conectado', 'err'); return; }
-    const { error } = await db.from('config').upsert(
-      { chave: 'loja_status', valor: JSON.stringify(s) },
-      { onConflict: 'chave' }
-    );
-    if (error) throw error;
-    showToast(_statusAberta ? '✓ Loja aberta — clientes podem comprar' : '✓ Loja fechada — compras bloqueadas na vitrine');
-  } catch(e) {
-    console.error('Erro ao salvar status:', e);
-    showToast('Erro ao salvar status: ' + (e.message || e), 'err');
-  } finally {
-    if (btn) { btn.innerHTML = btnOrigHtml || 'Salvar'; btn.disabled = false; }
-  }
-}
-
-function _renderStatusUI() {
-  const card  = document.getElementById('status-card');
-  const oA    = document.getElementById('opt-aberta');
-  const oF    = document.getElementById('opt-fechada');
-  const badgeIcon = document.getElementById('status-badge-icon');
-  const badgeTxt  = document.getElementById('status-badge-txt');
-  const fieldsAberta  = document.getElementById('status-fields-aberta');
-  const fieldsFechada = document.getElementById('status-fields-fechada');
-  if (!card) return;
-
-  card.classList.toggle('fechado', !_statusAberta);
-  if (oA) { oA.className = 'status-opt' + (_statusAberta ? ' ativo-aberta' : ''); }
-  if (oF) { oF.className = 'status-opt' + (!_statusAberta ? ' ativo-fechada' : ''); }
-  if (badgeIcon) badgeIcon.textContent = _statusAberta ? 'check_circle' : 'lock';
-  if (badgeTxt)  badgeTxt.textContent  = _statusAberta ? 'Aberta' : 'Fechada';
-
-  if (fieldsAberta)  fieldsAberta.style.display  = _statusAberta ? '' : 'none';
-  if (fieldsFechada) fieldsFechada.style.display = _statusAberta ? 'none' : '';
-
-  document.querySelectorAll('.status-save-btn').forEach(btn => {
-    btn.style.background = _statusAberta ? '#22c55e' : '#ef4444';
-  });
-}
 
 function addCorImgToState(cor, url) {
   if (!corImagens[cor]) corImagens[cor] = [];
