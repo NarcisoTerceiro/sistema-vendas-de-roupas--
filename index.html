@@ -325,7 +325,9 @@ nav.scrolled{box-shadow:0 4px 32px var(--sh2);}
 .cart-item-price{font-size:13px;color:var(--gold);margin-bottom:10px;}
 .cart-item-qty{display:flex;align-items:center;gap:10px;}
 .qty-btn{width:30px;height:30px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;border-radius:50%;}
-.qty-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--bg2);}
+.qty-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);background:var(--bg2);}
+.qty-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.cart-stock-alert{display:flex;align-items:center;gap:5px;margin-top:6px;padding:5px 10px;background:rgba(184,150,90,0.12);border:1px solid rgba(184,150,90,0.3);border-radius:6px;font-size:10px;letter-spacing:0.08em;color:var(--gold);font-family:'DM Sans',sans-serif;}
 .qty-num{font-size:14px;color:var(--ink);min-width:22px;text-align:center;font-weight:500;}
 .cart-item-del{background:none;border:none;cursor:pointer;color:var(--muted2);transition:color .25s;align-self:flex-start;margin-top:2px;display:flex;padding:6px;border-radius:50%;}
 .cart-item-del:hover{color:#c84040;background:rgba(200,64,64,0.1);}
@@ -1678,6 +1680,13 @@ function removeCart(idx) {
 }
 
 function changeQty(idx, delta) {
+  if (delta > 0) {
+    const estoque = cart[idx].produto.estoque;
+    if (typeof estoque === 'number' && cart[idx].qty >= estoque) {
+      showToast(`Estoque disponível: apenas ${estoque} unidade${estoque === 1 ? '' : 's'}`, 'error');
+      return;
+    }
+  }
   cart[idx].qty += delta;
   if (cart[idx].qty <= 0) { removeCart(idx); return; }
   saveCart();
@@ -1728,8 +1737,9 @@ function renderCart() {
             <div class="cart-item-qty">
               <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
               <span class="qty-num">${x.qty}</span>
-              <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+              <button class="qty-btn" onclick="changeQty(${i},1)" ${(typeof x.produto.estoque === 'number' && x.qty >= x.produto.estoque) ? 'disabled title="Estoque máximo atingido"' : ''}>+</button>
             </div>
+            ${(typeof x.produto.estoque === 'number' && x.qty >= x.produto.estoque) ? '<div class=\"cart-stock-alert\"><span class=\"mat\" style=\"font-size:13px;\">warning_amber</span> Último estoque adicionado</div>' : ''}
           </div>
           <button class="cart-item-del" onclick="removeCart(${i})" title="Remover">
             <span class="mat" style="font-size:18px;">delete_outline</span>

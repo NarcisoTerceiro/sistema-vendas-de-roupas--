@@ -534,71 +534,8 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
-<div id="login-screen">
-  <div class="login-wrap">
-    <div class="login-logo-area">
-      <div class="logo-wrap" onclick="null">
-        <img src="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png" alt="Benedictus Camisaria"/>
-      </div>
-      <div class="login-divider">
-        <div class="login-divider-line"></div>
-        <div class="login-badge">Painel Admin</div>
-        <div class="login-divider-line"></div>
-      </div>
-    </div>
-    <div class="login-box">
-      <!-- ETAPA 1: USUÁRIO -->
-      <div id="login-step-1">
-        <div class="login-section-label">Acesso Restrito</div>
-        <div class="login-field" style="margin-bottom:0;">
-          <label class="login-label">Usuário</label>
-          <div class="login-input-wrap">
-            <input class="login-input" id="l-user" type="text" placeholder="admin" autocomplete="username"/>
-            <div class="login-input-icon"><span class="mat">person</span></div>
-          </div>
-        </div>
-        <button class="login-btn" onclick="loginStep1()">
-          <span class="mat" style="font-size:16px;">arrow_forward</span>
-          <span>Continuar</span>
-        </button>
-        <div class="login-err" id="l-err-user">
-          <span class="mat" style="font-size:15px;vertical-align:middle;margin-right:5px;">error_outline</span>Usuário não encontrado.
-        </div>
-      </div>
-      <!-- ETAPA 2: SENHA -->
-      <div id="login-step-2" style="display:none;">
-        <div class="login-section-label">Bem-vindo, <span id="login-user-label" style="color:var(--gold);font-style:normal;"></span></div>
-        <div class="login-field" style="margin-bottom:0;">
-          <label class="login-label">Senha</label>
-          <div class="login-input-wrap">
-            <input class="login-input" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
-            <div class="login-input-icon"><span class="mat">lock</span></div>
-          </div>
-        </div>
-        <button class="login-btn" onclick="doLogin()">
-          <span class="mat" style="font-size:16px;">lock_open</span>
-          <span>Entrar no Painel</span>
-        </button>
-        <button onclick="voltarStep1()" style="width:100%;margin-top:8px;background:none;border:1px solid var(--border2);color:var(--muted);padding:10px;border-radius:8px;cursor:pointer;font-size:11px;letter-spacing:0.15em;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .25s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
-          <span class="mat" style="font-size:15px;">arrow_back</span>Trocar usuário
-        </button>
-        <div class="login-err" id="l-err">
-          <span class="mat" style="font-size:15px;vertical-align:middle;margin-right:5px;">error_outline</span>Senha incorreta.
-        </div>
-      </div>
-    </div>
-    <div class="login-theme-row">
-      <button class="login-theme-btn" onclick="toggleTheme()">
-        <span class="mat" id="login-theme-icon" style="font-size:15px;">light_mode</span>
-        <span id="login-theme-txt">Modo Claro</span>
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ APP ══ -->
-<div id="app">
+<div id="app" style="display:block;">
   <nav class="topbar">
     <div class="topbar-left">
       <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
@@ -617,7 +554,7 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
       <button class="topbar-btn" onclick="window.open('atelier.html','_blank')">
         <span class="mat">storefront</span><span>Ver Loja</span>
       </button>
-      <button class="topbar-btn" onclick="doLogout()">
+      <button class="topbar-btn" onclick="window.location.href='index.html'">
         <span class="mat">logout</span><span>Sair</span>
       </button>
     </div>
@@ -1088,20 +1025,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const t = localStorage.getItem('bened_theme');
   if (t) document.documentElement.setAttribute('data-theme', t);
 
-  // Sessão ativa
-  if (sessionStorage.getItem('bened_auth') === '1') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    initApp();
-  }
-
-  // Enter nos campos de login
-  document.getElementById('l-user')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') loginStep1();
-  });
-  document.getElementById('l-pass')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
+  // Inicia app direto, sem login
+  initApp();
 
   // Fechar modal ao clicar fora
   document.getElementById('modal-overlay')?.addEventListener('click', function (e) {
