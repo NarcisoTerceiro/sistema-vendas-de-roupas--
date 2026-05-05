@@ -796,11 +796,189 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <h2 class="section-title">Em Promoção</h2>
     <div class="section-divider"></div>
   </div>
-  <div class="carousel-wrap reveal" style="position:relative;">
-    <div class="cat-carousel" id="promo-carousel"></div>
-    <button class="carousel-btn prev" onclick="scrollCar('promo-carousel',-1)"><span class="mat">arrow_back</span></button>
-    <button class="carousel-btn next" onclick="scrollCar('promo-carousel',1)"><span class="mat">arrow_forward</span></button>
-    <div class="carousel-dots" id="promo-dots"></div>
+
+  <style>
+    /* ── carrossel wrapper ── */
+    .promo-car-wrap{position:relative;padding:0 0 56px;}
+    .promo-ivory-track{
+      display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;
+      padding:4px 48px 16px;
+      -ms-overflow-style:none;scrollbar-width:none;
+    }
+    .promo-ivory-track::-webkit-scrollbar{display:none;}
+    @media(max-width:1024px){.promo-ivory-track{padding:4px 28px 16px;}}
+    @media(max-width:640px){.promo-ivory-track{padding:4px 16px 16px;gap:12px;}}
+    @media(max-width:480px){.promo-ivory-track{padding:4px 12px 16px;gap:10px;}}
+
+    /* setas — ficam no header, acima do carrossel */
+    .promo-car-arrow{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;flex-shrink:0;}
+    .promo-car-arrow:hover{background:var(--gold);border-color:var(--gold);color:#0f1526;}
+
+    /* dots */
+    .promo-car-dots{display:flex;justify-content:center;gap:6px;margin-top:4px;}
+    .promo-car-dot{width:6px;height:6px;border-radius:3px;background:rgba(196,169,125,.25);border:none;cursor:pointer;padding:0;transition:all .3s;}
+    .promo-car-dot.active{width:22px;background:#c4a97d;}
+
+    /* card — foto ocupa tudo */
+    .ivory-card{
+      position:relative;flex-shrink:0;width:300px;scroll-snap-align:start;
+      border-radius:18px;overflow:hidden;
+      background:var(--card-bg);
+      box-shadow:0 24px 60px rgba(0,0,0,.55);
+      transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s;
+      cursor:pointer;
+    }
+    @media(max-width:768px){.ivory-card{width:260px;}}
+    @media(max-width:480px){.ivory-card{width:calc(85vw);max-width:300px;}}
+    .ivory-card:hover{transform:translateY(-5px);box-shadow:0 36px 80px rgba(0,0,0,.7);}
+
+    /* foto ocupa o card inteiro — info flutua sobre ela */
+    .ivory-card__img-wrap{position:absolute;inset:0;}
+    .ivory-card__img-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .7s cubic-bezier(.22,1,.36,1);filter:brightness(.85) saturate(.9);}
+    .ivory-card:hover .ivory-card__img-wrap img{transform:scale(1.06);}
+    .ivory-card__img-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08) 0%,transparent 30%,rgba(26,23,20,.6) 60%,rgba(26,23,20,.97) 100%);pointer-events:none;}
+    .ivory-card__img-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.18);gap:8px;}
+    .ivory-card__img-ph .mat{font-size:52px;}
+
+    /* altura fixa para o card (foto preenche) */
+    .ivory-card__inner{position:relative;z-index:5;display:flex;flex-direction:column;justify-content:flex-end;min-height:480px;padding:0 18px 20px;}
+    @media(max-width:480px){.ivory-card__inner{min-height:420px;padding:0 14px 16px;}}
+
+    .ivory-card__badge{position:absolute;top:16px;left:16px;z-index:10;display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;border:1px solid rgba(196,169,125,.45);background:rgba(26,23,20,.58);backdrop-filter:blur(8px);font-size:9px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:#c4a97d;}
+    .ivory-card__badge::before{content:'';width:5px;height:5px;border-radius:50%;background:#c4a97d;animation:ivoryPulse 2s ease-in-out infinite;}
+    @keyframes ivoryPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
+    .ivory-card__wish{position:absolute;top:14px;right:14px;z-index:10;width:34px;height:34px;border-radius:50%;background:rgba(26,23,20,.55);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,border-color .2s;}
+    .ivory-card__wish:hover,.ivory-card__wish.wished{background:rgba(196,169,125,.22);border-color:rgba(196,169,125,.55);}
+    .ivory-card__wish svg{width:15px;height:15px;stroke:rgba(255,255,255,.7);fill:none;stroke-width:1.5;transition:stroke .2s,fill .2s;}
+    .ivory-card__wish.wished svg{stroke:#c4a97d;fill:rgba(196,169,125,.3);}
+
+    .ivory-card__meta{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+    .ivory-card__thumb{width:44px;height:44px;border-radius:9px;overflow:hidden;border:1.5px solid rgba(196,169,125,.35);flex-shrink:0;background:#2a2520;}
+    .ivory-card__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .ivory-card__thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.2);}
+    .ivory-card__name{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;letter-spacing:.05em;color:#f4efe8;line-height:1.1;margin-bottom:4px;}
+    .ivory-card__prices{display:flex;align-items:baseline;gap:8px;}
+    .ivory-card__price-now{font-size:15px;font-weight:500;color:#f4efe8;}
+    .ivory-card__price-was{font-size:12px;font-weight:300;color:#b0a898;text-decoration:line-through;}
+
+    .ivory-card__sublabel{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px;}
+    .ivory-card__colors{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
+    .ivory-color-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:1.5px solid transparent;transition:transform .15s,box-shadow .15s;flex-shrink:0;}
+    .ivory-color-dot:hover{transform:scale(1.18);}
+    .ivory-color-dot.active{box-shadow:0 0 0 2px #1a1714,0 0 0 3.5px #c4a97d;}
+    .ivory-card__sizes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+    .ivory-sz-btn{min-width:34px;height:34px;padding:0 7px;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:rgba(255,255,255,.6);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:border-color .18s,color .18s,background .18s;display:flex;align-items:center;justify-content:center;}
+    .ivory-sz-btn:hover,.ivory-sz-btn.active{border-color:#c4a97d;color:#c4a97d;background:rgba(196,169,125,.15);}
+
+    /* ── BOTÃO COR DOURADA — animação fiel ao original ── */
+    .ivory-card__cta{
+      --bg-scale:1;
+      --text-o:1;
+      --text-x:8px;
+      --cart:rgba(26,23,20,1);
+      --cart-x:-48px;
+      --cart-y:0px;
+      --cart-rotate:0deg;
+      --cart-scale:.75;
+      --cart-clip:0px;
+      --cart-clip-x:0px;
+      --cart-tick-offset:10px;
+      --cart-tick-color:#FF328B;
+      --shirt-y:-16px;
+      --shirt-scale:0;
+      --shirt-color:#c8a96e;
+      --shirt-logo:#1a1714;
+      --shirt-second-y:24px;
+      --shirt-second-color:#1a1714;
+      --shirt-second-logo:#c8a96e;
+      width:100%;padding:12px 0;
+      border-radius:10px;border:none;
+      background:none;
+      color:#1a1714;
+      font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;
+      letter-spacing:.22em;text-transform:uppercase;
+      cursor:pointer;
+      position:relative;
+      font-family:inherit;
+      -webkit-tap-highlight-color:transparent;
+      -webkit-appearance:none;
+      outline:none;
+    }
+    .ivory-card__cta::before{
+      content:'';display:block;position:absolute;
+      top:0;right:0;bottom:0;left:0;
+      border-radius:10px;
+      background:#c8a96e;
+      transform:scaleX(var(--bg-scale)) translateZ(0);
+      transition:background .25s;
+    }
+    .ivory-card__cta:not(.active):hover::before{background:#d4b87a;}
+    /* texto */
+    .cta-span{
+      display:block;text-align:center;position:relative;z-index:1;
+      font-size:11px;font-weight:500;line-height:24px;letter-spacing:.22em;
+      color:#1a1714;
+      opacity:var(--text-o);
+      transform:translateX(var(--text-x)) translateZ(0);
+    }
+    /* camiseta */
+    .cta-shirt{
+      pointer-events:none;position:absolute;left:50%;
+      margin:-12px 0 0 -12px;top:0;
+      transform-origin:50% 100%;
+      transform:translateY(var(--shirt-y)) scale(var(--shirt-scale));
+    }
+    .cta-shirt svg{display:block;width:24px;height:24px;stroke-linecap:round;stroke-linejoin:round;}
+    .cta-shirt svg path{fill:var(--shirt-color);stroke:none;}
+    .cta-shirt svg g path{fill:var(--shirt-logo);}
+    .cta-shirt svg.second{position:absolute;top:0;left:0;
+      -webkit-clip-path:polygon(0 var(--shirt-second-y),24px var(--shirt-second-y),24px 24px,0 24px);
+      clip-path:polygon(0 var(--shirt-second-y),24px var(--shirt-second-y),24px 24px,0 24px);}
+    .cta-shirt svg.second path{fill:var(--shirt-second-color);}
+    .cta-shirt svg.second g path{fill:var(--shirt-second-logo);}
+    /* morph */
+    .cta-morph{
+      display:block;width:64px;height:13px;
+      position:absolute;left:50%;top:-12px;
+      margin-left:-32px;
+      pointer-events:none;
+    }
+    .cta-morph path{fill:#c8a96e;stroke:none;}
+    /* carrinho */
+    .cta-cart{
+      pointer-events:none;position:absolute;left:50%;top:10px;margin-left:-18px;
+      transform:translate(var(--cart-x),var(--cart-y)) rotate(var(--cart-rotate)) scale(var(--cart-scale)) translateZ(0);
+    }
+    .cta-cart::before{
+      content:'';display:block;width:22px;height:12px;
+      position:absolute;left:7px;top:7px;
+      background:var(--cart);
+      -webkit-clip-path:polygon(0 0,22px 0,calc(22px - var(--cart-clip-x)) var(--cart-clip),var(--cart-clip-x) var(--cart-clip));
+      clip-path:polygon(0 0,22px 0,calc(22px - var(--cart-clip-x)) var(--cart-clip),var(--cart-clip-x) var(--cart-clip));
+    }
+    .cta-cart svg{display:block;width:36px;height:26px;stroke-linecap:round;stroke-linejoin:round;}
+    .cta-cart svg path{fill:none;stroke:var(--cart);stroke-width:2;}
+    .cta-cart svg path.wheel{stroke-width:1.5;}
+    .cta-cart svg path.tick{
+      stroke:var(--cart-tick-color);
+      stroke-dasharray:10px;
+      stroke-dashoffset:var(--cart-tick-offset);
+    }
+  </style>
+
+  <div class="promo-car-wrap reveal">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 48px;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <span class="section-eyebrow" style="margin-bottom:6px;"><span class="mat" style="font-size:14px;">local_offer</span> Promoções</span>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(20px,2.5vw,30px);font-weight:300;color:var(--ink);">Preços especiais</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="promo-car-arrow" onclick="scrollPromo(-1)"><span class="mat">arrow_back</span></button>
+        <button class="promo-car-arrow" onclick="scrollPromo(1)"><span class="mat">arrow_forward</span></button>
+      </div>
+    </div>
+    <div class="promo-ivory-track" id="promo-ivory-grid"></div>
+    <div class="promo-car-dots" id="promo-ivory-dots"></div>
   </div>
 </div>
 
@@ -1083,6 +1261,14 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     </div>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.4.0/gsap.min.js"></script>
+<script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/MorphSVGPlugin3.min.js"></script>
+<script>
+// registra MorphSVG assim que os scripts carregarem
+window.addEventListener('load', () => {
+  if (window.gsap && window.MorphSVGPlugin) gsap.registerPlugin(MorphSVGPlugin);
+});
+</script>
 <script> // ════════════════════════════════════════════════════════════
 //  BENEDICTUS CAMISARIA — Loja v2.1
 //  Supabase + Carrinho + WhatsApp + Animações
@@ -1400,21 +1586,253 @@ function productCardHTML(p, inCarrossel = false) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  PROMOS CAROUSEL
+//  PROMOS — IVORY CARDS (foto full + carrossel + botão dourado)
 // ════════════════════════════════════════════════════════════
 function renderPromoCarousel() {
   const promos = allProducts.filter(p => p.promocao);
   const sec    = document.getElementById('secao-promos');
-  const car    = document.getElementById('promo-carousel');
-  const dots   = document.getElementById('promo-dots');
-  if (!sec || !car) return;
+  const grid   = document.getElementById('promo-ivory-grid');
+  const dots   = document.getElementById('promo-ivory-dots');
+  if (!sec || !grid) return;
 
   if (!promos.length) { sec.style.display = 'none'; return; }
 
   sec.style.display = '';
-  car.innerHTML = promos.map(p => productCardHTML(p, true)).join('');
+  grid.innerHTML = promos.map(p => ivoryCardHTML(p)).join('');
 
-  if (dots) buildCarDots(car, dots, promos.length);
+  // Dots
+  if (dots) {
+    const total = promos.length;
+    dots.innerHTML = Array.from({length: total}, (_,i) =>
+      `<button class="promo-car-dot${i===0?' active':''}" data-i="${i}"></button>`
+    ).join('');
+    dots.querySelectorAll('.promo-car-dot').forEach(d => {
+      d.addEventListener('click', () => {
+        const cardW = (grid.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
+        grid.scrollTo({left: parseInt(d.dataset.i) * cardW, behavior:'smooth'});
+      });
+    });
+    grid.addEventListener('scroll', () => {
+      const cardW = (grid.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
+      const idx   = Math.round(grid.scrollLeft / cardW);
+      dots.querySelectorAll('.promo-car-dot').forEach((d,i) =>
+        d.classList.toggle('active', i === idx));
+    }, {passive:true});
+  }
+
+  // Interações
+  grid.querySelectorAll('.ivory-card').forEach(card => {
+    const pid = card.dataset.pid;
+
+    // Click no card → página de detalhes do produto
+    card.addEventListener('click', () => {
+      window.location.href = 'produto.html?id=' + encodeURIComponent(pid);
+    });
+
+    card.querySelector('.ivory-card__wish')?.addEventListener('click', e => {
+      e.stopPropagation();
+      e.currentTarget.classList.toggle('wished');
+    });
+
+    card.querySelectorAll('.ivory-color-dot').forEach(dot => {
+      dot.addEventListener('click', e => {
+        e.stopPropagation();
+        card.querySelectorAll('.ivory-color-dot').forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+        const p = allProducts.find(x => x.id === pid);
+        if (!p) return;
+        const url = getFirstImage(p, dot.dataset.cor);
+        if (url) {
+          const imgEl   = card.querySelector('.ivory-card__img-wrap img');
+          const thumbEl = card.querySelector('.ivory-card__thumb img');
+          if (imgEl)   imgEl.src   = url;
+          if (thumbEl) thumbEl.src = url;
+        }
+      });
+    });
+
+    card.querySelectorAll('.ivory-sz-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        card.querySelectorAll('.ivory-sz-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    card.querySelector('.ivory-card__cta')?.addEventListener('click', e => {
+      e.stopPropagation();
+      const cta = card.querySelector('.ivory-card__cta');
+      if (cta.classList.contains('active')) return;
+      if (window._lojaFechada) { showToast('Loja fechada no momento', 'error'); return; }
+      const p  = allProducts.find(x => x.id === pid);
+      if (!p) return;
+      const sz  = card.querySelector('.ivory-sz-btn.active')?.dataset.sz   || '';
+      const cor = card.querySelector('.ivory-color-dot.active')?.dataset.cor || '';
+      adicionarAoCarrinho(p, sz, cor);
+
+      // Animação idêntica ao original
+      const morph = cta.querySelector('.cta-morph path');
+      const shirt = cta.querySelectorAll('.cta-shirt svg > path');
+
+      cta.classList.add('active');
+
+      gsap.to(cta, { keyframes: [
+        { '--bg-scale': .97, duration: .15 },
+        { '--bg-scale': 1, delay: .125, duration: 1.2, ease: 'elastic.out(1,.6)' }
+      ]});
+
+      gsap.to(cta, { keyframes: [
+        { '--shirt-scale': 1, '--shirt-y': '-42px', '--cart-x': '0px', '--cart-scale': 1, duration: .4, ease: 'power1.in' },
+        { '--shirt-y': '-40px', duration: .3 },
+        { '--shirt-y': '16px', '--shirt-scale': .9, duration: .25, ease: 'none' },
+        { '--shirt-scale': 0, duration: .3, ease: 'none' }
+      ]});
+
+      gsap.to(cta, { '--shirt-second-y': '0px', delay: .835, duration: .12 });
+
+      gsap.to(cta, { keyframes: [
+        { '--cart-clip': '12px', '--cart-clip-x': '3px', delay: .9, duration: .06 },
+        { '--cart-y': '2px', duration: .1 },
+        { '--cart-tick-offset': '0px', '--cart-y': '0px', duration: .2,
+          onComplete() { cta.style.overflow = 'hidden'; }
+        },
+        { '--cart-x': '52px', '--cart-rotate': '-15deg', duration: .2 },
+        { '--cart-x': '104px', '--cart-rotate': '0deg', duration: .2, clearProps: true,
+          onComplete() {
+            cta.style.overflow = 'hidden';
+            cta.style.setProperty('--text-o', 0);
+            cta.style.setProperty('--text-x', '0px');
+            cta.style.setProperty('--cart-x', '-104px');
+          }
+        },
+        { '--text-o': 1, '--text-x': '8px', '--cart-x': '-48px', '--cart-scale': .75, duration: .25, clearProps: true,
+          onComplete() { cta.classList.remove('active'); }
+        }
+      ]});
+
+      gsap.to(cta, { keyframes: [{ '--text-o': 0, duration: .3 }] });
+
+      if (morph && window.MorphSVGPlugin) {
+        gsap.to(morph, { keyframes: [
+          { morphSVG: 'M0 12C6 12 20 10 32 0C43.9024 9.99999 58 12 64 12V13H0V12Z', duration: .25, ease: 'power1.out' },
+          { morphSVG: 'M0 12C6 12 17 12 32 12C47.9024 12 58 12 64 12V13H0V12Z', duration: .15, ease: 'none' }
+        ]});
+      }
+
+      if (shirt.length && window.MorphSVGPlugin) {
+        gsap.to(shirt, { keyframes: [
+          { morphSVG: 'M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L23.5 8L20.5 11L19 9.5L18 22.5C18 22.5 14 21.5 12 21.5C10 21.5 5.99997 22.5 5.99997 22.5L4.99997 9.5L3.5 11L0.5 8L4.99997 3Z', duration: .25, delay: .25 },
+          { morphSVG: 'M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L23.5 8L20.5 11L19 9.5L18.5 22.5C18.5 22.5 13.5 22.5 12 22.5C10.5 22.5 5.5 22.5 5.5 22.5L4.99997 9.5L3.5 11L0.5 8L4.99997 3Z', duration: .85, ease: 'elastic.out(1,.5)' },
+          { morphSVG: 'M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L22.5 8L19.5 10.5L19 9.5L17.1781 18.6093C17.062 19.1901 16.778 19.7249 16.3351 20.1181C15.4265 20.925 13.7133 22.3147 12 23C10.2868 22.3147 8.57355 20.925 7.66487 20.1181C7.22198 19.7249 6.93798 19.1901 6.82183 18.6093L4.99997 9.5L4.5 10.5L1.5 8L4.99997 3Z', duration: 0, delay: 1.25 }
+        ]});
+      }
+    });
+  });
+}
+
+function scrollPromo(dir) {
+  const track = document.getElementById('promo-ivory-grid');
+  if (!track) return;
+  const cardW = (track.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
+  track.scrollBy({left: dir * cardW, behavior:'smooth'});
+}
+
+function ivoryCardHTML(p) {
+  const cores    = Array.isArray(p.cores)    ? p.cores    : [];
+  const tamanhos = Array.isArray(p.tamanhos) ? p.tamanhos : [];
+
+  // Descobre qual cor tem imagem cadastrada — essa será a ativa inicial
+  const _normKey = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const _ci = p.cor_imagens || {};
+  let _corAtiva = 0;
+  if (cores.length) {
+    const idx = cores.findIndex(c => {
+      const k = Object.keys(_ci).find(k2 => k2 === c || _normKey(k2) === _normKey(c));
+      return k && Array.isArray(_ci[k]) && _ci[k].length > 0;
+    });
+    if (idx >= 0) _corAtiva = idx;
+  }
+
+  // Imagem inicial = a da cor ativa (sincronizado com o ponto marcado)
+  const imgUrl = cores.length
+    ? (getFirstImage(p, cores[_corAtiva]) || getFirstImage(p))
+    : getFirstImage(p);
+
+  const imgHTML = imgUrl
+    ? `<img src="${esc(imgUrl)}" alt="${esc(p.nome)}" loading="lazy" onerror="this.style.display='none'">`
+    : `<div class="ivory-card__img-ph"><span class="mat">checkroom</span></div>`;
+
+  const thumbHTML = imgUrl
+    ? `<img src="${esc(imgUrl)}" alt="${esc(p.nome)}" loading="lazy" onerror="this.style.display='none'">`
+    : `<div class="ivory-card__thumb-ph"><span class="mat">checkroom</span></div>`;
+
+  const coresHTML = cores.length ? `
+    <div class="ivory-card__sublabel">Cor</div>
+    <div class="ivory-card__colors">
+      ${cores.map((c,i) =>
+        `<span class="ivory-color-dot${i===_corAtiva?' active':''}"
+          style="background:${corHex(c)};outline:1px solid rgba(255,255,255,0.12);"
+          data-cor="${esc(c)}" title="${esc(c)}"></span>`
+      ).join('')}
+    </div>` : '';
+
+  const tamHTML = tamanhos.length ? `
+    <div class="ivory-card__sublabel">Tamanho</div>
+    <div class="ivory-card__sizes">
+      ${tamanhos.map((s,i) =>
+        `<button class="ivory-sz-btn${i===0?' active':''}" data-sz="${esc(s)}">${esc(s)}</button>`
+      ).join('')}
+    </div>` : '';
+
+  const precoOrigHTML = p.preco_original && parseFloat(p.preco_original) > parseFloat(p.preco)
+    ? `<span class="ivory-card__price-was">R$ ${formatPrice(p.preco_original)}</span>` : '';
+
+  return `
+<article class="ivory-card" data-pid="${esc(p.id)}">
+  <div class="ivory-card__img-wrap">${imgHTML}</div>
+  <div class="ivory-card__badge">Promoção</div>
+  <button class="ivory-card__wish" aria-label="Favoritar">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+  </button>
+  <div class="ivory-card__inner">
+    <div class="ivory-card__meta">
+      <div class="ivory-card__thumb">${thumbHTML}</div>
+      <div>
+        <div class="ivory-card__name">${esc(p.nome)}</div>
+        <div class="ivory-card__prices">
+          <span class="ivory-card__price-now">R$ ${formatPrice(p.preco)}</span>
+          ${precoOrigHTML}
+        </div>
+      </div>
+    </div>
+    ${coresHTML}
+    ${tamHTML}
+    <button class="ivory-card__cta">
+      <span class="cta-span">Adicionar</span>
+      <svg class="cta-morph" viewBox="0 0 64 13">
+        <path d="M0 12C6 12 17 12 32 12C47.9024 12 58 12 64 12V13H0V12Z"/>
+      </svg>
+      <div class="cta-shirt">
+        <svg class="first" viewBox="0 0 24 24">
+          <path d="M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L22.5 8L19.5 10.5L19 9.5L17.1781 18.6093C17.062 19.1901 16.778 19.7249 16.3351 20.1181C15.4265 20.925 13.7133 22.3147 12 23C10.2868 22.3147 8.57355 20.925 7.66487 20.1181C7.22198 19.7249 6.93798 19.1901 6.82183 18.6093L4.99997 9.5L4.5 10.5L1.5 8L4.99997 3Z"/>
+          <g><path d="M16.3516 9.65383H14.3484V7.83652H14.1742V9.8269H16.5258V7.83652H16.3516V9.65383Z"/><path d="M14.5225 6.01934V7.66357H14.6967V7.4905H14.8186V7.66357H14.9928V6.01934H14.8186V7.31742H14.6967V6.01934H14.5225Z"/><path d="M14.1742 5.67319V7.66357H14.3484V5.84627H16.3516V7.66357H16.5258V5.67319H14.1742Z"/><path d="M15.707 9.48071H15.8812V9.28084L16.0032 9.4807V9.48071H16.1774V7.83648H16.0032V9.14683L15.8812 8.94697V7.83648H15.707V9.48071Z"/><path d="M15.5852 6.01931H15.1149V6.19238H15.5852V6.01931Z"/><path d="M15.707 6.01934V7.66357H15.8812V7.46371L16.0032 7.66357H16.1774V6.01934H16.0032V7.32969L15.8812 7.12984V6.01934H15.707Z"/><path d="M15.411 7.31742H15.2891V6.53857H15.411V7.31742ZM15.1149 7.66357H15.2891V7.4905H15.411V7.66357H15.5852V6.3655H15.1149V7.66357Z"/><path d="M14.5225 8.69756L14.8186 9.18291V9.30763H14.6967V9.13455H14.5225V9.48071H14.9928V9.13456V9.13455L14.6967 8.64917V8.00956H14.8186V8.6586H14.9928V7.83648H14.5225V8.69756Z"/><path d="M15.411 9.30763H15.2891V8.00956H15.411V9.30763ZM15.1149 9.48071H15.5852V7.83648H15.1149V9.48071Z"/></g>
+        </svg>
+        <svg class="second" viewBox="0 0 24 24">
+          <path d="M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L22.5 8L19.5 10.5L19 9.5L17.1781 18.6093C17.062 19.1901 16.778 19.7249 16.3351 20.1181C15.4265 20.925 13.7133 22.3147 12 23C10.2868 22.3147 8.57355 20.925 7.66487 20.1181C7.22198 19.7249 6.93798 19.1901 6.82183 18.6093L4.99997 9.5L4.5 10.5L1.5 8L4.99997 3Z"/>
+          <g><path d="M16.3516 9.65383H14.3484V7.83652H14.1742V9.8269H16.5258V7.83652H16.3516V9.65383Z"/><path d="M14.5225 6.01934V7.66357H14.6967V7.4905H14.8186V7.66357H14.9928V6.01934H14.8186V7.31742H14.6967V6.01934H14.5225Z"/><path d="M14.1742 5.67319V7.66357H14.3484V5.84627H16.3516V7.66357H16.5258V5.67319H14.1742Z"/><path d="M15.707 9.48071H15.8812V9.28084L16.0032 9.4807V9.48071H16.1774V7.83648H16.0032V9.14683L15.8812 8.94697V7.83648H15.707V9.48071Z"/><path d="M15.5852 6.01931H15.1149V6.19238H15.5852V6.01931Z"/><path d="M15.707 6.01934V7.66357H15.8812V7.46371L16.0032 7.66357H16.1774V6.01934H16.0032V7.32969L15.8812 7.12984V6.01934H15.707Z"/><path d="M15.411 7.31742H15.2891V6.53857H15.411V7.31742ZM15.1149 7.66357H15.2891V7.4905H15.411V7.66357H15.5852V6.3655H15.1149V7.66357Z"/><path d="M14.5225 8.69756L14.8186 9.18291V9.30763H14.6967V9.13455H14.5225V9.48071H14.9928V9.13456V9.13455L14.6967 8.64917V8.00956H14.8186V8.6586H14.9928V7.83648H14.5225V8.69756Z"/><path d="M15.411 9.30763H15.2891V8.00956H15.411V9.30763ZM15.1149 9.48071H15.5852V7.83648H15.1149V9.48071Z"/></g>
+        </svg>
+      </div>
+      <div class="cta-cart">
+        <svg viewBox="0 0 36 26">
+          <path d="M1 2.5H6L10 18.5H25.5L28.5 7.5L7.5 7.5" class="shape"/>
+          <path d="M11.5 25C12.6046 25 13.5 24.1046 13.5 23C13.5 21.8954 12.6046 21 11.5 21C10.3954 21 9.5 21.8954 9.5 23C9.5 24.1046 10.3954 25 11.5 25Z" class="wheel"/>
+          <path d="M24 25C25.1046 25 26 24.1046 26 23C26 21.8954 25.1046 21 24 21C22.8954 21 22 21.8954 22 23C22 24.1046 22.8954 25 24 25Z" class="wheel"/>
+          <path d="M14.5 13.5L16.5 15.5L21.5 10.5" class="tick"/>
+        </svg>
+      </div>
+    </button>
+  </div>
+</article>`;
 }
 
 function scrollCar(id, dir) {
