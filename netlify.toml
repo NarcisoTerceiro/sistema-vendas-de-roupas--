@@ -1,0 +1,21 @@
+# Configuração do Netlify
+# Este arquivo diz ao Netlify onde encontrar as Functions
+
+[build]
+  # Pasta onde estão os arquivos do site (raiz)
+  publish = "."
+
+  # Pasta onde estão as Netlify Functions
+  functions = "netlify/functions"
+
+[functions]
+  # Versão do Node.js usada nas functions
+  node_bundler = "esbuild"
+
+# Headers de segurança (opcional, mas recomendado)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -4,6 +4,26 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Benedictus Camisaria · Admin</title>
+
+<!-- ══════════════════════════════════════════════════════════
+     GATE DE AUTENTICAÇÃO — bloqueia entrada direta na URL
+     Roda antes de tudo: se não passou pela tela de login
+     (adminsenha.html), redireciona imediatamente.
+     ══════════════════════════════════════════════════════════ -->
+<script>
+(function authGate() {
+  try {
+    if (sessionStorage.getItem('bened_auth') !== '1') {
+      // Não autenticado — bloqueia render e manda pro login
+      document.documentElement.style.display = 'none';
+      window.location.replace('adminsenha.html?expired=1');
+    }
+  } catch (e) {
+    // Se o sessionStorage falhar (modo privado restrito etc.), também redireciona
+    window.location.replace('adminsenha.html');
+  }
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -551,9 +571,6 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
       <button class="theme-toggle-btn" onclick="toggleTheme()">
         <span class="mat" id="app-theme-icon">light_mode</span>
       </button>
-      <button class="topbar-btn" onclick="window.open('atelier.html','_blank')">
-        <span class="mat">storefront</span><span>Ver Loja</span>
-      </button>
       <button class="topbar-btn" onclick="window.location.href='index.html'">
         <span class="mat">logout</span><span>Sair</span>
       </button>
@@ -572,6 +589,9 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
         <button class="sidebar-item" id="nav-produtos" onclick="showSection('produtos');closeSidebar()">
           <span class="mat">checkroom</span> Produtos
         </button>
+        <button class="sidebar-item" id="nav-colecoes" onclick="showSection('colecoes');closeSidebar()">
+          <span class="mat">collections_bookmark</span> Coleções
+        </button>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
@@ -579,12 +599,12 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
         <button class="sidebar-item" onclick="showSection('produtos');abrirModal();closeSidebar()">
           <span class="mat">add_circle</span> Novo Produto
         </button>
-        <button class="sidebar-item" onclick="window.open('atelier.html','_blank');closeSidebar()">
-          <span class="mat">open_in_new</span> Abrir Loja
+        <button class="sidebar-item" onclick="showSection('colecoes');abrirModalColecao();closeSidebar()">
+          <span class="mat">create_new_folder</span> Nova Coleção
         </button>
-        <button class="sidebar-item" onclick="window.open('https://wa.me/5583991156097','_blank');closeSidebar()">
-          <span class="mat">chat</span> WhatsApp
-        </button>
+        <button class="sidebar-item" onclick="window.location.href='pedidosadmin.html'">
+  <span class="mat">receipt_long</span> Pedidos
+</button>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
@@ -675,13 +695,6 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
             <div class="quick-card-title">Estoque Baixo</div>
             <div class="quick-card-sub">Monitorar reposição</div>
           </div>
-          <div class="quick-card" style="--c2:var(--success);" onclick="window.open('atelier.html','_blank')">
-            <div class="quick-card-icon" style="border-color:rgba(109,191,126,0.25);">
-              <span class="mat" style="color:var(--success);">storefront</span>
-            </div>
-            <div class="quick-card-title">Abrir Loja</div>
-            <div class="quick-card-sub">Ver como cliente</div>
-          </div>
         </div>
         <div class="subsec-label">Produtos Recentes</div>
         <div class="recent-wrap">
@@ -742,6 +755,46 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
           </div>
         </div>
       </div>
+
+      <!-- COLEÇÕES -->
+      <div id="sec-colecoes" style="display:none;">
+        <div class="sec-header">
+          <div>
+            <div class="page-eyebrow">Curadoria</div>
+            <h2 class="page-title">Coleções</h2>
+            <div class="page-divider"></div>
+          </div>
+          <button class="btn-add" onclick="abrirModalColecao()">
+            <span class="mat" style="font-size:17px;">add</span><span>Nova Coleção</span>
+          </button>
+        </div>
+        <div style="margin-bottom:18px;color:var(--muted);font-size:12px;line-height:1.7;max-width:780px;">
+          Crie e organize as coleções que aparecem na vitrine do site. Cada coleção vira automaticamente uma seção no Index, na mesma ordem em que foram cadastradas. Para vincular um produto, basta selecioná-la no campo <em>Categoria</em> ao cadastrar ou editar.
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:64px;"></th>
+                  <th>Coleção</th>
+                  <th>Slug (categoria)</th>
+                  <th>Produtos</th>
+                  <th style="text-align:right;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-colecoes">
+                <tr><td colspan="5">
+                  <div class="empty-state">
+                    <div class="spinner" style="margin:0 auto 14px;"></div>
+                    <div class="empty-sub">Carregando coleções...</div>
+                  </div>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -767,11 +820,7 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
           <div class="form-group">
             <label class="form-label">Categoria <span>*</span></label>
             <select class="form-select" id="f-cat">
-              <option value="Feminino">Feminino</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Acessórios">Acessórios</option>
-              <option value="Casual">Casual</option>
-              <option value="Formal">Formal</option>
+              <!-- Opções renderizadas dinamicamente a partir das coleções cadastradas -->
             </select>
           </div>
         </div>
@@ -788,6 +837,34 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
         <div class="form-group">
           <label class="form-label">Descrição curta</label>
           <input class="form-input" id="f-desc" type="text" placeholder="Aparece no card da vitrine"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo de Tecido <span>*</span></label>
+            <select class="form-select" id="f-tipo-tecido">
+              <option value="">— Selecione —</option>
+              <option value="premium">Premium</option>
+              <option value="algodao">100% Algodão</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo da Peça <span>*</span></label>
+            <select class="form-select" id="f-tipo-peca">
+              <option value="">— Selecione —</option>
+              <option value="normal">Normal</option>
+              <option value="baby">Baby Look</option>
+              <option value="ambos">Normal e Baby Look</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gênero <span>*</span></label>
+          <select class="form-select" id="f-genero">
+            <option value="">— Selecione —</option>
+            <option value="masculino">Masculino</option>
+            <option value="feminino">Feminino</option>
+            <option value="unissex">Unissex</option>
+          </select>
         </div>
         <div class="toggle-wrap" id="toggle-wrap-promo" onclick="togglePromo()">
           <button class="toggle-switch" id="toggle-promo" type="button"></button>
@@ -906,6 +983,65 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
   </div>
 </div>
 
+<!-- ══ MODAL COLEÇÃO ══ -->
+<div class="modal-overlay" id="modal-colecao-overlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3 class="modal-title" id="modal-colecao-title">Nova <em>Coleção</em></h3>
+      <button class="modal-close" onclick="fecharModalColecao()"><span class="mat">close</span></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-col-id"/>
+      <input type="hidden" id="f-col-slug-original"/>
+
+      <div class="form-section">
+        <div class="form-section-head"><span class="mat">collections_bookmark</span><span class="form-section-label">Identificação</span></div>
+
+        <div class="form-group">
+          <label class="form-label">Nome da Coleção <span>*</span></label>
+          <input class="form-input" id="f-col-nome" type="text" placeholder="Ex: Linha Verão 2026" oninput="atualizarPreviewSlug()"/>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.6;">
+            Esse nome aparece para os clientes no Index, em cima do carrossel.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Slug (identificador interno)</label>
+          <input class="form-input" id="f-col-slug" type="text" placeholder="ex: linha_verao_2026" style="font-family:'JetBrains Mono',monospace;font-size:12px;"/>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.6;">
+            Gerado automaticamente a partir do nome. Só letras, números e _ . É o valor salvo no campo <em>categoria</em> de cada produto.
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ícone (Material Icons)</label>
+            <input class="form-input" id="f-col-icone" type="text" placeholder="ex: music_note" value="auto_awesome" style="font-family:'JetBrains Mono',monospace;font-size:12px;"/>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.6;">
+              Nome do ícone do <a href="https://fonts.google.com/icons" target="_blank" style="color:var(--gold);text-decoration:none;">Material Icons</a>. Ex: music_note, invert_colors, eco, diamond, star.
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pré-visualização</label>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);min-height:42px;">
+              <span class="mat" id="f-col-icone-preview" style="font-size:18px;color:var(--gold);">auto_awesome</span>
+              <span id="f-col-nome-preview" style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);">Nova Coleção</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="fecharModalColecao()">Cancelar</button>
+      <button class="btn-primary" id="save-col-btn" onclick="salvarColecao()">
+        <span class="mat" style="font-size:16px;">save</span>
+        <span>Salvar Coleção</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIRM -->
 <div class="confirm-overlay" id="confirm-overlay">
   <div class="confirm-inner">
@@ -930,9 +1066,27 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
 //  Supabase + Auth local + Gestão completa de produtos
 // ════════════════════════════════════════════════════════════
 
+// ── GUARD DE AUTENTICAÇÃO ─────────────────────────────────
+// Se o usuário não fez login, manda pro adminsenha.html imediatamente.
+// A sessionStorage expira automaticamente quando a aba é fechada,
+// forçando login a cada nova sessão de navegador.
+(function authGuard(){
+  if (sessionStorage.getItem('bened_auth') !== '1') {
+    window.location.replace('adminsenha.html?expired=1');
+  }
+})();
+
+// Quando o usuário sair da página (fechar aba, navegar pra outro site),
+// força logout pra próxima visita exigir login novamente.
+window.addEventListener('pagehide', () => {
+  sessionStorage.removeItem('bened_auth');
+  sessionStorage.removeItem('bened_auth_time');
+  sessionStorage.removeItem('bened_auth_user');
+});
+
 // ── CONFIGURAÇÃO SUPABASE ─────────────────────────────────
-const SUPABASE_URL = 'https://vtdhpnzpwemvvmhhomsg.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0ZGhwbnpwd2VtdnZtaGhvbXNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MDEyNTYsImV4cCI6MjA5MzI3NzI1Nn0.3x3AD0jiFHCChrfoalkRdAqepWhJLWwDTJjnP3OjSWY';
+const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
 
 // ── CREDENCIAIS DO ADMIN ──────────────────────────────────
 const ADMIN_USER = 'admin';
@@ -1003,15 +1157,9 @@ function doLogin() {
 
 function doLogout() {
   sessionStorage.removeItem('bened_auth');
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  // Volta para etapa 1
-  document.getElementById('login-step-1').style.display = '';
-  document.getElementById('login-step-2').style.display = 'none';
-  document.getElementById('l-err').style.display = 'none';
-  document.getElementById('l-err-user').style.display = 'none';
-  document.getElementById('l-user').value = '';
-  document.getElementById('l-pass').value = '';
+  sessionStorage.removeItem('bened_auth_time');
+  sessionStorage.removeItem('bened_auth_user');
+  window.location.replace('adminsenha.html');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1073,7 +1221,9 @@ let _lastCoresKey = '';
 async function initApp() {
   updateThemeIcons();
   // status removido
+  await loadColecoes();
   await loadProducts();
+  popularSelectCategorias();
   renderDashboard();
   renderTable();
   iniciarRealtimeEstoque();
@@ -1172,7 +1322,7 @@ async function loadProducts() {
   try {
     const { data, error } = await db
       .from('produtos')
-      .select('id,nome,categoria,preco,estoque,descricao,promocao,tamanhos,cores,cor_imagens,created_at')
+      .select('id,nome,categoria,preco,estoque,descricao,promocao,tamanhos,cores,cor_imagens,tipo_tecido,tipo_peca,genero,composicao,cuidados,created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -1241,6 +1391,416 @@ async function deleteProduct(id) {
 }
 
 // ════════════════════════════════════════════════════════════
+//  COLEÇÕES — CRUD (Supabase + fallback localStorage)
+// ════════════════════════════════════════════════════════════
+//
+//  Estratégia:
+//  - Tenta usar a tabela `colecoes` no Supabase (id, nome, slug, icone, ordem).
+//  - Se a tabela não existir / der erro, cai para localStorage com
+//    a chave 'bened_colecoes' (mesma chave usada no index.html).
+//  - As coleções padrão ("Coleção Canções" e "Preto no Branco") são
+//    semeadas automaticamente na primeira execução para preservar os
+//    produtos antigos vinculados a essas categorias.
+// ════════════════════════════════════════════════════════════
+
+const COLECOES_STORAGE_KEY = 'bened_colecoes';
+const COLECOES_DEFAULT = [
+  { slug: 'cancoes',      nome: 'Coleção Canções', icone: 'music_note',     ordem: 0 },
+  { slug: 'preto_branco', nome: 'Preto no Branco', icone: 'invert_colors',  ordem: 1 },
+];
+
+let allColecoes = [];     // [{id?, slug, nome, icone, ordem}]
+let editingColId = null;  // id quando estiver editando
+let _colecoesSupabaseOk = false; // se conseguimos ler do Supabase
+
+// Helper: gerar slug seguro a partir do nome
+function gerarSlug(nome) {
+  return (nome || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60) || 'colecao';
+}
+
+// Persiste em localStorage (sempre — funciona como cache pro index também)
+function salvarColecoesLocal(lista) {
+  try {
+    localStorage.setItem(COLECOES_STORAGE_KEY, JSON.stringify(lista));
+  } catch (e) { console.warn('localStorage indisponível:', e); }
+}
+
+function lerColecoesLocal() {
+  try {
+    const raw = localStorage.getItem(COLECOES_STORAGE_KEY);
+    if (!raw) return null;
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : null;
+  } catch { return null; }
+}
+
+async function loadColecoes() {
+  // 1) tenta Supabase
+  if (db) {
+    try {
+      const { data, error } = await db
+        .from('colecoes')
+        .select('id, slug, nome, icone, ordem')
+        .order('ordem', { ascending: true });
+      if (!error && Array.isArray(data)) {
+        _colecoesSupabaseOk = true;
+        allColecoes = data;
+        // Se vazio, semeia padrão
+        if (allColecoes.length === 0) {
+          await semearColecoesPadraoSupabase();
+        }
+        salvarColecoesLocal(allColecoes); // cache pro index
+        return;
+      }
+    } catch (e) {
+      // tabela não existe ou erro — cai pro fallback
+      console.warn('Tabela colecoes indisponível, usando localStorage:', e?.message);
+    }
+  }
+
+  // 2) Fallback: localStorage
+  _colecoesSupabaseOk = false;
+  const local = lerColecoesLocal();
+  if (local && local.length) {
+    allColecoes = local;
+  } else {
+    allColecoes = COLECOES_DEFAULT.map(c => ({ ...c, id: 'local_' + c.slug }));
+    salvarColecoesLocal(allColecoes);
+  }
+}
+
+async function semearColecoesPadraoSupabase() {
+  if (!db) return;
+  try {
+    const rows = COLECOES_DEFAULT.map(c => ({ ...c }));
+    const { data, error } = await db.from('colecoes').insert(rows).select();
+    if (!error && Array.isArray(data)) allColecoes = data;
+  } catch (e) { console.warn('Falha ao semear coleções padrão:', e); }
+}
+
+async function saveColecao(payload) {
+  // payload: { slug, nome, icone, ordem }
+  if (_colecoesSupabaseOk && db) {
+    try {
+      if (editingColId) {
+        const { data, error } = await db.from('colecoes').update(payload).eq('id', editingColId).select().single();
+        if (error) throw error;
+        const idx = allColecoes.findIndex(c => c.id === editingColId);
+        if (idx !== -1) allColecoes[idx] = data;
+      } else {
+        const { data, error } = await db.from('colecoes').insert(payload).select().single();
+        if (error) throw error;
+        allColecoes.push(data);
+      }
+      salvarColecoesLocal(allColecoes);
+      return true;
+    } catch (e) {
+      console.error('Erro Supabase coleções:', e);
+      showToast('Erro ao salvar coleção: ' + e.message, 'err');
+      return false;
+    }
+  }
+  // Fallback local
+  try {
+    if (editingColId) {
+      const idx = allColecoes.findIndex(c => c.id === editingColId);
+      if (idx !== -1) allColecoes[idx] = { ...allColecoes[idx], ...payload };
+    } else {
+      allColecoes.push({ id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), ...payload });
+    }
+    salvarColecoesLocal(allColecoes);
+    return true;
+  } catch (e) {
+    showToast('Erro ao salvar coleção', 'err');
+    return false;
+  }
+}
+
+async function deleteColecao(id) {
+  if (_colecoesSupabaseOk && db) {
+    try {
+      const { error } = await db.from('colecoes').delete().eq('id', id);
+      if (error) throw error;
+    } catch (e) {
+      showToast('Erro ao excluir coleção: ' + e.message, 'err');
+      return false;
+    }
+  }
+  allColecoes = allColecoes.filter(c => c.id !== id);
+  salvarColecoesLocal(allColecoes);
+  return true;
+}
+
+// Conta produtos vinculados a uma coleção (pela categoria/slug)
+function contarProdutosPorSlug(slug) {
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const target = norm(slug);
+  return allProducts.filter(p => norm(p.categoria) === target).length;
+}
+
+// ── Atualiza o <select> de categoria no modal de produto ──
+function popularSelectCategorias() {
+  const sel = document.getElementById('f-cat');
+  if (!sel) return;
+  const valAtual = sel.value;
+  sel.innerHTML = allColecoes
+    .slice()
+    .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+    .map(c => `<option value="${esc(c.slug)}">${esc(c.nome)}</option>`)
+    .join('');
+  // Mantém o valor anterior se ainda existir, senão pega a primeira
+  if (valAtual && [...sel.options].some(o => o.value === valAtual)) {
+    sel.value = valAtual;
+  }
+}
+
+// ── Renderiza a tabela de coleções no admin ──
+function renderColecoesTable() {
+  const tb = document.getElementById('tbody-colecoes');
+  if (!tb) return;
+
+  if (!allColecoes.length) {
+    tb.innerHTML = `
+      <tr><td colspan="5">
+        <div class="empty-state">
+          <span class="mat" style="font-size:48px;color:var(--muted2);">collections_bookmark</span>
+          <div class="empty-title" style="margin-top:10px;">Nenhuma coleção cadastrada</div>
+          <div class="empty-sub" style="margin-top:6px;">Clique em "Nova Coleção" para começar.</div>
+        </div>
+      </td></tr>`;
+    return;
+  }
+
+  const lista = allColecoes.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+
+  tb.innerHTML = lista.map((c, i) => {
+    const qtd = contarProdutosPorSlug(c.slug);
+    return `
+      <tr>
+        <td>
+          <div style="width:42px;height:42px;border-radius:8px;background:rgba(200,169,110,0.10);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;">
+            <span class="mat" style="font-size:20px;color:var(--gold);">${esc(c.icone || 'auto_awesome')}</span>
+          </div>
+        </td>
+        <td>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--ink);">${esc(c.nome)}</div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Posição #${i + 1}</div>
+        </td>
+        <td>
+          <code style="font-size:11.5px;background:var(--surface2);padding:3px 7px;border-radius:4px;color:var(--muted2);">${esc(c.slug)}</code>
+        </td>
+        <td>
+          <span style="font-weight:600;color:${qtd > 0 ? 'var(--success)' : 'var(--muted2)'};">${qtd}</span>
+          <span style="font-size:11px;color:var(--muted);"> ${qtd === 1 ? 'produto' : 'produtos'}</span>
+        </td>
+        <td style="text-align:right;">
+          <div style="display:inline-flex;gap:4px;">
+            ${i > 0 ? `<button class="topbar-btn" title="Subir" onclick="moverColecao('${c.id}', -1)" style="padding:6px 8px;"><span class="mat" style="font-size:14px;">arrow_upward</span></button>` : ''}
+            ${i < lista.length - 1 ? `<button class="topbar-btn" title="Descer" onclick="moverColecao('${c.id}', 1)" style="padding:6px 8px;"><span class="mat" style="font-size:14px;">arrow_downward</span></button>` : ''}
+            <button class="topbar-btn" title="Editar" onclick="editarColecao('${c.id}')" style="padding:6px 10px;">
+              <span class="mat" style="font-size:14px;">edit</span>
+            </button>
+            <button class="topbar-btn" title="Excluir" onclick="confirmarExcluirColecao('${c.id}')" style="padding:6px 10px;color:var(--danger);">
+              <span class="mat" style="font-size:14px;">delete</span>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function moverColecao(id, dir) {
+  const lista = allColecoes.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+  const idx = lista.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const novo = idx + dir;
+  if (novo < 0 || novo >= lista.length) return;
+
+  // Troca ordem
+  const a = lista[idx];
+  const b = lista[novo];
+  const ordemA = a.ordem ?? idx;
+  const ordemB = b.ordem ?? novo;
+  a.ordem = ordemB;
+  b.ordem = ordemA;
+
+  // Reflete no array principal
+  const upd = (obj) => {
+    const i = allColecoes.findIndex(c => c.id === obj.id);
+    if (i !== -1) allColecoes[i].ordem = obj.ordem;
+  };
+  upd(a); upd(b);
+
+  if (_colecoesSupabaseOk && db) {
+    try {
+      await db.from('colecoes').update({ ordem: a.ordem }).eq('id', a.id);
+      await db.from('colecoes').update({ ordem: b.ordem }).eq('id', b.id);
+    } catch (e) { console.warn('Reordenar:', e); }
+  }
+  salvarColecoesLocal(allColecoes);
+  renderColecoesTable();
+}
+
+// ── Modal de coleção ──
+function abrirModalColecao(colecao = null) {
+  editingColId = null;
+  const titleEl = document.getElementById('modal-colecao-title');
+  const nomeEl  = document.getElementById('f-col-nome');
+  const slugEl  = document.getElementById('f-col-slug');
+  const iconEl  = document.getElementById('f-col-icone');
+  const origEl  = document.getElementById('f-col-slug-original');
+
+  if (colecao) {
+    editingColId = colecao.id;
+    titleEl.innerHTML = 'Editar <em>Coleção</em>';
+    nomeEl.value  = colecao.nome  || '';
+    slugEl.value  = colecao.slug  || '';
+    iconEl.value  = colecao.icone || 'auto_awesome';
+    origEl.value  = colecao.slug  || '';
+  } else {
+    titleEl.innerHTML = 'Nova <em>Coleção</em>';
+    nomeEl.value = '';
+    slugEl.value = '';
+    iconEl.value = 'auto_awesome';
+    origEl.value = '';
+  }
+  atualizarPreviewSlug();
+  document.getElementById('modal-colecao-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => nomeEl.focus(), 200);
+}
+
+function fecharModalColecao() {
+  document.getElementById('modal-colecao-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Atualiza preview e auto-slug enquanto digita
+function atualizarPreviewSlug() {
+  const nome  = document.getElementById('f-col-nome').value.trim();
+  const slug  = document.getElementById('f-col-slug');
+  const icon  = document.getElementById('f-col-icone').value.trim() || 'auto_awesome';
+  const iconP = document.getElementById('f-col-icone-preview');
+  const nomeP = document.getElementById('f-col-nome-preview');
+
+  // Auto-gera slug a menos que o usuário tenha editado manualmente
+  if (!slug.dataset.touched) {
+    slug.value = gerarSlug(nome);
+  }
+  iconP.textContent = icon;
+  nomeP.textContent = nome || 'Nova Coleção';
+}
+
+function editarColecao(id) {
+  const c = allColecoes.find(c => c.id === id);
+  if (c) abrirModalColecao(c);
+}
+
+async function salvarColecao() {
+  const nome  = document.getElementById('f-col-nome').value.trim();
+  let   slug  = document.getElementById('f-col-slug').value.trim();
+  const icone = document.getElementById('f-col-icone').value.trim() || 'auto_awesome';
+  const slugOrig = document.getElementById('f-col-slug-original').value.trim();
+
+  if (!nome) {
+    showToast('Informe o nome da coleção', 'err');
+    return;
+  }
+
+  // Normaliza slug
+  slug = gerarSlug(slug || nome);
+
+  // Verifica duplicidade (exceto se for o mesmo slug em edição)
+  const dup = allColecoes.some(c => c.slug === slug && c.id !== editingColId);
+  if (dup) {
+    showToast('Já existe uma coleção com esse slug. Mude o nome ou ajuste o slug.', 'err');
+    return;
+  }
+
+  // Define ordem para nova: vai pro final
+  const ordem = editingColId
+    ? (allColecoes.find(c => c.id === editingColId)?.ordem ?? 0)
+    : (allColecoes.reduce((m, c) => Math.max(m, c.ordem ?? 0), -1) + 1);
+
+  const btn = document.getElementById('save-col-btn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+
+  const ok = await saveColecao({ nome, slug, icone, ordem });
+
+  // Se mudou o slug em uma coleção que tinha produtos, atualiza produtos
+  if (ok && editingColId && slugOrig && slugOrig !== slug) {
+    if (db) {
+      try {
+        await db.from('produtos').update({ categoria: slug }).eq('categoria', slugOrig);
+        // Atualiza local
+        allProducts.forEach(p => { if (p.categoria === slugOrig) p.categoria = slug; });
+      } catch (e) { console.warn('Falha ao migrar categoria dos produtos:', e); }
+    }
+  }
+
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+
+  if (ok) {
+    showToast(editingColId ? 'Coleção atualizada' : 'Coleção criada com sucesso');
+    fecharModalColecao();
+    popularSelectCategorias();
+    renderColecoesTable();
+    renderDashboard();
+  }
+}
+
+// Confirmação de exclusão (reusa overlay de confirm do produto)
+let _colecaoIdParaExcluir = null;
+function confirmarExcluirColecao(id) {
+  const c = allColecoes.find(c => c.id === id);
+  if (!c) return;
+  const qtd = contarProdutosPorSlug(c.slug);
+  const aviso = qtd > 0
+    ? `Esta coleção tem ${qtd} ${qtd === 1 ? 'produto vinculado' : 'produtos vinculados'}. Eles continuarão cadastrados, mas ficarão sem uma coleção válida até você reatribuí-los.`
+    : 'Esta ação não pode ser desfeita.';
+  _colecaoIdParaExcluir = id;
+  const titleEl = document.querySelector('#confirm-overlay .confirm-title');
+  const msgEl   = document.getElementById('confirm-sub');
+  const okBtn   = document.getElementById('confirm-ok');
+  if (titleEl) titleEl.textContent = `Excluir "${c.nome}"?`;
+  if (msgEl)   msgEl.textContent   = aviso;
+  if (okBtn) {
+    // Substitui o handler atual (para não excluir produto)
+    okBtn.onclick = async () => {
+      const id = _colecaoIdParaExcluir;
+      _colecaoIdParaExcluir = null;
+      closeConfirm();
+      // Restaura comportamento original do botão depois (será resetado na próxima exclusão de produto)
+      const ok = await deleteColecao(id);
+      if (ok) {
+        showToast('Coleção excluída');
+        renderColecoesTable();
+        popularSelectCategorias();
+        renderDashboard();
+      }
+    };
+  }
+  document.getElementById('confirm-overlay')?.classList.add('open');
+}
+
+// Marca quando o usuário edita o slug manualmente
+document.addEventListener('DOMContentLoaded', () => {
+  const s = document.getElementById('f-col-slug');
+  if (s) {
+    s.addEventListener('input', () => { s.dataset.touched = '1'; });
+    s.addEventListener('blur',  () => { s.value = gerarSlug(s.value); });
+  }
+  const i = document.getElementById('f-col-icone');
+  if (i) i.addEventListener('input', atualizarPreviewSlug);
+});
+
+// ════════════════════════════════════════════════════════════
 //  DASHBOARD
 // ════════════════════════════════════════════════════════════
 
@@ -1286,7 +1846,7 @@ function renderDashboard() {
       ${imgHtml}
       <div>
         <div class="recent-name">${esc(p.nome)}</div>
-        <div class="recent-cat">${esc(p.categoria || '')}</div>
+        <div class="recent-cat">${esc(labelCategoria(p.categoria))}</div>
       </div>
       <div class="recent-price">R$ ${formatPrice(p.preco)}</div>
     </div>`;
@@ -1334,7 +1894,7 @@ function renderTable() {
     tr.innerHTML = `
       <td><div class="prod-cell">${imgHtml}<div>
         <div class="prod-name">${esc(p.nome)}</div>
-        <div class="prod-meta">${esc(p.categoria || '')}</div>
+        <div class="prod-meta">${esc(labelCategoria(p.categoria))}${p.tipo_tecido ? ' · ' + esc(labelTipoTecido(p.tipo_tecido)) : ''}${p.tipo_peca ? ' · ' + esc(labelTipoPeca(p.tipo_peca)) : ''}${p.genero ? ' · ' + esc(labelGenero(p.genero)) : ''}</div>
       </div></div></td>
       <td><div class="prod-price">R$ ${formatPrice(p.preco)}</div></td>
       <td><div class="stock-num">${p.estoque ?? 0}</div></td>
@@ -1410,18 +1970,40 @@ function abrirModal(produto = null) {
   corImagens        = {};
   _lastCoresKey     = '';
 
+  // Garante que o select esteja populado com as coleções atuais
+  popularSelectCategorias();
+
   const tog  = document.getElementById('toggle-promo');
   const wrap = document.getElementById('toggle-wrap-promo');
+
+  // Slug padrão = primeira coleção disponível (na ordem cadastrada)
+  const primeiroSlug = (allColecoes.slice().sort((a,b)=>(a.ordem??0)-(b.ordem??0))[0]?.slug) || 'cancoes';
 
   if (produto) {
     editingId = produto.id;
     document.getElementById('modal-title-el').innerHTML = 'Editar <em>Produto</em>';
     document.getElementById('f-id').value             = produto.id;
     document.getElementById('f-nome').value           = produto.nome        || '';
-    document.getElementById('f-cat').value            = produto.categoria   || 'Masculino';
+
+    // Se a categoria salva no produto não existe mais (coleção excluída),
+    // injeta uma option desabilitada para o usuário enxergar e poder trocar.
+    const catSel = document.getElementById('f-cat');
+    const catVal = produto.categoria || primeiroSlug;
+    if (catVal && ![...catSel.options].some(o => o.value === catVal)) {
+      const opt = document.createElement('option');
+      opt.value = catVal;
+      opt.textContent = `⚠ ${catVal} (coleção removida)`;
+      opt.style.color = 'var(--danger)';
+      catSel.insertBefore(opt, catSel.firstChild);
+    }
+    catSel.value = catVal;
+
     document.getElementById('f-preco').value          = produto.preco       || '';
     document.getElementById('f-estoque').value        = produto.estoque     ?? '';
     document.getElementById('f-desc').value           = produto.descricao   || '';
+    document.getElementById('f-tipo-tecido').value    = produto.tipo_tecido || '';
+    document.getElementById('f-tipo-peca').value      = produto.tipo_peca   || '';
+    document.getElementById('f-genero').value         = produto.genero      || '';
     document.getElementById('f-composicao').value     = produto.composicao  || '';
     document.getElementById('f-cuidados').value       = produto.cuidados    || '';
 
@@ -1437,7 +2019,10 @@ function abrirModal(produto = null) {
     ['f-id','f-nome','f-preco','f-estoque','f-desc','f-composicao','f-cuidados'].forEach(id => {
       document.getElementById(id).value = '';
     });
-    document.getElementById('f-cat').value = 'Masculino';
+    document.getElementById('f-cat').value         = primeiroSlug;
+    document.getElementById('f-tipo-tecido').value = '';
+    document.getElementById('f-tipo-peca').value   = '';
+    document.getElementById('f-genero').value      = '';
     tog.classList.remove('on');
     wrap.classList.remove('promo-on');
   }
@@ -1462,7 +2047,7 @@ async function editarProduto(id) {
 
   if (!db) return;
   try {
-    const { data, error } = await db.from('produtos').select('id,nome,categoria,preco,estoque,descricao,composicao,cuidados,promocao,tamanhos,cores,cor_imagens,created_at').eq('id', id).single();
+    const { data, error } = await db.from('produtos').select('id,nome,categoria,preco,estoque,descricao,composicao,cuidados,promocao,tamanhos,cores,cor_imagens,tipo_tecido,tipo_peca,genero,created_at').eq('id', id).single();
     if (error) throw error;
     abrirModal(data);
   } catch (e) {
@@ -1475,12 +2060,18 @@ async function editarProduto(id) {
 // ════════════════════════════════════════════════════════════
 
 async function salvar() {
-  const nome    = document.getElementById('f-nome').value.trim();
-  const cat     = document.getElementById('f-cat').value;
-  const preco   = parseFloat(document.getElementById('f-preco').value);
-  const estoque = parseInt(document.getElementById('f-estoque').value, 10);
+  const nome        = document.getElementById('f-nome').value.trim();
+  const cat         = document.getElementById('f-cat').value;
+  const tipoTecido  = document.getElementById('f-tipo-tecido').value;
+  const tipoPeca    = document.getElementById('f-tipo-peca').value;
+  const genero      = document.getElementById('f-genero').value;
+  const preco       = parseFloat(document.getElementById('f-preco').value);
+  const estoque     = parseInt(document.getElementById('f-estoque').value, 10);
 
   if (!nome)          { showToast('Informe o nome do produto', 'warn');  document.getElementById('f-nome').focus();    return; }
+  if (!tipoTecido)    { showToast('Selecione o tipo de tecido', 'warn'); document.getElementById('f-tipo-tecido').focus(); return; }
+  if (!tipoPeca)      { showToast('Selecione o tipo da peça', 'warn');   document.getElementById('f-tipo-peca').focus();   return; }
+  if (!genero)        { showToast('Selecione o gênero', 'warn');          document.getElementById('f-genero').focus();      return; }
   if (isNaN(preco))   { showToast('Informe um preço válido', 'warn');    document.getElementById('f-preco').focus();   return; }
   if (isNaN(estoque)) { showToast('Informe o estoque', 'warn');          document.getElementById('f-estoque').focus(); return; }
 
@@ -1496,6 +2087,9 @@ async function salvar() {
     preco:       Math.round(preco * 100) / 100, // evita float sujo
     estoque,
     descricao:   document.getElementById('f-desc').value.trim()        || null,
+    tipo_tecido: tipoTecido                                            || null,
+    tipo_peca:   tipoPeca                                              || null,
+    genero:      genero                                                || null,
     composicao:  document.getElementById('f-composicao').value.trim()  || null,
     cuidados:    document.getElementById('f-cuidados').value.trim()    || null,
     promocao:    document.getElementById('toggle-promo').classList.contains('on'),
@@ -1824,7 +2418,20 @@ function clearCorPreview(sid) {
 function addCorImgFromUrl(cor, sid) {
   const inp = document.getElementById(`url-inp-${sid}`);
   const url = (inp?.value || '').trim();
-  if (!url || !/^https?:\/\//.test(url)) { showToast('URL inválida', 'warn'); return; }
+  if (!url) { showToast('URL inválida', 'warn'); return; }
+
+  // Bloqueia colagem de imagem em base64 (foto da galeria colada como texto)
+  if (/^data:/i.test(url)) {
+    showToast('Use a aba "Galeria/Câmera" para fotos do celular. O campo URL é só para links http(s).', 'warn');
+    return;
+  }
+  // Bloqueia URLs absurdamente longas (geralmente colagem indevida)
+  if (url.length > 2000) {
+    showToast('URL muito longa. Cole apenas um link http(s) válido.', 'warn');
+    return;
+  }
+  if (!/^https?:\/\//i.test(url)) { showToast('URL inválida — deve começar com http:// ou https://', 'warn'); return; }
+
   addCorImgToState(cor, url);
   inp.value = '';
   clearCorPreview(sid);
@@ -1848,11 +2455,13 @@ async function handleCorUpload(cor, sid, files) {
   let done = 0;
   for (const file of files) {
     try {
-      const ext      = file.name.split('.').pop().toLowerCase();
+      // Comprime fotos grandes antes de enviar (evita travamento com fotos de celular)
+      const fileToUpload = await comprimirImagem(file);
+      const ext      = (fileToUpload.name.split('.').pop() || 'jpg').toLowerCase();
       const filename = `produtos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await db.storage
         .from('imagens')
-        .upload(filename, file, { cacheControl: '3600', upsert: false });
+        .upload(filename, fileToUpload, { cacheControl: '3600', upsert: false });
       if (error) throw error;
 
       const { data: urlData } = db.storage.from('imagens').getPublicUrl(filename);
@@ -1873,6 +2482,49 @@ async function handleCorUpload(cor, sid, files) {
   _lastCoresKey = '';
   renderCorGaleria();
   setTimeout(() => document.getElementById(`cor-item-${safeId(cor)}`)?.classList.add('expanded'), 50);
+}
+
+// Reduz a imagem para no máx 1600px no lado maior e qualidade JPEG ~0.82.
+// Só comprime se o arquivo for > 500KB ou maior que 1600px. Mantém o original em casos pequenos.
+function comprimirImagem(file) {
+  return new Promise((resolve) => {
+    if (!file || !file.type || !file.type.startsWith('image/')) return resolve(file);
+    // Não tenta comprimir GIF (animado) nem SVG
+    if (/gif|svg/i.test(file.type)) return resolve(file);
+    if (file.size < 500 * 1024) return resolve(file); // já é pequeno
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const MAX = 1600;
+        let { width: w, height: h } = img;
+        if (w <= MAX && h <= MAX && file.size < 1.5 * 1024 * 1024) {
+          URL.revokeObjectURL(url);
+          return resolve(file);
+        }
+        const ratio = Math.min(MAX / w, MAX / h, 1);
+        const cw = Math.round(w * ratio);
+        const ch = Math.round(h * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) return resolve(file);
+          const newName = (file.name || 'foto').replace(/\.\w+$/, '') + '.jpg';
+          const out = new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() });
+          resolve(out.size < file.size ? out : file);
+        }, 'image/jpeg', 0.82);
+      } catch (err) {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
 }
 
 function addCorImgConfirm(cor, sid) {
@@ -1987,6 +2639,9 @@ let _deleteId = null;
 
 function confirmarDelete(id, nome) {
   _deleteId = id;
+  // Reseta título (pode ter sido alterado pela exclusão de coleção)
+  const titleEl = document.querySelector('#confirm-overlay .confirm-title');
+  if (titleEl) titleEl.textContent = 'Excluir produto?';
   document.getElementById('confirm-sub').textContent =
     `"${nome}" será excluído permanentemente. Esta ação não pode ser desfeita.`;
   document.getElementById('confirm-overlay').classList.add('open');
@@ -2006,10 +2661,11 @@ function closeConfirm() {
 // ════════════════════════════════════════════════════════════
 
 function showSection(sec) {
-  ['dashboard', 'produtos'].forEach(s => {
+  ['dashboard', 'produtos', 'colecoes'].forEach(s => {
     document.getElementById(`sec-${s}`).style.display = s === sec ? '' : 'none';
     document.getElementById(`nav-${s}`)?.classList.toggle('active', s === sec);
   });
+  if (sec === 'colecoes') renderColecoesTable();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2095,6 +2751,48 @@ function setEl(id, val) {
 function formatPrice(v) {
   const n = parseFloat(v);
   return isNaN(n) ? '0,00' : n.toFixed(2).replace('.', ',');
+}
+
+// Converte o slug da categoria/tipo no rótulo amigável
+function labelCategoria(cat) {
+  if (!cat) return '';
+  // Primeiro tenta encontrar nas coleções cadastradas dinamicamente
+  const col = allColecoes.find(c => c.slug === cat);
+  if (col) return col.nome;
+  // Fallback para os slugs históricos (caso a coleção tenha sido excluída)
+  const map = {
+    'cancoes':              'Coleção Canções',
+    'preto_branco':         'Preto no Branco',
+    'best_seller_premium':  'Best Seller Premium',
+  };
+  return map[cat] || cat;
+}
+function labelTipoTecido(t) {
+  if (!t) return '';
+  const map = {
+    'premium': 'Premium',
+    'algodao': '100% Algodão',
+  };
+  return map[t] || t;
+}
+function labelTipoPeca(t) {
+  if (!t) return '';
+  const map = {
+    'normal': 'Normal',
+    'baby':   'Baby Look',
+    'ambos':  'Normal e Baby Look',
+  };
+  return map[t] || t;
+}
+
+function labelGenero(g) {
+  if (!g) return '';
+  const map = {
+    'masculino': '♂ Masculino',
+    'feminino':  '♀ Feminino',
+    'unissex':   '⚥ Unissex',
+  };
+  return map[g] || g;
 }
 
 function safeId(str) {

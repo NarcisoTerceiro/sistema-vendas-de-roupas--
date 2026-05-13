@@ -1,0 +1,850 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Benedictus Camisaria · Acesso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+[data-theme="dark"]{
+  --bg:#0a0f1e;--bg2:#0f1624;--navy:#141c30;--navy2:#1a2540;--navy3:#1f2d4e;
+  --ink:#f2ede5;--ink2:#e0d9ce;--muted:#8a90a2;--muted2:#545d70;
+  --gold:#c8a96e;--gold2:#a08050;--gold3:#e8c98e;--gold4:#f2daa2;
+  --surface:#141c30;--surface2:#1a2540;--surface3:#1f2d4e;
+  --nav-bg:rgba(10,15,30,0.97);--border:rgba(200,169,110,0.18);--border2:rgba(200,169,110,0.09);
+  --sh:rgba(0,0,0,0.65);--sh2:rgba(0,0,0,0.85);--sh-gold:rgba(200,169,110,0.18);--sh-navy:rgba(20,28,48,0.7);
+  --danger:#e05555;--danger-dim:rgba(224,85,85,0.12);--success:#6dbf7e;--success-dim:rgba(109,191,126,0.1);
+  --warn:#c8a046;--warn-dim:rgba(200,160,70,0.1);
+  --glass:rgba(20,28,48,0.6);
+}
+[data-theme="light"]{
+  --bg:#eef1f7;--bg2:#e4e8f2;--navy:#161e33;--navy2:#1e2a42;--navy3:#243050;
+  --ink:#161e33;--ink2:#243050;--muted:#5a6480;--muted2:#8a90aa;
+  --gold:#9a7440;--gold2:#7a5830;--gold3:#c8a96e;--gold4:#b89050;
+  --surface:#ffffff;--surface2:#f4f6fc;--surface3:#e8edf8;
+  --nav-bg:rgba(255,255,255,0.97);--border:rgba(22,30,51,0.14);--border2:rgba(22,30,51,0.07);
+  --sh:rgba(22,30,51,0.1);--sh2:rgba(22,30,51,0.18);--sh-gold:rgba(154,116,64,0.18);--sh-navy:rgba(22,30,51,0.12);
+  --danger:#c84040;--danger-dim:rgba(200,64,64,0.08);--success:#3a8e4e;--success-dim:rgba(58,142,78,0.08);
+  --warn:#b08030;--warn-dim:rgba(176,128,48,0.08);
+  --glass:rgba(255,255,255,0.6);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);overflow-x:hidden;min-height:100vh;transition:background .4s,color .4s;}
+[data-theme="dark"] body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 10% 0%,rgba(20,28,48,0.95) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 90% 100%,rgba(200,169,110,0.04) 0%,transparent 60%);}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px;}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;transition:font-variation-settings .2s;}
+
+:root { --logo-h: 72px; }
+@media (max-width: 1024px) { :root { --logo-h: 64px; } }
+@media (max-width: 640px) { :root { --logo-h: 150px; } }
+
+.logo-wrap {
+  display: flex;align-items: center;justify-content: center;
+  height: var(--logo-h);flex-shrink: 0;cursor: pointer;transition: opacity .25s;
+}
+.logo-wrap:hover { opacity: .8; }
+.logo-wrap img { height: var(--logo-h);width: auto;display: block;object-fit: contain; }
+
+/* LOGIN — mesmo estilo do adminsenha */
+#login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);transition:background .4s;overflow-y:auto;}
+.login-wrap{width:100%;max-width:440px;animation:fadeUp .7s ease both;position:relative;z-index:1;margin:auto;}
+.login-logo-area{text-align:center;margin-bottom:32px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.login-logo-area .logo-wrap{--logo-h:120px;}
+@media(max-width:640px){.login-logo-area .logo-wrap{--logo-h:140px;}}
+.login-divider{display:flex;align-items:center;gap:14px;width:100%;}
+.login-divider-line{flex:1;height:1px;background:var(--border);}
+.login-badge{font-size:8px;letter-spacing:0.55em;text-transform:uppercase;color:var(--gold);border:1px solid var(--border);padding:5px 14px;border-radius:2px;white-space:nowrap;font-family:'Cinzel',serif;}
+
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:36px 32px;position:relative;overflow:hidden;box-shadow:0 40px 100px var(--sh2);}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold2) 25%,var(--gold) 50%,var(--gold3) 75%,transparent);}
+
+/* TABS login/cadastro */
+.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--border2);}
+.tab-btn{flex:1;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.32em;text-transform:uppercase;color:var(--muted);padding:12px 0;position:relative;transition:color .25s;}
+.tab-btn.active{color:var(--gold);}
+.tab-btn::after{content:'';position:absolute;bottom:-1px;left:50%;right:50%;height:2px;background:linear-gradient(90deg,var(--gold2),var(--gold),var(--gold3));transition:all .3s;}
+.tab-btn.active::after{left:0;right:0;}
+
+.login-section-label{font-size:8px;letter-spacing:0.5em;text-transform:uppercase;color:var(--gold);margin-bottom:22px;display:flex;align-items:center;gap:10px;}
+.login-section-label::before{content:'';display:block;width:20px;height:1px;background:var(--gold);}
+
+.login-field{margin-bottom:16px;}
+.login-label{font-size:8px;letter-spacing:0.32em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;}
+.login-input-wrap{position:relative;}
+.login-input{width:100%;background:var(--bg2);border:1px solid var(--border2);color:var(--ink);padding:13px 42px 13px 15px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s;border-radius:8px;}
+.login-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sh-gold);}
+.login-input::placeholder{color:var(--muted2);}
+.login-input-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--muted2);pointer-events:none;}
+.login-pwd-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted2);padding:6px;display:flex;align-items:center;justify-content:center;transition:color .2s;border-radius:4px;}
+.login-pwd-toggle:hover{color:var(--gold);}
+
+.login-btn{width:100%;background:linear-gradient(135deg,var(--navy2),var(--navy3));color:var(--gold3);padding:14px;font-size:9px;letter-spacing:0.42em;text-transform:uppercase;border:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .35s;border-radius:8px;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;}
+.login-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gold2),var(--gold));opacity:0;transition:opacity .35s;}
+.login-btn:hover:not(:disabled)::before{opacity:1;}
+.login-btn:hover:not(:disabled){color:var(--navy);box-shadow:0 8px 28px var(--sh-gold);transform:translateY(-2px);}
+.login-btn:disabled{opacity:.6;cursor:not-allowed;}
+.login-btn>*{position:relative;z-index:1;}
+
+.login-btn-ghost{width:100%;margin-top:8px;background:none;border:1px solid var(--border2);color:var(--muted);padding:11px;border-radius:8px;cursor:pointer;font-size:10px;letter-spacing:0.22em;font-family:'DM Sans',sans-serif;text-transform:uppercase;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .25s;}
+.login-btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+
+.login-err{font-size:12px;color:var(--danger);text-align:center;margin-top:14px;display:none;background:var(--danger-dim);border:1px solid rgba(200,64,64,0.2);padding:10px;border-radius:8px;align-items:center;justify-content:center;gap:6px;}
+.login-err.show{display:flex;}
+.login-err.success{color:var(--success);background:var(--success-dim);border-color:rgba(58,142,78,0.25);}
+
+.login-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;margin-bottom:6px;font-size:11px;}
+.login-check{display:flex;align-items:center;gap:7px;color:var(--muted);cursor:pointer;user-select:none;letter-spacing:0.04em;}
+.login-check input{accent-color:var(--gold);width:13px;height:13px;cursor:pointer;}
+.login-link{color:var(--gold);text-decoration:none;font-size:11px;letter-spacing:0.04em;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;transition:opacity .2s;padding:0;}
+.login-link:hover{opacity:.7;text-decoration:underline;}
+
+.login-theme-row{display:flex;justify-content:center;margin-top:18px;}
+.login-theme-btn{background:var(--surface2);border:1px solid var(--border);border-radius:24px;padding:8px 18px;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;font-family:'DM Sans',sans-serif;transition:all .3s;}
+.login-theme-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* validação senha em tempo real */
+.pwd-rules{margin-top:8px;display:none;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:10px 12px;}
+.pwd-rules.show{display:block;}
+.pwd-rule{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;margin:3px 0;letter-spacing:0.04em;}
+.pwd-rule .mat{font-size:13px;color:var(--muted2);transition:color .2s;}
+.pwd-rule.ok{color:var(--success);}
+.pwd-rule.ok .mat{color:var(--success);}
+
+/* OTP */
+.otp-info-box{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;margin-bottom:20px;display:flex;gap:11px;align-items:flex-start;}
+.otp-info-box .mat{color:var(--gold);font-size:20px;flex-shrink:0;}
+.otp-info-txt{font-size:11px;color:var(--muted);line-height:1.6;letter-spacing:0.02em;}
+.otp-info-txt b{color:var(--ink);font-weight:500;}
+
+.otp-boxes{display:flex;gap:8px;justify-content:space-between;margin-bottom:18px;}
+.otp-box{flex:1;height:54px;text-align:center;font-size:22px;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--ink);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;outline:none;transition:all .25s;min-width:0;padding:0;}
+.otp-box:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sh-gold);transform:translateY(-2px);}
+.otp-box.filled{border-color:var(--gold);color:var(--gold);}
+
+.resend-row{text-align:center;font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:0.04em;}
+.resend-row .countdown{color:var(--gold);font-weight:500;}
+.email-display{color:var(--gold);font-weight:500;word-break:break-all;}
+
+/* steps */
+.auth-step{display:none;}
+.auth-step.active{display:block;animation:fadeUp .35s ease;}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{animation:spin .8s linear infinite;display:inline-block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:640px){
+  .login-box{padding:26px 20px;}
+  .login-input{font-size:16px;}
+  .otp-box{height:48px;font-size:20px;}
+}
+</style>
+
+<!-- SDK do Supabase (mesma versão do adminsenha) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<!-- ══ TELA DE AUTENTICAÇÃO ══ -->
+<div id="login-screen">
+  <div class="login-wrap">
+
+    <!-- LOGO + BADGE (igual ao adminsenha) -->
+    <div class="login-logo-area">
+      <div class="logo-wrap">
+        <img src="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png" alt="Benedictus Camisaria"/>
+      </div>
+      <div class="login-divider">
+        <div class="login-divider-line"></div>
+        <div class="login-badge" id="brand-badge">Acesso · Cliente</div>
+        <div class="login-divider-line"></div>
+      </div>
+    </div>
+
+    <div class="login-box">
+
+      <!-- ════ STEP 1: LOGIN / CADASTRO ════ -->
+      <div class="auth-step active" id="step-auth">
+
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="login">Entrar</button>
+          <button class="tab-btn" data-tab="signup">Cadastrar</button>
+        </div>
+
+        <div class="login-section-label" id="step-label">Acesse sua conta</div>
+
+        <!-- CADASTRO: NOME -->
+        <div class="login-field" id="field-nome" style="display:none;">
+          <label class="login-label">Nome completo</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="inp-nome" type="text" placeholder="Seu nome" autocomplete="name"/>
+            <div class="login-input-icon"><span class="mat">person</span></div>
+          </div>
+        </div>
+
+        <!-- CADASTRO: TELEFONE -->
+        <div class="login-field" id="field-tel" style="display:none;">
+          <label class="login-label">Telefone (WhatsApp)</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="inp-tel" type="tel" placeholder="(83) 99999-9999" autocomplete="tel"/>
+            <div class="login-input-icon"><span class="mat">phone_iphone</span></div>
+          </div>
+        </div>
+
+        <!-- CADASTRO: CPF -->
+        <div class="login-field" id="field-cpf" style="display:none;">
+          <label class="login-label">CPF</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="inp-cpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" autocomplete="off"/>
+            <div class="login-input-icon"><span class="mat">badge</span></div>
+          </div>
+        </div>
+
+        <!-- EMAIL -->
+        <div class="login-field">
+          <label class="login-label">E-mail</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="inp-email" type="email" placeholder="seu@email.com" autocomplete="email"/>
+            <div class="login-input-icon"><span class="mat">mail</span></div>
+          </div>
+        </div>
+
+        <!-- SENHA -->
+        <div class="login-field">
+          <label class="login-label">Senha</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="inp-pwd" type="password" placeholder="••••••••" autocomplete="current-password" style="padding-right:46px;"/>
+            <button type="button" class="login-pwd-toggle" id="togglePwd"><span class="mat" style="font-size:18px;">visibility</span></button>
+          </div>
+          <div class="pwd-rules" id="pwdRules">
+            <div class="pwd-rule" data-rule="len"><span class="mat">radio_button_unchecked</span>Mínimo 8 caracteres</div>
+            <div class="pwd-rule" data-rule="upp"><span class="mat">radio_button_unchecked</span>Pelo menos 1 letra maiúscula</div>
+            <div class="pwd-rule" data-rule="num"><span class="mat">radio_button_unchecked</span>Pelo menos 1 número</div>
+          </div>
+        </div>
+
+        <!-- CADASTRO: CONFIRMAR SENHA -->
+        <div class="login-field" id="field-pwd2" style="display:none;">
+          <label class="login-label">Confirmar senha</label>
+          <div class="login-input-wrap">
+            <input class="login-input" id="inp-pwd2" type="password" placeholder="••••••••" autocomplete="new-password"/>
+            <div class="login-input-icon"><span class="mat">lock</span></div>
+          </div>
+        </div>
+
+        <!-- LOGIN: lembrar / esqueci -->
+        <div class="login-row" id="row-login">
+          <label class="login-check"><input type="checkbox" id="remember" checked/>Lembrar de mim</label>
+          <button class="login-link" id="forgotBtn">Esqueci a senha</button>
+        </div>
+
+        <!-- CADASTRO: termos -->
+        <div class="login-row" id="row-signup" style="display:none;align-items:flex-start;">
+          <label class="login-check" style="font-size:10px;line-height:1.5;align-items:flex-start;">
+            <input type="checkbox" id="terms" style="margin-top:2px;flex-shrink:0;"/>
+            <span>Aceito os <a href="#" class="login-link" style="display:inline;font-size:10px;">termos de uso</a> e a <a href="#" class="login-link" style="display:inline;font-size:10px;">política de privacidade</a></span>
+          </label>
+        </div>
+
+        <!-- BOTÃO PRINCIPAL -->
+        <button class="login-btn" id="submitBtn">
+          <span class="mat" id="submitIcon" style="font-size:16px;">login</span>
+          <span id="submitTxt">Entrar</span>
+        </button>
+
+        <!-- ALERTA -->
+        <div class="login-err" id="alert">
+          <span class="mat" id="alertIcon" style="font-size:15px;">error_outline</span>
+          <span id="alertMsg"></span>
+        </div>
+
+      </div>
+
+      <!-- ════ STEP 2: VERIFICAÇÃO 2FA ════ -->
+      <div class="auth-step" id="step-otp">
+
+        <div class="login-section-label">Verificação em duas etapas</div>
+
+        <div class="otp-info-box">
+          <span class="mat">shield</span>
+          <div class="otp-info-txt">
+            <b>Código enviado por e-mail</b><br/>
+            Para sua segurança, enviamos um código de 6 dígitos para <span class="email-display" id="otpEmail">seu@email.com</span>. Verifique também a caixa de spam.
+          </div>
+        </div>
+
+        <div class="otp-boxes" id="otpBoxes">
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-box" data-i="0"/>
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-box" data-i="1"/>
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-box" data-i="2"/>
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-box" data-i="3"/>
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-box" data-i="4"/>
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-box" data-i="5"/>
+        </div>
+
+        <button class="login-btn" id="otpVerifyBtn">
+          <span class="mat" style="font-size:16px;">verified</span>
+          <span id="otpVerifyTxt">Verificar e Entrar</span>
+        </button>
+
+        <button class="login-btn-ghost" id="backToAuth">
+          <span class="mat" style="font-size:15px;">arrow_back</span>Voltar
+        </button>
+
+        <div class="login-err" id="alertOtp">
+          <span class="mat" id="alertOtpIcon" style="font-size:15px;">error_outline</span>
+          <span id="alertOtpMsg"></span>
+        </div>
+
+        <div class="resend-row">
+          Não recebeu?
+          <button class="login-link" id="resendBtn">Reenviar código <span class="countdown" id="countdown"></span></button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TOGGLE TEMA (igual ao adminsenha) -->
+    <div class="login-theme-row">
+      <button class="login-theme-btn" onclick="toggleTheme()">
+        <span class="mat" id="login-theme-icon" style="font-size:15px;">light_mode</span>
+        <span id="login-theme-txt">Modo Claro</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  TEMA (mesmo padrão do adminsenha — usa "bened_theme")
+// ════════════════════════════════════════════════════════════
+(function applyStoredTheme() {
+  const t = localStorage.getItem('bened_theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+})();
+
+function updateThemeIcons() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const icon = isDark ? 'light_mode' : 'dark_mode';
+  const txt  = isDark ? 'Modo Claro'  : 'Modo Escuro';
+  const el1 = document.getElementById('login-theme-icon');
+  const el2 = document.getElementById('login-theme-txt');
+  if (el1) el1.textContent = icon;
+  if (el2) el2.textContent = txt;
+}
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('bened_theme', next);
+  updateThemeIcons();
+}
+
+// ════════════════════════════════════════════════════════════
+//  CONFIG SUPABASE
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
+// Redirect dinâmico: se veio do carrinho (?redirect=checkout), volta pro index
+// preservando o parâmetro pra que o carrinho seja reaberto automaticamente
+const _urlParams = new URLSearchParams(window.location.search);
+const _redirectParam = _urlParams.get('redirect');
+const REDIRECT_AFTER_LOGIN = _redirectParam === 'checkout'
+  ? 'index.html?redirect=checkout'
+  : 'index.html';
+
+let db = null;
+function initSupabase() {
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+      console.error('Supabase SDK não encontrado!');
+    }
+  } catch (e) {
+    console.error('Erro ao inicializar Supabase:', e);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ESTADO
+// ════════════════════════════════════════════════════════════
+let mode = 'login';
+let pendingEmail = '';
+let pendingPassword = '';
+let pendingMode = 'login';
+let resendTimer = 0;
+let resendInterval = null;
+
+// ════════════════════════════════════════════════════════════
+//  TABS LOGIN ↔ CADASTRO
+// ════════════════════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    mode = t.dataset.tab;
+    const isSignup = mode === 'signup';
+
+    document.getElementById('field-nome').style.display = isSignup ? '' : 'none';
+    document.getElementById('field-tel').style.display = isSignup ? '' : 'none';
+    document.getElementById('field-cpf').style.display = isSignup ? '' : 'none';
+    document.getElementById('field-pwd2').style.display = isSignup ? '' : 'none';
+    document.getElementById('row-login').style.display = isSignup ? 'none' : 'flex';
+    document.getElementById('row-signup').style.display = isSignup ? 'flex' : 'none';
+    document.getElementById('pwdRules').classList.toggle('show', isSignup);
+
+    document.getElementById('step-label').textContent = isSignup ? 'Crie sua conta' : 'Acesse sua conta';
+    document.getElementById('brand-badge').textContent = isSignup ? 'Novo · Cadastro' : 'Acesso · Cliente';
+    document.getElementById('submitTxt').textContent = isSignup ? 'Criar Conta' : 'Entrar';
+    document.getElementById('submitIcon').textContent = isSignup ? 'how_to_reg' : 'login';
+
+    document.getElementById('inp-pwd').setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+    hideAlert();
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+//  TOGGLE SENHA
+// ════════════════════════════════════════════════════════════
+document.getElementById('togglePwd').addEventListener('click', () => {
+  const inp = document.getElementById('inp-pwd');
+  const icon = document.querySelector('#togglePwd .mat');
+  if (inp.type === 'password') { inp.type = 'text'; icon.textContent = 'visibility_off'; }
+  else { inp.type = 'password'; icon.textContent = 'visibility'; }
+});
+
+// ════════════════════════════════════════════════════════════
+//  VALIDAÇÃO DE SENHA EM TEMPO REAL
+// ════════════════════════════════════════════════════════════
+document.getElementById('inp-pwd').addEventListener('input', e => {
+  if (mode !== 'signup') return;
+  const v = e.target.value;
+  const rules = { len: v.length >= 8, upp: /[A-Z]/.test(v), num: /\d/.test(v) };
+  document.querySelectorAll('.pwd-rule').forEach(it => {
+    const ok = rules[it.dataset.rule];
+    it.classList.toggle('ok', ok);
+    it.querySelector('.mat').textContent = ok ? 'check_circle' : 'radio_button_unchecked';
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+//  MÁSCARA DE TELEFONE
+// ════════════════════════════════════════════════════════════
+document.getElementById('inp-tel').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+  e.target.value = v;
+});
+
+// ════════════════════════════════════════════════════════════
+//  MÁSCARA DE CPF + VALIDAÇÃO
+// ════════════════════════════════════════════════════════════
+document.getElementById('inp-cpf').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,        '$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/,                '$1.$2');
+  e.target.value = v;
+});
+
+// Valida CPF (algoritmo dos dígitos verificadores)
+function validarCPF(cpf) {
+  cpf = (cpf || '').replace(/\D/g, '');
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false; // todos iguais
+  let soma = 0;
+  for (let i = 0; i < 9; i++) soma += parseInt(cpf[i]) * (10 - i);
+  let d1 = 11 - (soma % 11); if (d1 >= 10) d1 = 0;
+  if (d1 !== parseInt(cpf[9])) return false;
+  soma = 0;
+  for (let i = 0; i < 10; i++) soma += parseInt(cpf[i]) * (11 - i);
+  let d2 = 11 - (soma % 11); if (d2 >= 10) d2 = 0;
+  return d2 === parseInt(cpf[10]);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ALERTAS
+// ════════════════════════════════════════════════════════════
+function showAlert(msg, type = 'error', target = 'alert') {
+  if (msg === null || msg === undefined) return;
+  const el = document.getElementById(target);
+  const icon = document.getElementById(target + 'Icon');
+  const txt = document.getElementById(target + 'Msg');
+  el.classList.remove('success');
+  el.classList.add('show');
+  if (type === 'success') el.classList.add('success');
+  icon.textContent = type === 'error' ? 'error_outline' : 'check_circle';
+  txt.textContent = msg;
+}
+function hideAlert(){
+  document.getElementById('alert').classList.remove('show');
+  document.getElementById('alertOtp').classList.remove('show');
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOADING NO BOTÃO
+// ════════════════════════════════════════════════════════════
+function setLoading(btn, on, txt, icon) {
+  if (on) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"><span class="mat" style="font-size:16px;">progress_activity</span></span><span>Aguarde...</span>`;
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = `<span class="mat" style="font-size:16px;">${icon}</span><span>${txt}</span>`;
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  RATE LIMIT
+// ════════════════════════════════════════════════════════════
+let rateLimitInterval = null;
+function startRateLimit() {
+  const btn = document.getElementById('submitBtn');
+  const alertEl = document.getElementById('alert');
+  const alertMsg = document.getElementById('alertMsg');
+  const alertIcon = document.getElementById('alertIcon');
+  alertEl.classList.remove('success');
+  alertEl.classList.add('show');
+  alertIcon.textContent = 'timer';
+  btn.disabled = true;
+  let secs = 60;
+  const update = () => {
+    alertMsg.textContent = 'Muitas tentativas. Tente novamente em ' + secs + 's.';
+    secs--;
+    if (secs < 0) {
+      clearInterval(rateLimitInterval);
+      alertEl.classList.remove('show');
+      btn.disabled = false;
+    }
+  };
+  update();
+  clearInterval(rateLimitInterval);
+  rateLimitInterval = setInterval(update, 1000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  SUBMIT (LOGIN OU CADASTRO)
+// ════════════════════════════════════════════════════════════
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  hideAlert();
+  if (!db) { showAlert('Conexão com o banco indisponível. Recarregue a página.'); return; }
+
+  const email = document.getElementById('inp-email').value.trim().toLowerCase();
+  const pwd = document.getElementById('inp-pwd').value;
+
+  if (!email || !email.includes('@')) return showAlert('Informe um e-mail válido');
+  if (!pwd) return showAlert('Informe sua senha');
+
+  const btn = document.getElementById('submitBtn');
+
+  // ─────────── CADASTRO ───────────
+  if (mode === 'signup') {
+    const nome = document.getElementById('inp-nome').value.trim();
+    const tel = document.getElementById('inp-tel').value.trim();
+    const cpfRaw = document.getElementById('inp-cpf').value.trim();
+    const cpfDigits = cpfRaw.replace(/\D/g, '');
+    const pwd2 = document.getElementById('inp-pwd2').value;
+    const aceito = document.getElementById('terms').checked;
+
+    if (!nome) return showAlert('Informe seu nome completo');
+    if (!tel || tel.replace(/\D/g,'').length < 10) return showAlert('Informe um telefone válido');
+    if (!cpfDigits) return showAlert('Informe seu CPF');
+    if (!validarCPF(cpfDigits)) return showAlert('CPF inválido — confira os números');
+    if (pwd.length < 8) return showAlert('A senha precisa ter no mínimo 8 caracteres');
+    if (!/[A-Z]/.test(pwd)) return showAlert('A senha precisa ter pelo menos 1 letra maiúscula');
+    if (!/\d/.test(pwd)) return showAlert('A senha precisa ter pelo menos 1 número');
+    if (pwd !== pwd2) return showAlert('As senhas não conferem');
+    if (!aceito) return showAlert('Você precisa aceitar os termos de uso');
+
+    setLoading(btn, true);
+
+    // ── VERIFICAÇÃO: e-mail já existe no banco? ──────────────────────────────
+    try {
+      const { data: profileCheck } = await db
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (profileCheck) {
+        setLoading(btn, false, 'Criar Conta', 'how_to_reg');
+        return showAlert('Este e-mail já está cadastrado. Faça login ou use "Esqueci a senha".');
+      }
+    } catch (checkErr) {
+      console.warn('Verificação prévia de e-mail falhou (não crítico):', checkErr);
+    }
+    // ── FIM DA VERIFICAÇÃO ───────────────────────────────────────────────────
+
+    const { data, error } = await db.auth.signUp({
+      email, password: pwd,
+      options: {
+        data: { nome, telefone: tel, cpf: cpfDigits, full_name: nome, phone: tel },
+      }
+    });
+
+    if (error) {
+      setLoading(btn, false, 'Criar Conta', 'how_to_reg');
+      return showAlert(traduzErro(error.message));
+    }
+
+    if (data.user) {
+      try {
+        await db.from('profiles').insert({
+          id: data.user.id,
+          nome,
+          telefone: tel,
+          email,
+          cpf: cpfDigits
+        });
+      } catch(e) { /* trigger do banco já cuida disso */ }
+    }
+
+    // ─── CADASTRO SEM 2FA ───
+    // Se já há sessão (confirmação automática habilitada no Supabase), entra direto.
+    // Caso contrário, tenta signInWithPassword (cobre o caso de "auto-confirm" do Supabase).
+    if (data.session) {
+      // Sessão já criada — entra direto
+      setLoading(btn, false, 'Pronto!', 'check_circle');
+      showAlert('Conta criada com sucesso! Redirecionando...', 'success');
+      setTimeout(() => { window.location.href = REDIRECT_AFTER_LOGIN; }, 700);
+      return;
+    }
+
+    // Sem sessão automática? Tenta logar com a senha que o usuário acabou de criar
+    const { data: loginData, error: loginErr } = await db.auth.signInWithPassword({ email, password: pwd });
+
+    if (loginErr) {
+      setLoading(btn, false, 'Criar Conta', 'how_to_reg');
+      // Mensagem mais amigável: provavelmente precisa confirmar email
+      const m = (loginErr.message || '').toLowerCase();
+      if (m.includes('email not confirmed') || m.includes('confirm')) {
+        showAlert('Conta criada! Verifique seu e-mail para confirmar e depois faça login.', 'success');
+        // Volta para a aba "Entrar" com email pré-preenchido após 2s
+        setTimeout(() => {
+          document.querySelector('.tab-btn[data-tab="login"]').click();
+        }, 2200);
+      } else {
+        showAlert(traduzErro(loginErr.message));
+      }
+      return;
+    }
+
+    // Login pós-cadastro funcionou — vai direto pro index
+    setLoading(btn, false, 'Pronto!', 'check_circle');
+    showAlert('Bem-vindo(a)! Redirecionando...', 'success');
+    setTimeout(() => { window.location.href = REDIRECT_AFTER_LOGIN; }, 700);
+    return;
+  }
+
+  // ─────────── LOGIN ───────────
+  setLoading(btn, true);
+
+  const { error: errLogin } = await db.auth.signInWithPassword({ email, password: pwd });
+  if (errLogin) {
+    setLoading(btn, false, 'Entrar', 'login');
+    return showAlert(traduzErro(errLogin.message));
+  }
+
+  // Dispara código de 2FA por email
+  await db.auth.signOut();
+  const { error: errOtp } = await db.auth.signInWithOtp({
+    email, options: { shouldCreateUser: false }
+  });
+
+  setLoading(btn, false, 'Entrar', 'login');
+
+  if (errOtp) return showAlert(traduzErro(errOtp.message));
+
+  pendingEmail = email;
+  pendingPassword = pwd;
+  pendingMode = 'login';
+  goToOtp(email);
+});
+
+// ════════════════════════════════════════════════════════════
+//  ESQUECI A SENHA
+// ════════════════════════════════════════════════════════════
+document.getElementById('forgotBtn').addEventListener('click', async () => {
+  if (!db) return;
+  const email = document.getElementById('inp-email').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) return showAlert('Informe seu e-mail no campo acima');
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/redefinir-senha.html?email=' + encodeURIComponent(email)
+  });
+  if (error) return showAlert(traduzErro(error.message));
+  showAlert('Enviamos um código de 6 dígitos para seu e-mail. Redirecionando...', 'success');
+  setTimeout(() => {
+    window.location.href = 'redefinir-senha.html?email=' + encodeURIComponent(email);
+  }, 1500);
+});
+
+// ════════════════════════════════════════════════════════════
+//  TELA DE OTP (2FA)
+// ════════════════════════════════════════════════════════════
+function goToOtp(email) {
+  document.getElementById('otpEmail').textContent = email;
+  document.getElementById('step-auth').classList.remove('active');
+  document.getElementById('step-otp').classList.add('active');
+  document.getElementById('brand-badge').textContent = 'Verificação · 2FA';
+  startCountdown();
+  document.querySelectorAll('.otp-box').forEach(b => { b.value = ''; b.classList.remove('filled'); });
+  setTimeout(() => document.querySelector('.otp-box[data-i="0"]').focus(), 200);
+}
+
+document.getElementById('backToAuth').addEventListener('click', () => {
+  document.getElementById('step-otp').classList.remove('active');
+  document.getElementById('step-auth').classList.add('active');
+  document.getElementById('brand-badge').textContent = mode === 'signup' ? 'Novo · Cadastro' : 'Acesso · Cliente';
+  hideAlert();
+});
+
+// Inputs OTP
+const boxes = document.querySelectorAll('.otp-box');
+boxes.forEach((box, i) => {
+  box.addEventListener('input', e => {
+    const v = e.target.value.replace(/\D/g,'');
+    e.target.value = v;
+    e.target.classList.toggle('filled', !!v);
+    if (v && i < boxes.length - 1) boxes[i+1].focus();
+    const all = Array.from(boxes).map(b => b.value).join('');
+    if (all.length === 6) document.getElementById('otpVerifyBtn').click();
+  });
+  box.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !e.target.value && i > 0) boxes[i-1].focus();
+  });
+  box.addEventListener('paste', e => {
+    e.preventDefault();
+    const txt = (e.clipboardData.getData('text') || '').replace(/\D/g,'').slice(0,6);
+    txt.split('').forEach((c, idx) => {
+      if (boxes[idx]) { boxes[idx].value = c; boxes[idx].classList.add('filled'); }
+    });
+    if (txt.length === 6) document.getElementById('otpVerifyBtn').click();
+  });
+});
+
+// Verificar código
+document.getElementById('otpVerifyBtn').addEventListener('click', async () => {
+  hideAlert();
+  if (!db) return;
+  const code = Array.from(boxes).map(b => b.value).join('');
+  if (code.length !== 6) return showAlert('Digite os 6 dígitos do código', 'error', 'alertOtp');
+
+  const btn = document.getElementById('otpVerifyBtn');
+  setLoading(btn, true);
+
+  const otpType = pendingMode === 'signup' ? 'signup' : 'email';
+  const { error } = await db.auth.verifyOtp({
+    email: pendingEmail, token: code, type: otpType
+  });
+
+  if (error) {
+    setLoading(btn, false, 'Verificar e Entrar', 'verified');
+    boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+    boxes[0].focus();
+    return showAlert(traduzErro(error.message), 'error', 'alertOtp');
+  }
+
+  showAlert('Acesso liberado! Redirecionando...', 'success', 'alertOtp');
+  setTimeout(() => { window.location.href = REDIRECT_AFTER_LOGIN; }, 700);
+});
+
+// Reenviar
+function startCountdown() {
+  resendTimer = 60;
+  const btn = document.getElementById('resendBtn');
+  const cd = document.getElementById('countdown');
+  btn.disabled = true;
+  btn.style.opacity = '.5';
+  clearInterval(resendInterval);
+  resendInterval = setInterval(() => {
+    resendTimer--;
+    cd.textContent = `(${resendTimer}s)`;
+    if (resendTimer <= 0) {
+      clearInterval(resendInterval);
+      cd.textContent = '';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  }, 1000);
+}
+
+document.getElementById('resendBtn').addEventListener('click', async () => {
+  if (resendTimer > 0 || !db) return;
+  hideAlert();
+  const { error } = await db.auth.signInWithOtp({
+    email: pendingEmail, options: { shouldCreateUser: false }
+  });
+  if (error) return showAlert(traduzErro(error.message), 'error', 'alertOtp');
+  showAlert('Código reenviado! Verifique seu e-mail.', 'success', 'alertOtp');
+  startCountdown();
+});
+
+// ════════════════════════════════════════════════════════════
+//  TRADUÇÃO DE ERROS
+// ════════════════════════════════════════════════════════════
+function traduzErro(msg) {
+  const m = (msg||'').toLowerCase();
+  if (m.includes('invalid login credentials')) return 'E-mail ou senha incorretos';
+  if (m.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.';
+  if (m.includes('user already registered') || m.includes('already registered')) return 'Este e-mail já está cadastrado. Faça login ou use "Esqueci a senha".';
+  if (m.includes('signups not allowed')) return 'Cadastros estão temporariamente desabilitados.';
+  if (m.includes('password should be at least')) return 'A senha precisa ter no mínimo 6 caracteres';
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('for security purposes')) { startRateLimit(); return null; }
+  if (m.includes('token has expired') || m.includes('invalid token') || m.includes('expired')) return 'Código inválido ou expirado. Solicite um novo.';
+  if (m.includes('otp_disabled')) return 'Login por código desabilitado. Contate o suporte.';
+  if (m.includes('network') || m.includes('failed to fetch')) return 'Erro de conexão. Verifique sua internet.';
+  return msg || 'Erro inesperado. Tente novamente.';
+}
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  initSupabase();
+  updateThemeIcons();
+
+  // Já está logado? → vai direto pro destino
+  if (db) {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) { window.location.href = REDIRECT_AFTER_LOGIN; return; }
+  }
+
+  // Ativa a tab correta conforme ?action=login ou ?action=cadastro
+  const action = (_urlParams.get('action') || '').toLowerCase();
+  if (action === 'cadastro' || action === 'signup' || action === 'register') {
+    const tab = document.querySelector('.tab-btn[data-tab="signup"]');
+    if (tab) tab.click();
+  } else if (action === 'login' || action === 'entrar') {
+    const tab = document.querySelector('.tab-btn[data-tab="login"]');
+    if (tab) tab.click();
+  }
+
+  // Se veio do checkout, mostra um aviso amigável
+  if (_redirectParam === 'checkout') {
+    const lbl = document.getElementById('step-label');
+    if (lbl) lbl.innerHTML = (action === 'cadastro' || action === 'signup' || action === 'register')
+      ? 'Crie sua conta para finalizar a compra'
+      : 'Entre para finalizar sua compra';
+  }
+
+  // Enter pra submeter
+  document.querySelectorAll('#step-auth input').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('submitBtn').click();
+    });
+  });
+});
+</script>
+</body>
+</html>

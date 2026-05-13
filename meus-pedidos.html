@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Meus Pedidos · Benedictus Camisaria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+[data-theme="light"]{--bg:#F5F1EA;--bg2:#EDE8DF;--ink:#222;--muted:#777;--muted2:#aaa;--gold:#B8965A;--gold2:#9A7A45;--card:#fff;--border:rgba(180,160,120,0.25);--sh:rgba(34,34,34,0.08);--sh2:rgba(34,34,34,0.18);--sh-gold:rgba(184,150,90,0.25);}
+[data-theme="dark"]{--bg:#0f1526;--bg2:#161e33;--ink:#e8d5a3;--muted:#6a7a9a;--muted2:#3a4a6a;--gold:#c8a96e;--gold2:#a08050;--card:#1a2340;--border:rgba(200,169,110,0.18);--sh:rgba(0,0,0,0.4);--sh2:rgba(0,0,0,0.6);--sh-gold:rgba(200,169,110,0.2);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);min-height:100vh;}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px;}
+
+/* HEADER */
+.top-nav{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);box-shadow:0 2px 12px var(--sh);}
+.back-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--border);color:var(--ink);padding:8px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .25s;text-decoration:none;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(200,169,110,.06);}
+.brand{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);}
+.brand em{color:var(--gold);font-style:normal;}
+.theme-btn{background:var(--bg2);border:1px solid var(--border);color:var(--muted);width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;}
+.theme-btn:hover{color:var(--gold);border-color:var(--gold);}
+
+/* WRAPPER */
+.wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px;}
+
+/* PAGE HEAD */
+.page-head{margin-bottom:30px;}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--ink);margin-bottom:6px;}
+.page-title em{color:var(--gold);font-style:normal;}
+.page-sub{font-size:13px;color:var(--muted);}
+
+/* USER CARD */
+.user-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:14px;}
+.user-avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0f1526;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:14px;color:var(--ink);font-weight:500;}
+.user-email{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* FILTROS */
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.filtro-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .22s;}
+.filtro-btn:hover{border-color:var(--gold);color:var(--gold);}
+.filtro-btn.active{background:var(--gold);color:#0f1526;border-color:var(--gold);font-weight:500;}
+
+/* PEDIDO CARD */
+.pedido{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;transition:all .25s;}
+.pedido:hover{border-color:var(--gold);box-shadow:0 6px 20px var(--sh-gold);}
+.pedido-head{padding:18px 22px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:12px;flex-wrap:wrap;}
+.pedido-head:hover{background:rgba(200,169,110,.04);}
+.pedido-id{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
+.pedido-numero{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);}
+.pedido-data{font-size:11px;color:var(--muted);letter-spacing:.04em;}
+.pedido-resumo{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.pedido-total{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);font-weight:600;}
+.pedido-expand{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:transform .3s;}
+.pedido.open .pedido-expand{transform:rotate(180deg);color:var(--gold);}
+
+.status-badge{font-size:9px;letter-spacing:.18em;text-transform:uppercase;padding:5px 11px;border-radius:12px;font-weight:500;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.status-pendente{background:rgba(200,160,70,.14);color:#c8a046;border:1px solid rgba(200,160,70,.3);}
+.status-confirmado{background:rgba(91,155,213,.14);color:#7ab0e0;border:1px solid rgba(91,155,213,.3);}
+.status-enviado{background:rgba(80,140,200,.14);color:#7ab0e0;border:1px solid rgba(80,140,200,.3);}
+.status-entregue{background:rgba(58,142,78,.14);color:#6dbf7e;border:1px solid rgba(58,142,78,.3);}
+.status-cancelado{background:rgba(200,64,64,.14);color:#e07a7a;border:1px solid rgba(200,64,64,.3);}
+.status-finalizado{background:rgba(100,100,120,.14);color:#9a9ab0;border:1px solid rgba(100,100,120,.3);}
+
+/* Modal notificação cancelamento */
+.notif-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.notif-box{background:var(--card);border:1px solid rgba(200,64,64,.35);border-radius:16px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5);animation:slideUp .3s cubic-bezier(.4,0,.2,1);}
+.notif-box::before{content:'';display:block;height:3px;background:linear-gradient(90deg,#e05555,#c84040);}
+.notif-head{padding:22px 22px 14px;display:flex;align-items:flex-start;gap:14px;}
+.notif-icon{width:44px;height:44px;border-radius:50%;background:rgba(200,64,64,.15);border:1px solid rgba(200,64,64,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.notif-icon .mat{color:#e07a7a;font-size:22px;}
+.notif-titles{flex:1;}
+.notif-title{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);margin-bottom:4px;}
+.notif-sub{font-size:12px;color:var(--muted);line-height:1.5;}
+.notif-list{padding:0 22px 16px;display:flex;flex-direction:column;gap:8px;}
+.notif-item{background:rgba(200,64,64,.07);border:1px solid rgba(200,64,64,.2);border-radius:8px;padding:10px 14px;}
+.notif-item-num{font-family:'Cormorant Garamond',serif;font-size:16px;color:#e07a7a;margin-bottom:2px;}
+.notif-item-info{font-size:11px;color:var(--muted);}
+.notif-foot{padding:14px 22px 20px;display:flex;gap:8px;}
+.notif-btn-ok{flex:1;padding:11px;background:linear-gradient(135deg,#c84040,#e05555);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:opacity .2s;}
+.notif-btn-ok:hover{opacity:.88;}
+
+/* Modal notificação finalizado — verde */
+.notif-box-ok{border-color:rgba(58,142,78,.35) !important;}
+.notif-box-ok::before{background:linear-gradient(90deg,#3a8e4e,#6dbf7e) !important;}
+.notif-icon-ok{background:rgba(58,142,78,.15) !important;border-color:rgba(58,142,78,.3) !important;}
+.notif-icon-ok .mat{color:#6dbf7e !important;}
+.notif-item-ok{background:rgba(58,142,78,.07) !important;border-color:rgba(58,142,78,.2) !important;}
+.notif-item-ok .notif-item-num{color:#6dbf7e !important;}
+.notif-btn-ok-green{background:linear-gradient(135deg,#3a8e4e,#6dbf7e) !important;}
+
+.cancelado-banner{background:rgba(200,64,64,.1);border:1px solid rgba(200,64,64,.25);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.cancelado-banner .mat{color:#e07a7a;font-size:20px;flex-shrink:0;}
+.cancelado-banner-txt{font-size:12px;color:#e07a7a;line-height:1.5;}
+.cancelado-banner-txt strong{display:block;font-size:13px;margin-bottom:2px;}
+
+/* Banner aguardando confirmação de entrega — azul */
+.entrega-banner{background:rgba(91,155,213,.1);border:1px solid rgba(91,155,213,.3);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.entrega-banner .mat{color:#7ab0e0;font-size:20px;flex-shrink:0;}
+.entrega-banner-txt{font-size:12px;color:#7ab0e0;line-height:1.5;}
+.entrega-banner-txt strong{display:block;font-size:13px;margin-bottom:2px;color:#9ec6e6;}
+
+/* Cartão de Rastreio dos Correios (cliente) */
+.rastreio-card{background:rgba(91,155,213,.08);border:1px solid rgba(91,155,213,.3);border-radius:10px;padding:14px;margin-bottom:14px;}
+.rastreio-card-head{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#9ec6e6;font-weight:500;margin-bottom:10px;}
+.rastreio-card-head .mat{font-size:16px;color:#7ab0e0;}
+.rastreio-codigo-wrap{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid rgba(91,155,213,.25);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.rastreio-codigo{flex:1;font-family:monospace;font-size:15px;color:var(--ink);letter-spacing:0.08em;font-weight:600;word-break:break-all;}
+.btn-copiar-rastreio{background:transparent;border:1px solid rgba(91,155,213,.4);color:#7ab0e0;width:36px;height:36px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.btn-copiar-rastreio:hover{background:rgba(91,155,213,.15);border-color:#7ab0e0;}
+.btn-copiar-rastreio .mat{font-size:16px;}
+.btn-rastrear-correios{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;background:linear-gradient(135deg,#005bbb,#0070d4);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;cursor:pointer;text-decoration:none;transition:opacity .2s;}
+.btn-rastrear-correios:hover{opacity:.9;}
+.btn-rastrear-correios .mat{font-size:15px;}
+
+/* Botão confirmar entrega — verde */
+.acao-confirmar{background:linear-gradient(135deg,#3a8e4e,#6dbf7e);color:#fff;border-color:#3a8e4e;}
+.acao-confirmar:hover{opacity:.88;}
+.acao-confirmar:disabled{opacity:.5;cursor:not-allowed;}
+
+/* PEDIDO BODY (expandido) */
+.pedido-body{max-height:0;overflow:hidden;transition:max-height .35s ease;border-top:1px solid var(--border);}
+.pedido.open .pedido-body{max-height:2000px;}
+.pedido-body-inner{padding:18px 22px 22px;}
+.section-label{font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin:14px 0 10px;display:flex;align-items:center;gap:8px;}
+.section-label::before{content:'';width:18px;height:1px;background:var(--gold);}
+.section-label:first-child{margin-top:0;}
+
+/* Itens */
+.item-list{display:flex;flex-direction:column;gap:8px;}
+.item-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);}
+.item-info{flex:1;min-width:0;}
+.item-nome{font-size:13px;color:var(--ink);font-weight:500;line-height:1.4;}
+.item-vars{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.item-var{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);padding:2px 7px;border-radius:8px;}
+.item-qty-preco{text-align:right;flex-shrink:0;font-size:12px;}
+.item-qty{color:var(--muted);font-size:11px;}
+.item-preco{color:var(--ink);font-weight:500;margin-top:2px;}
+
+/* Endereço */
+.endereco-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.6;}
+.endereco-box .destaque{color:var(--gold);font-weight:500;}
+
+/* Totais */
+.totais-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.totais-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;}
+.totais-row.total{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-top:8px;padding-top:10px;border-top:1px solid var(--border);}
+.totais-row.total span:last-child{color:var(--gold);font-weight:600;}
+
+/* Ações */
+.pedido-acoes{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.acao-btn{flex:1;min-width:140px;padding:10px 14px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid;text-decoration:none;font-weight:500;}
+.acao-btn .mat{font-size:15px;}
+.acao-wpp{background:#25d366;color:#fff;border-color:#25d366;}
+.acao-wpp:hover{background:#1ebe5d;}
+.acao-secundaria{background:transparent;color:var(--ink);border-color:var(--border);}
+.acao-secundaria:hover{border-color:var(--gold);color:var(--gold);}
+
+/* Estado vazio */
+.empty-state{text-align:center;padding:80px 20px;}
+.empty-state .mat{font-size:80px;color:var(--muted2);margin-bottom:16px;}
+.empty-title{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--ink);margin-bottom:8px;}
+.empty-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;max-width:380px;margin-left:auto;margin-right:auto;}
+.empty-cta{background:var(--gold);color:#0f1526;border:none;padding:13px 28px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.28em;text-transform:uppercase;font-weight:500;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .25s;}
+.empty-cta:hover{background:#e8d5a3;box-shadow:0 6px 20px var(--sh-gold);transform:translateY(-2px);}
+
+/* Loading */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;}
+.loading .mat{font-size:36px;color:var(--gold);animation:spin 1.4s linear infinite;}
+.loading-txt{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Login required */
+.auth-required{text-align:center;padding:60px 20px;background:var(--card);border:1px solid var(--border);border-radius:14px;}
+.auth-required .mat{font-size:64px;color:var(--gold);margin-bottom:14px;}
+.auth-required h2{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);margin-bottom:8px;}
+.auth-required p{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card);color:var(--ink);padding:14px 20px;border-radius:10px;border:1px solid var(--border);box-shadow:0 10px 30px var(--sh2);font-size:13px;z-index:3000;display:flex;align-items:center;gap:10px;transition:transform .35s cubic-bezier(.4,0,.2,1);max-width:90vw;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{border-color:rgba(200,64,64,.4);}
+.toast.error .mat{color:#e07a7a;}
+.toast.success .mat{color:#6dbf7e;}
+
+/* Mobile */
+@media(max-width:600px){
+  .top-nav{padding:12px 14px;}
+  .brand{font-size:18px;}
+  .back-btn{padding:7px 10px;font-size:10px;}
+  .back-btn span:last-child{display:none;}
+  .wrap{padding:20px 14px 60px;}
+  .page-title{font-size:28px;}
+  .pedido-head{padding:14px 16px;}
+  .pedido-body-inner{padding:14px 16px 18px;}
+  .pedido-numero{font-size:16px;}
+  .pedido-total{font-size:17px;}
+  .item-row{padding:9px 10px;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <a href="index.html" class="back-btn">
+    <span class="mat">arrow_back</span>
+    <span>Voltar à loja</span>
+  </a>
+  <div class="brand">Benedictus<em>.</em></div>
+  <button class="theme-btn" onclick="toggleTheme()" title="Alternar tema">
+    <span class="mat" id="theme-icon">dark_mode</span>
+  </button>
+</nav>
+
+<div class="wrap">
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <span class="mat">autorenew</span>
+    <div class="loading-txt">Carregando seus pedidos…</div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div id="content" style="display:none;">
+
+    <div class="page-head">
+      <h1 class="page-title">Meus <em>Pedidos</em></h1>
+      <p class="page-sub" id="page-sub">Acompanhe o histórico das suas compras.</p>
+    </div>
+
+    <!-- Card do usuário -->
+    <div class="user-card" id="user-card"></div>
+
+    <!-- Filtros -->
+    <div class="filtros" id="filtros">
+      <button class="filtro-btn active" data-status="todos">Todos</button>
+      <button class="filtro-btn" data-status="pendente">Pendentes</button>
+      <button class="filtro-btn" data-status="confirmado">Confirmados</button>
+      <button class="filtro-btn" data-status="enviado">Enviados</button>
+      <button class="filtro-btn" data-status="finalizado">Finalizados</button>
+    </div>
+
+    <!-- Lista de pedidos -->
+    <div id="pedidos-lista"></div>
+
+    <!-- Empty state (sem pedidos) -->
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <span class="mat">receipt_long</span>
+      <div class="empty-title">Nenhum pedido por aqui ainda</div>
+      <div class="empty-sub">Quando você fizer sua primeira compra, ela vai aparecer aqui pra você acompanhar.</div>
+      <a href="index.html" class="empty-cta">
+        <span class="mat">storefront</span>Explorar a loja
+      </a>
+    </div>
+
+  </div>
+
+  <!-- LOGIN OBRIGATÓRIO -->
+  <div class="auth-required" id="auth-required" style="display:none;">
+    <span class="mat">lock</span>
+    <h2>Entre para ver seus pedidos</h2>
+    <p>Você precisa estar logado para acompanhar suas compras.<br>Leva menos de um minuto.</p>
+    <a href="login.html?action=login" class="empty-cta">
+      <span class="mat">login</span>Fazer Login
+    </a>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast">
+  <span class="mat" id="toast-icon">check_circle</span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
+const WHATSAPP_NUM = '5583998015544';
+
+let db = null;
+let usuario = null;
+let pedidos = [];
+let filtroAtivo = 'todos';
+
+// ════════════════════════════════════════════════════════════
+//  THEME
+// ════════════════════════════════════════════════════════════
+function applyStoredTheme() {
+  const saved = localStorage.getItem('benedictus_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-icon').textContent = saved === 'dark' ? 'light_mode' : 'dark_mode';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('benedictus_theme', next);
+  document.getElementById('theme-icon').textContent = next === 'dark' ? 'light_mode' : 'dark_mode';
+}
+
+// ════════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function formatPrice(n) {
+  return Number(n || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+function formatarCPF(cpf) {
+  const v = String(cpf || '').replace(/\D/g,'').slice(0,11);
+  if (v.length !== 11) return v;
+  return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+function formatarCEP(cep) {
+  const v = String(cep || '').replace(/\D/g,'').slice(0,8);
+  if (v.length !== 8) return v;
+  return v.replace(/(\d{5})(\d{3})/, '$1-$2');
+}
+function formatarData(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mi = String(d.getMinutes()).padStart(2,'0');
+  return `${dd}/${mm}/${yy} às ${hh}:${mi}`;
+}
+function statusLabel(s) {
+  const map = {
+    pendente:'Pendente', confirmado:'Confirmado', enviado:'Enviado',
+    entregue:'Entregue', cancelado:'Cancelado', finalizado:'Finalizado'
+  };
+  return map[s] || (s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Pendente');
+}
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  const ic = document.getElementById('toast-icon');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.remove('error','success');
+  t.classList.add(type);
+  ic.textContent = type === 'error' ? 'error_outline' : 'check_circle';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  applyStoredTheme();
+
+  // Usa o cliente do index se já existir (mesma sessão), senão cria novo
+  try {
+    db = window._authClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch (e) {
+    console.error('Erro ao iniciar Supabase:', e);
+    showToast('Erro de conexão com o banco', 'error');
+    return;
+  }
+
+  // Verifica sessão — tenta algumas vezes pois o _authClient pode ainda estar iniciando
+  let session = null;
+  for (let i = 0; i < 3; i++) {
+    const { data } = await db.auth.getSession();
+    session = data?.session;
+    if (session) break;
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  if (!session) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('auth-required').style.display = 'block';
+    return;
+  }
+  usuario = session.user;
+
+  // Detecta logout em outras abas
+  db.auth.onAuthStateChange((event, sess) => {
+    if (event === 'SIGNED_OUT' || !sess) {
+      window.location.href = 'login.html?action=login';
+    }
+  });
+
+  await carregarPedidos();
+});
+
+// ════════════════════════════════════════════════════════════
+//  CARREGAR PEDIDOS
+// ════════════════════════════════════════════════════════════
+async function carregarPedidos() {
+  try {
+    // Busca o profile pra saber o nome
+    let nomeUsuario = '';
+    try {
+      const { data: prof } = await db.from('profiles').select('nome,email').eq('id', usuario.id).maybeSingle();
+      nomeUsuario = (prof && prof.nome) || (usuario.user_metadata && (usuario.user_metadata.nome || usuario.user_metadata.full_name)) || '';
+    } catch(e) {
+      nomeUsuario = (usuario.user_metadata && (usuario.user_metadata.nome || usuario.user_metadata.full_name)) || '';
+    }
+    if (!nomeUsuario && usuario.email) nomeUsuario = usuario.email.split('@')[0];
+
+    // Renderiza card do usuário
+    const inicial = (nomeUsuario[0] || 'U').toUpperCase();
+    document.getElementById('user-card').innerHTML = `
+      <div class="user-avatar">${esc(inicial)}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(nomeUsuario || 'Cliente')}</div>
+        <div class="user-email">${esc(usuario.email || '')}</div>
+      </div>
+    `;
+
+    // Busca pedidos
+    const { data, error } = await db
+      .from('pedidos')
+      .select('*')
+      .eq('user_id', usuario.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar pedidos:', error);
+      showToast('Erro ao carregar pedidos: ' + (error.message || 'verifique a tabela "pedidos"'), 'error');
+      pedidos = [];
+    } else {
+      pedidos = data || [];
+    }
+
+    // ── Verifica pedidos cancelados para notificar o cliente (só os não vistos) ──
+    let cancVistos = [];
+    try { cancVistos = JSON.parse(localStorage.getItem('benedictus_canc_vistos') || '[]'); } catch(e) {}
+
+    // Primeira execução: marca TODOS os cancelados existentes como já vistos
+    // (não mostra modal pra cancelamentos antigos, só pros novos que vierem depois)
+    if (!localStorage.getItem('benedictus_canc_init')) {
+      const idsAtuais = pedidos.filter(p => (p.status || '') === 'cancelado').map(p => p.id);
+      idsAtuais.forEach(id => { if (!cancVistos.includes(id)) cancVistos.push(id); });
+      localStorage.setItem('benedictus_canc_vistos', JSON.stringify(cancVistos));
+      localStorage.setItem('benedictus_canc_init', '1');
+    }
+
+    const cancelados = pedidos.filter(p => (p.status || '') === 'cancelado' && !cancVistos.includes(p.id));
+    if (cancelados.length > 0) mostrarNotificacaoCancelamento(cancelados);
+
+    // ── Verifica pedidos finalizados para notificar o cliente (só os não vistos) ──
+    let vistos = [];
+    try { vistos = JSON.parse(localStorage.getItem('benedictus_fin_vistos') || '[]'); } catch(e) {}
+    const finalizados = pedidos.filter(p => (p.status || '') === 'finalizado' && !vistos.includes(p.id));
+    if (finalizados.length > 0) mostrarNotificacaoFinalizado(finalizados);
+
+    // Mostra interface
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+    // Atualiza subtítulo
+    const sub = document.getElementById('page-sub');
+    sub.textContent = pedidos.length === 0
+      ? 'Nenhuma compra registrada ainda.'
+      : `Você tem ${pedidos.length} ${pedidos.length === 1 ? 'pedido' : 'pedidos'}.`;
+
+    // Configura filtros
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        filtroAtivo = btn.dataset.status;
+        renderPedidos();
+      });
+    });
+
+    renderPedidos();
+  } catch (e) {
+    console.error('Falha ao carregar:', e);
+    document.getElementById('loading').style.display = 'none';
+    showToast('Erro ao carregar. Tente recarregar a página.', 'error');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  NOTIFICAÇÃO DE FINALIZADO
+// ════════════════════════════════════════════════════════════
+function mostrarNotificacaoFinalizado(finalizados) {
+  const overlay = document.createElement('div');
+  overlay.className = 'notif-overlay';
+
+  const itensHTML = finalizados.map(p => {
+    const num = '#' + String(p.id).padStart(6,'0');
+    return `
+      <div class="notif-item notif-item-ok">
+        <div class="notif-item-num">${num}</div>
+        <div class="notif-item-info">Finalizado · R$ ${formatPrice(p.total)}</div>
+      </div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="notif-box notif-box-ok">
+      <div class="notif-head">
+        <div class="notif-icon notif-icon-ok"><span class="mat">check_circle</span></div>
+        <div class="notif-titles">
+          <div class="notif-title">${finalizados.length === 1 ? 'Pedido concluído!' : 'Pedidos concluídos!'}</div>
+          <div class="notif-sub">
+            ${finalizados.length === 1
+              ? 'Seu pedido foi entregue e concluído. Obrigado pela compra! 🎉'
+              : `${finalizados.length} pedidos foram entregues e concluídos. Obrigado! 🎉`}
+          </div>
+        </div>
+      </div>
+      <div class="notif-list">${itensHTML}</div>
+      <div class="notif-foot">
+        <button class="notif-btn-ok notif-btn-ok-green" id="notif-btn-fin">Ótimo!</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  // Ao confirmar: marca como visto e fecha
+  document.getElementById('notif-btn-fin').onclick = () => {
+    let vistos = [];
+    try { vistos = JSON.parse(localStorage.getItem('benedictus_fin_vistos') || '[]'); } catch(e) {}
+    finalizados.forEach(p => { if (!vistos.includes(p.id)) vistos.push(p.id); });
+    localStorage.setItem('benedictus_fin_vistos', JSON.stringify(vistos));
+    overlay.remove();
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+//  NOTIFICAÇÃO DE CANCELAMENTO
+// ════════════════════════════════════════════════════════════
+function mostrarNotificacaoCancelamento(cancelados) {
+  const overlay = document.createElement('div');
+  overlay.className = 'notif-overlay';
+
+  const itensHTML = cancelados.map(p => {
+    const num = '#' + String(p.id).padStart(6,'0');
+    const data = p.cancelado_em ? formatarData(p.cancelado_em) : formatarData(p.created_at);
+    return `
+      <div class="notif-item">
+        <div class="notif-item-num">Pedido ${num}</div>
+        <div class="notif-item-info">Cancelado em ${data} · R$ ${formatPrice(p.total)}</div>
+      </div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="notif-box">
+      <div class="notif-head">
+        <div class="notif-icon"><span class="mat">cancel</span></div>
+        <div class="notif-titles">
+          <div class="notif-title">${cancelados.length === 1 ? 'Pedido cancelado' : 'Pedidos cancelados'}</div>
+          <div class="notif-sub">
+            ${cancelados.length === 1
+              ? 'Seu pedido foi cancelado pela loja.'
+              : `${cancelados.length} pedidos seus foram cancelados pela loja.`}
+          </div>
+        </div>
+      </div>
+      <div class="notif-list">${itensHTML}</div>
+      <div class="notif-foot">
+        <button class="notif-btn-ok" id="notif-btn-ok">Entendido</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  // Ao confirmar: marca como visto e fecha (mantém o pedido no histórico)
+  document.getElementById('notif-btn-ok').onclick = () => {
+    let vistos = [];
+    try { vistos = JSON.parse(localStorage.getItem('benedictus_canc_vistos') || '[]'); } catch(e) {}
+    cancelados.forEach(p => { if (!vistos.includes(p.id)) vistos.push(p.id); });
+    localStorage.setItem('benedictus_canc_vistos', JSON.stringify(vistos));
+    overlay.remove();
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════════
+function renderPedidos() {
+  const lista = document.getElementById('pedidos-lista');
+  const empty = document.getElementById('empty-state');
+
+  let filtrados = pedidos;
+  if (filtroAtivo === 'todos') {
+    // "Todos" não mostra finalizados nem cancelados
+    filtrados = pedidos.filter(p => !['finalizado','cancelado'].includes(p.status || 'pendente'));
+  } else {
+    filtrados = pedidos.filter(p => (p.status || 'pendente') === filtroAtivo);
+  }
+
+  if (!filtrados.length) {
+    lista.innerHTML = '';
+    if (!pedidos.length) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      lista.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;">
+          <span class="mat" style="font-size:36px;color:var(--muted2);display:block;margin-bottom:8px;">filter_list</span>
+          Nenhum pedido com este status.
+        </div>`;
+    }
+    return;
+  }
+
+  empty.style.display = 'none';
+  lista.innerHTML = filtrados.map(renderPedido).join('');
+}
+
+function renderPedido(p) {
+  const status = (p.status || 'pendente').toLowerCase();
+  const itens = Array.isArray(p.itens) ? p.itens : [];
+  const numeroPedido = `#${String(p.id).padStart(6, '0')}`;
+
+  // Itens
+  const itensHTML = itens.map(it => {
+    const generoLabel = it.genero === 'feminino' ? '♀ Feminino' : it.genero === 'masculino' ? '♂ Masculino' : it.genero === 'unissex' ? '⚥ Unissex' : '';
+    const vars = [
+      it.tamanho && `Tam: ${it.tamanho}`,
+      it.cor && `Cor: ${it.cor}`,
+      generoLabel && `Gênero: ${generoLabel}`
+    ].filter(Boolean);
+    const subtotal = (it.preco || 0) * (it.qty || 1);
+    return `
+      <div class="item-row">
+        <div class="item-info">
+          <div class="item-nome">${esc(it.nome || 'Item')}</div>
+          ${vars.length ? `<div class="item-vars">${vars.map(v => `<span class="item-var">${esc(v)}</span>`).join('')}</div>` : ''}
+        </div>
+        <div class="item-qty-preco">
+          <div class="item-qty">${it.qty}× R$ ${formatPrice(it.preco || 0)}</div>
+          <div class="item-preco">R$ ${formatPrice(subtotal)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Endereço
+  const enderecoHTML = `
+    <div class="endereco-box">
+      <div><span class="destaque">${esc(p.cliente_nome || '')}</span></div>
+      ${p.cliente_cpf ? `<div>CPF: ${esc(formatarCPF(p.cliente_cpf))}</div>` : ''}
+      ${p.cliente_celular ? `<div>📱 ${esc(p.cliente_celular)}</div>` : ''}
+      ${p.cliente_email ? `<div>✉️ ${esc(p.cliente_email)}</div>` : ''}
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        ${esc(p.endereco || '')}, Nº ${esc(p.numero || '')}${p.complemento ? ' — ' + esc(p.complemento) : ''}<br>
+        Bairro ${esc(p.bairro || '—')}<br>
+        ${esc(p.cidade || '')}${p.cidade && p.uf ? '/' : ''}${esc(p.uf || '')}<br>
+        ${p.cep ? `CEP: ${esc(formatarCEP(p.cep))}` : ''}
+      </div>
+    </div>
+  `;
+
+  // Totais
+  const pagamentoLabel = p.pagamento === 'pix' ? '💠 PIX' : p.pagamento === 'dinheiro' ? '💵 Dinheiro na entrega' : (p.pagamento || '—');
+  const totaisHTML = `
+    <div class="totais-box">
+      <div class="totais-row"><span>Subtotal</span><span>R$ ${formatPrice(p.subtotal)}</span></div>
+      <div class="totais-row"><span>Frete${p.frete_nome ? ' (' + esc(p.frete_nome) + ')' : ''}</span><span>${(p.frete_valor && Number(p.frete_valor) > 0) ? 'R$ ' + formatPrice(p.frete_valor) : '—'}</span></div>
+      <div class="totais-row"><span>Pagamento</span><span>${pagamentoLabel}${p.troco_para ? ' (troco ' + esc(p.troco_para) + ')' : ''}</span></div>
+      <div class="totais-row total"><span>Total</span><span>R$ ${formatPrice(p.total)}</span></div>
+    </div>
+  `;
+
+  // Mensagem WhatsApp pra reenviar/dúvida
+  const itensWA = itens.map(it => {
+    const generoLabel = it.genero === 'feminino' ? 'Feminino' : it.genero === 'masculino' ? 'Masculino' : it.genero === 'unissex' ? 'Unissex' : '';
+    const detalhes = [
+      it.tamanho && `Tam: ${it.tamanho}`,
+      it.cor && `Cor: ${it.cor}`,
+      generoLabel && `Gênero: ${generoLabel}`
+    ].filter(Boolean).join(' | ');
+    return `• ${it.qty}× ${it.nome || 'Item'}${detalhes ? ` (${detalhes})` : ''}`;
+  }).join('\n');
+  const msgWA = encodeURIComponent(`Olá! Gostaria de saber sobre meu pedido ${numeroPedido} feito em ${formatarData(p.created_at)}.\n\n${itensWA}\n\nTotal: R$ ${formatPrice(p.total)} 🙏`);
+
+  return `
+    <div class="pedido" id="pedido-${p.id}">
+      <div class="pedido-head" onclick="togglePedido(${p.id})">
+        <div class="pedido-id">
+          <div class="pedido-numero">Pedido ${numeroPedido}</div>
+          <div class="pedido-data">${formatarData(p.created_at)}</div>
+        </div>
+        <div class="pedido-resumo">
+          <span class="status-badge status-${status}">${esc(statusLabel(status))}</span>
+          <div class="pedido-total">R$ ${formatPrice(p.total)}</div>
+          <div class="pedido-expand"><span class="mat">expand_more</span></div>
+        </div>
+      </div>
+      <div class="pedido-body">
+        <div class="pedido-body-inner">
+          ${status === 'cancelado' ? `
+          <div class="cancelado-banner">
+            <span class="mat">cancel</span>
+            <div class="cancelado-banner-txt">
+              <strong>Pedido cancelado</strong>
+              Este pedido foi cancelado. Entre em contato se tiver dúvidas.
+            </div>
+          </div>` : ''}
+          ${status === 'enviado' ? `
+          <div class="entrega-banner">
+            <span class="mat">local_shipping</span>
+            <div class="entrega-banner-txt">
+              <strong>Pedido a caminho</strong>
+              Quando receber seu pedido, clique em "Confirmar entrega" abaixo para finalizar.
+            </div>
+          </div>
+          ${p.codigo_rastreio ? `
+          <div class="rastreio-card">
+            <div class="rastreio-card-head">
+              <span class="mat">qr_code_2</span>
+              Código de Rastreio dos Correios
+            </div>
+            <div class="rastreio-codigo-wrap">
+              <span class="rastreio-codigo" id="rastreio-${p.id}">${esc(p.codigo_rastreio)}</span>
+              <button class="btn-copiar-rastreio" onclick="copiarRastreio('${esc(p.codigo_rastreio)}', ${p.id})" title="Copiar código">
+                <span class="mat">content_copy</span>
+              </button>
+            </div>
+            <a class="btn-rastrear-correios" target="_blank"
+               href="https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(p.codigo_rastreio)}">
+              <span class="mat">travel_explore</span>Rastrear nos Correios
+            </a>
+          </div>` : ''}` : ''}
+          <div class="section-label">Itens (${itens.length})</div>
+          <div class="item-list">${itensHTML}</div>
+
+          <div class="section-label">Endereço de entrega</div>
+          ${enderecoHTML}
+
+          <div class="section-label">Pagamento e totais</div>
+          ${totaisHTML}
+
+          <div class="pedido-acoes">
+            <a class="acao-btn acao-wpp" target="_blank" href="https://api.whatsapp.com/send?phone=${WHATSAPP_NUM}&text=${msgWA}">
+              <span class="mat">support_agent</span>${status === 'cancelado' ? 'Falar sobre cancelamento' : 'Falar sobre o pedido'}
+            </a>
+            ${status === 'enviado' ? `
+            <button class="acao-btn acao-confirmar" onclick="confirmarEntrega(${p.id})">
+              <span class="mat">check_circle</span>Confirmar entrega
+            </button>` : ''}
+            ${status !== 'cancelado' ? `
+            <button class="acao-btn acao-secundaria" onclick="recomprar(${p.id})">
+              <span class="mat">refresh</span>Comprar de novo
+            </button>` : `
+            <button class="acao-btn acao-secundaria" onclick="recomprar(${p.id})">
+              <span class="mat">shopping_bag</span>Pedir novamente
+            </button>`}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function togglePedido(id) {
+  const el = document.getElementById('pedido-' + id);
+  if (el) el.classList.toggle('open');
+}
+
+// ════════════════════════════════════════════════════════════
+//  COPIAR CÓDIGO DE RASTREIO
+// ════════════════════════════════════════════════════════════
+function copiarRastreio(codigo, pedidoId) {
+  if (!codigo) return;
+  // Tenta a API moderna primeiro, com fallback pra textarea
+  const ok = (txt) => showToast('Código copiado: ' + txt, 'success');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(codigo).then(() => ok(codigo)).catch(() => fallbackCopy(codigo, ok));
+  } else {
+    fallbackCopy(codigo, ok);
+  }
+}
+function fallbackCopy(txt, cb) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    cb(txt);
+  } catch(e) {
+    showToast('Não foi possível copiar', 'error');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  AÇÕES
+// ════════════════════════════════════════════════════════════
+async function confirmarEntrega(pedidoId) {
+  const p = pedidos.find(x => x.id === pedidoId);
+  if (!p) return;
+
+  const num = '#' + String(pedidoId).padStart(6, '0');
+  if (!confirm(`Confirmar que você recebeu o pedido ${num}?\n\nApós confirmar, o pedido será finalizado.`)) return;
+
+  // Desabilita o botão pra evitar duplo-clique
+  const btn = document.querySelector(`#pedido-${pedidoId} .acao-confirmar`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="mat">hourglass_empty</span>Finalizando...';
+  }
+
+  try {
+    const { error } = await db
+      .from('pedidos')
+      .update({ status: 'finalizado' })
+      .eq('id', pedidoId);
+    if (error) throw error;
+
+    // Atualiza local
+    const idx = pedidos.findIndex(x => x.id === pedidoId);
+    if (idx !== -1) pedidos[idx].status = 'finalizado';
+
+    showToast('Entrega confirmada! Obrigado pela compra 🎉', 'success');
+
+    // Mostra notificação verde de finalizado
+    setTimeout(() => {
+      mostrarNotificacaoFinalizado([pedidos[idx]]);
+    }, 400);
+
+    renderPedidos();
+  } catch(e) {
+    showToast('Erro ao confirmar entrega: ' + (e.message || e), 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="mat">check_circle</span>Confirmar entrega';
+    }
+  }
+}
+
+function recomprar(pedidoId) {
+  const p = pedidos.find(x => x.id === pedidoId);
+  if (!p || !Array.isArray(p.itens) || !p.itens.length) {
+    showToast('Pedido sem itens válidos', 'error');
+    return;
+  }
+
+  // Chave usada pelo index.html
+  const CART_KEY = 'bened_cart';
+
+  // Carrega o carrinho atual do localStorage
+  let cartAtual = [];
+  try {
+    cartAtual = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  } catch(e) { cartAtual = []; }
+
+  // Adiciona os itens do pedido (formato esperado pelo index)
+  let adicionados = 0;
+  p.itens.forEach(it => {
+    if (!it.id) return;
+    // Se o item já existe no carrinho, soma a quantidade
+    const key = `${it.id}|${it.tamanho||''}|${it.cor||''}`;
+    const ex = cartAtual.find(x => `${x.produto?.id}|${x.tamanho||''}|${x.cor||''}` === key);
+    if (ex) {
+      ex.qty += (it.qty || 1);
+    } else {
+      cartAtual.push({
+        produto: { id: it.id, nome: it.nome, preco: it.preco || 0 },
+        qty: it.qty || 1,
+        tamanho: it.tamanho || null,
+        cor: it.cor || null
+      });
+    }
+    adicionados++;
+  });
+
+  if (!adicionados) {
+    showToast('Não foi possível recriar o pedido', 'error');
+    return;
+  }
+
+  localStorage.setItem(CART_KEY, JSON.stringify(cartAtual));
+  showToast(`${adicionados} ${adicionados === 1 ? 'item adicionado' : 'itens adicionados'} ao carrinho!`, 'success');
+  setTimeout(() => { window.location.href = 'index.html'; }, 800);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Redefinir senha · Benedictus Camisaria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+[data-theme="dark"]{
+  --bg:#0a0f1e;--bg2:#0f1624;--ink:#f2ede5;--muted:#8a90a2;--muted2:#545d70;
+  --gold:#c8a96e;--gold2:#a08050;--gold3:#e8c98e;
+  --surface:#141c30;--border:rgba(200,169,110,0.18);
+  --sh:rgba(0,0,0,0.65);--sh2:rgba(0,0,0,0.85);--sh-gold:rgba(200,169,110,0.18);
+  --danger:#e05555;--danger-dim:rgba(224,85,85,0.12);--success:#6dbf7e;--success-dim:rgba(109,191,126,0.1);
+}
+[data-theme="light"]{
+  --bg:#eef1f7;--bg2:#e4e8f2;--ink:#161e33;--muted:#5a6480;--muted2:#8a90aa;
+  --gold:#9a7440;--gold2:#7a5830;--gold3:#c8a96e;
+  --surface:#ffffff;--border:rgba(22,30,51,0.14);
+  --sh:rgba(22,30,51,0.1);--sh2:rgba(22,30,51,0.18);--sh-gold:rgba(154,116,64,0.18);
+  --danger:#c84040;--danger-dim:rgba(200,64,64,0.08);--success:#3a8e4e;--success-dim:rgba(58,142,78,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden;}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;}
+
+.wrap{width:100%;max-width:440px;animation:fadeUp .7s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+/* HEAD */
+.head{text-align:center;margin-bottom:32px;}
+.brand{font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--ink);}
+.brand em{color:var(--gold);font-style:normal;}
+.tag{font-size:9px;letter-spacing:.5em;text-transform:uppercase;color:var(--gold);margin-top:8px;font-family:'Cinzel',serif;}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 32px;position:relative;overflow:hidden;box-shadow:0 40px 100px var(--sh2);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold2) 25%,var(--gold) 50%,var(--gold3) 75%,transparent);}
+
+.icon-wrap{width:64px;height:64px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px var(--sh-gold);}
+.icon-wrap .mat{font-size:30px;color:#0f1526;font-variation-settings:'FILL' 1,'wght' 400;}
+
+.title{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);text-align:center;margin-bottom:8px;}
+.title em{color:var(--gold);font-style:normal;}
+.subtitle{font-size:13px;color:var(--muted);text-align:center;line-height:1.55;margin-bottom:28px;}
+
+/* CAMPO */
+.field{margin-bottom:16px;}
+.label{font-size:8px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;}
+.input-wrap{position:relative;}
+.input{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:13px 46px 13px 15px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;border-radius:8px;transition:border-color .3s,box-shadow .3s;}
+.input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sh-gold);}
+.input::placeholder{color:var(--muted2);}
+.pwd-toggle{position:absolute;top:50%;right:10px;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:color .25s;}
+.pwd-toggle:hover{color:var(--gold);}
+
+/* OTP */
+.otp-wrap{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
+.otp-digit{width:52px;height:60px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--ink);font-size:26px;font-family:'Cormorant Garamond',serif;font-weight:600;text-align:center;outline:none;transition:border-color .3s,box-shadow .3s;caret-color:var(--gold);}
+.otp-digit:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sh-gold);}
+.otp-digit.filled{border-color:var(--gold2);}
+
+/* REGRAS */
+.rules{display:none;flex-direction:column;gap:6px;margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);}
+.rules.show{display:flex;}
+.rule{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);transition:color .25s;}
+.rule .mat{font-size:14px;color:var(--muted2);}
+.rule.ok{color:var(--success);}
+.rule.ok .mat{color:var(--success);}
+
+/* BOTÃO */
+.btn{width:100%;background:var(--gold);color:#0f1526;border:none;padding:15px;font-size:11px;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border-radius:8px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .28s;box-shadow:0 4px 16px var(--sh-gold);}
+.btn:hover:not(:disabled){background:#e8d5a3;box-shadow:0 8px 24px var(--sh-gold);transform:translateY(-2px);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);box-shadow:none;}
+.btn-ghost:hover:not(:disabled){background:var(--bg2);border-color:var(--gold);color:var(--gold);transform:translateY(-1px);}
+
+/* ALERTA */
+.alert{display:none;background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);padding:12px 14px;border-radius:8px;font-size:12px;margin-top:14px;align-items:center;gap:10px;line-height:1.5;}
+.alert.show{display:flex;}
+.alert.success{background:var(--success-dim);border-color:var(--success);color:var(--success);}
+.alert .mat{font-size:16px;flex-shrink:0;}
+
+/* INFO BOX */
+.info-box{background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.22);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;}
+.info-box .mat{color:var(--gold);font-size:16px;flex-shrink:0;margin-top:1px;}
+
+/* LINK */
+.foot-link{text-align:center;margin-top:18px;font-size:12px;color:var(--muted);}
+.foot-link a{color:var(--gold);text-decoration:none;}
+.foot-link a:hover{text-decoration:underline;}
+
+/* THEME TOGGLE */
+.theme-toggle{position:fixed;top:18px;right:18px;background:var(--surface);border:1px solid var(--border);color:var(--muted);width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;z-index:10;}
+.theme-toggle:hover{color:var(--gold);border-color:var(--gold);}
+
+/* EMAIL HINT */
+.email-hint{text-align:center;font-size:12px;color:var(--muted);margin-bottom:22px;}
+.email-hint strong{color:var(--gold);font-weight:500;}
+
+/* TIMER */
+.resend-area{text-align:center;margin-top:14px;font-size:12px;color:var(--muted);}
+.resend-btn{background:none;border:none;color:var(--gold);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;text-decoration:underline;padding:0;}
+.resend-btn:disabled{color:var(--muted2);text-decoration:none;cursor:default;}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{animation:spin 1s linear infinite;}
+
+@media(max-width:480px){
+  .card{padding:30px 20px;}
+  .title{font-size:24px;}
+  .otp-digit{width:44px;height:54px;font-size:22px;}
+  .otp-wrap{gap:7px;}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+  <span class="mat" id="theme-icon">dark_mode</span>
+</button>
+
+<div class="wrap">
+
+  <div class="head">
+    <div class="brand">Benedictus<em>.</em></div>
+    <div class="tag">Camisaria · Moda Cristã</div>
+  </div>
+
+  <div class="card">
+
+    <!-- ═══════════════════════════════════════
+         STEP 1 — CÓDIGO OTP
+    ════════════════════════════════════════ -->
+    <div id="step-otp">
+      <div class="icon-wrap">
+        <span class="mat">mark_email_read</span>
+      </div>
+      <h1 class="title">Código de <em>verificação</em></h1>
+      <p class="subtitle">Enviamos um código de 6 dígitos para o seu e-mail. Digite-o abaixo para continuar.</p>
+
+      <div class="info-box">
+        <span class="mat">info</span>
+        <span>Verifique sua caixa de entrada (e pasta de spam). O código expira em <strong>10 minutos</strong>.</span>
+      </div>
+
+      <div id="email-hint" class="email-hint" style="display:none;">
+        Código enviado para <strong id="email-display"></strong>
+      </div>
+
+      <label class="label" style="text-align:center;display:block;">Digite os 6 dígitos</label>
+      <div class="otp-wrap" id="otp-wrap">
+        <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code" id="d0"/>
+        <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" id="d1"/>
+        <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" id="d2"/>
+        <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" id="d3"/>
+        <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" id="d4"/>
+        <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" id="d5"/>
+      </div>
+
+      <button class="btn" id="btnVerificar">
+        <span class="mat" id="btnVIcon" style="font-size:16px;">verified</span>
+        <span id="btnVTxt">Verificar código</span>
+      </button>
+
+      <div class="alert" id="alert-otp">
+        <span class="mat" id="alertOtpIcon">error_outline</span>
+        <span id="alertOtpMsg"></span>
+      </div>
+
+      <div class="resend-area">
+        <span id="timer-txt"></span>
+        <button class="resend-btn" id="btnReenviar" onclick="reenviarCodigo()" disabled>Reenviar código</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         STEP 2 — NOVA SENHA
+    ════════════════════════════════════════ -->
+    <div id="step-form" style="display:none;">
+      <div class="icon-wrap">
+        <span class="mat">lock_reset</span>
+      </div>
+      <h1 class="title">Nova <em>senha</em></h1>
+      <p class="subtitle">Código verificado com sucesso! Agora crie uma senha nova e segura para sua conta.</p>
+
+      <div class="field">
+        <label class="label">Nova senha</label>
+        <div class="input-wrap">
+          <input class="input" id="inp-senha" type="password" placeholder="••••••••" autocomplete="new-password"/>
+          <button type="button" class="pwd-toggle" id="toggleSenha"><span class="mat" style="font-size:18px;">visibility</span></button>
+        </div>
+        <div class="rules show" id="rules">
+          <div class="rule" data-rule="len"><span class="mat">radio_button_unchecked</span>Mínimo 8 caracteres</div>
+          <div class="rule" data-rule="upp"><span class="mat">radio_button_unchecked</span>Pelo menos 1 letra maiúscula</div>
+          <div class="rule" data-rule="num"><span class="mat">radio_button_unchecked</span>Pelo menos 1 número</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">Confirmar senha</label>
+        <div class="input-wrap">
+          <input class="input" id="inp-senha2" type="password" placeholder="••••••••" autocomplete="new-password" style="padding-right:15px;"/>
+        </div>
+      </div>
+
+      <button class="btn" id="btnSalvar">
+        <span class="mat" id="btnIcon" style="font-size:16px;">save</span>
+        <span id="btnTxt">Salvar nova senha</span>
+      </button>
+
+      <div class="alert" id="alert-senha">
+        <span class="mat" id="alertSenhaIcon">error_outline</span>
+        <span id="alertSenhaMsg"></span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         STEP SUCCESS
+    ════════════════════════════════════════ -->
+    <div id="step-success" style="display:none;text-align:center;">
+      <div class="icon-wrap" style="background:linear-gradient(135deg,#6dbf7e,#3a8e4e);">
+        <span class="mat" style="color:#fff;">check_circle</span>
+      </div>
+      <h1 class="title">Senha <em>alterada!</em></h1>
+      <p class="subtitle">Sua senha foi atualizada com sucesso. Agora você pode entrar normalmente com a nova senha.</p>
+      <a href="login.html?action=login" class="btn" style="text-decoration:none;">
+        <span class="mat" style="font-size:16px;">login</span>
+        <span>Ir para login</span>
+      </a>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         STEP ERRO (sem email na URL)
+    ════════════════════════════════════════ -->
+    <div id="step-erro" style="display:none;text-align:center;">
+      <div class="icon-wrap" style="background:linear-gradient(135deg,#e05555,#c84040);">
+        <span class="mat" style="color:#fff;">error</span>
+      </div>
+      <h1 class="title">Link <em>inválido</em></h1>
+      <p class="subtitle" id="erroMsg">Este link de redefinição é inválido ou expirou. Solicite um novo link na página de login.</p>
+      <a href="login.html?action=login" class="btn" style="text-decoration:none;">
+        <span class="mat" style="font-size:16px;">arrow_back</span>
+        <span>Voltar ao login</span>
+      </a>
+    </div>
+
+  </div>
+
+  <div class="foot-link">
+    Lembrou a senha? <a href="login.html?action=login">Voltar ao login</a>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
+
+let db = null;
+let userEmail = null; // e-mail vindo do parâmetro da URL
+let timerInterval = null;
+
+// ════════════════════════════════════════════════════════════
+//  THEME
+// ════════════════════════════════════════════════════════════
+function applyStoredTheme() {
+  const saved = localStorage.getItem('benedictus_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-icon').textContent = saved === 'dark' ? 'light_mode' : 'dark_mode';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('benedictus_theme', next);
+  document.getElementById('theme-icon').textContent = next === 'dark' ? 'light_mode' : 'dark_mode';
+}
+
+// ════════════════════════════════════════════════════════════
+//  ALERTAS
+// ════════════════════════════════════════════════════════════
+function showAlertOtp(msg, type = 'error') {
+  const el = document.getElementById('alert-otp');
+  const ic = document.getElementById('alertOtpIcon');
+  el.classList.remove('success');
+  if (type === 'success') el.classList.add('success');
+  ic.textContent = type === 'error' ? 'error_outline' : 'check_circle';
+  document.getElementById('alertOtpMsg').textContent = msg;
+  el.classList.add('show');
+}
+function hideAlertOtp() { document.getElementById('alert-otp').classList.remove('show'); }
+
+function showAlertSenha(msg, type = 'error') {
+  const el = document.getElementById('alert-senha');
+  const ic = document.getElementById('alertSenhaIcon');
+  el.classList.remove('success');
+  if (type === 'success') el.classList.add('success');
+  ic.textContent = type === 'error' ? 'error_outline' : 'check_circle';
+  document.getElementById('alertSenhaMsg').textContent = msg;
+  el.classList.add('show');
+}
+function hideAlertSenha() { document.getElementById('alert-senha').classList.remove('show'); }
+
+// ════════════════════════════════════════════════════════════
+//  LOADING STATES
+// ════════════════════════════════════════════════════════════
+function setLoadingOtp(loading) {
+  const btn = document.getElementById('btnVerificar');
+  const ic = document.getElementById('btnVIcon');
+  const tx = document.getElementById('btnVTxt');
+  btn.disabled = loading;
+  if (loading) {
+    ic.textContent = 'autorenew'; ic.classList.add('spin'); tx.textContent = 'Verificando…';
+  } else {
+    ic.textContent = 'verified'; ic.classList.remove('spin'); tx.textContent = 'Verificar código';
+  }
+}
+function setLoadingSenha(loading) {
+  const btn = document.getElementById('btnSalvar');
+  const ic = document.getElementById('btnIcon');
+  const tx = document.getElementById('btnTxt');
+  btn.disabled = loading;
+  if (loading) {
+    ic.textContent = 'autorenew'; ic.classList.add('spin'); tx.textContent = 'Salvando…';
+  } else {
+    ic.textContent = 'save'; ic.classList.remove('spin'); tx.textContent = 'Salvar nova senha';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  OTP INPUTS — comportamento dos 6 campos
+// ════════════════════════════════════════════════════════════
+function setupOtpInputs() {
+  const digits = Array.from({length: 6}, (_, i) => document.getElementById(`d${i}`));
+
+  digits.forEach((inp, idx) => {
+    inp.addEventListener('input', e => {
+      // Permite colar o código inteiro no primeiro campo
+      const val = e.target.value.replace(/\D/g, '');
+      if (val.length > 1) {
+        // Colar: distribui pelos campos
+        val.slice(0, 6).split('').forEach((ch, i) => {
+          if (digits[i]) { digits[i].value = ch; digits[i].classList.add('filled'); }
+        });
+        const nextEmpty = digits.find(d => !d.value);
+        (nextEmpty || digits[5]).focus();
+        return;
+      }
+      inp.value = val;
+      inp.classList.toggle('filled', !!val);
+      if (val && idx < 5) digits[idx + 1].focus();
+    });
+
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace') {
+        if (!inp.value && idx > 0) { digits[idx - 1].value = ''; digits[idx - 1].classList.remove('filled'); digits[idx - 1].focus(); }
+        else { inp.value = ''; inp.classList.remove('filled'); }
+      }
+      if (e.key === 'Enter') document.getElementById('btnVerificar').click();
+      if (e.key === 'ArrowLeft' && idx > 0) digits[idx - 1].focus();
+      if (e.key === 'ArrowRight' && idx < 5) digits[idx + 1].focus();
+    });
+
+    inp.addEventListener('focus', () => inp.select());
+  });
+}
+
+function getOtpValue() {
+  return Array.from({length: 6}, (_, i) => document.getElementById(`d${i}`).value).join('');
+}
+
+function clearOtp() {
+  Array.from({length: 6}, (_, i) => {
+    const d = document.getElementById(`d${i}`);
+    d.value = ''; d.classList.remove('filled');
+  });
+  document.getElementById('d0').focus();
+}
+
+// ════════════════════════════════════════════════════════════
+//  TIMER DE REENVIO (60s)
+// ════════════════════════════════════════════════════════════
+function startTimer(seconds = 60) {
+  const timerTxt = document.getElementById('timer-txt');
+  const btnR = document.getElementById('btnReenviar');
+  btnR.disabled = true;
+  clearInterval(timerInterval);
+  let remaining = seconds;
+
+  function update() {
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      timerTxt.textContent = '';
+      btnR.disabled = false;
+      return;
+    }
+    timerTxt.textContent = `Reenviar em ${remaining}s · `;
+    remaining--;
+  }
+  update();
+  timerInterval = setInterval(update, 1000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  VERIFICAR CÓDIGO OTP
+// ════════════════════════════════════════════════════════════
+document.getElementById('btnVerificar').addEventListener('click', async () => {
+  hideAlertOtp();
+  const otp = getOtpValue();
+  if (otp.length < 6) return showAlertOtp('Digite todos os 6 dígitos do código.');
+  if (!userEmail) return showAlertOtp('E-mail não encontrado. Volte ao login e solicite um novo link.');
+
+  setLoadingOtp(true);
+  try {
+    const { data, error } = await db.auth.verifyOtp({
+      email: userEmail,
+      token: otp,
+      type: 'recovery'
+    });
+
+    if (error) {
+      setLoadingOtp(false);
+      clearOtp();
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('expired') || msg.includes('invalid') || msg.includes('otp')) {
+        return showAlertOtp('Código inválido ou expirado. Verifique e tente novamente.');
+      }
+      return showAlertOtp(error.message || 'Erro ao verificar código.');
+    }
+
+    // Código válido — mostra formulário de senha
+    setLoadingOtp(false);
+    clearInterval(timerInterval);
+    document.getElementById('step-otp').style.display = 'none';
+    document.getElementById('step-form').style.display = 'block';
+    setTimeout(() => document.getElementById('inp-senha').focus(), 200);
+
+  } catch (e) {
+    setLoadingOtp(false);
+    showAlertOtp('Erro de conexão. Tente novamente.');
+    console.error(e);
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+//  REENVIAR CÓDIGO
+// ════════════════════════════════════════════════════════════
+async function reenviarCodigo() {
+  if (!userEmail) return;
+  hideAlertOtp();
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(userEmail, {
+      redirectTo: window.location.href.split('?')[0] + '?email=' + encodeURIComponent(userEmail)
+    });
+    if (error) {
+      showAlertOtp(error.message || 'Erro ao reenviar. Tente novamente.');
+    } else {
+      showAlertOtp('Novo código enviado para ' + userEmail + '!', 'success');
+      clearOtp();
+      startTimer(60);
+    }
+  } catch(e) {
+    showAlertOtp('Erro ao reenviar código.');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  TOGGLE SENHA
+// ════════════════════════════════════════════════════════════
+document.getElementById('toggleSenha').addEventListener('click', () => {
+  const inp = document.getElementById('inp-senha');
+  const ic = document.querySelector('#toggleSenha .mat');
+  if (inp.type === 'password') { inp.type = 'text'; ic.textContent = 'visibility_off'; }
+  else { inp.type = 'password'; ic.textContent = 'visibility'; }
+});
+
+// ════════════════════════════════════════════════════════════
+//  VALIDAÇÃO DE SENHA EM TEMPO REAL
+// ════════════════════════════════════════════════════════════
+document.getElementById('inp-senha').addEventListener('input', e => {
+  const v = e.target.value;
+  const rules = { len: v.length >= 8, upp: /[A-Z]/.test(v), num: /\d/.test(v) };
+  document.querySelectorAll('.rule').forEach(it => {
+    const ok = rules[it.dataset.rule];
+    it.classList.toggle('ok', ok);
+    it.querySelector('.mat').textContent = ok ? 'check_circle' : 'radio_button_unchecked';
+  });
+});
+
+// Enter pra submeter formulário senha
+document.querySelectorAll('#step-form input').forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btnSalvar').click();
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+//  SALVAR NOVA SENHA — grava de verdade no Supabase
+// ════════════════════════════════════════════════════════════
+document.getElementById('btnSalvar').addEventListener('click', async () => {
+  hideAlertSenha();
+  if (!db) return showAlertSenha('Erro de conexão. Recarregue a página.');
+
+  const senha = document.getElementById('inp-senha').value;
+  const senha2 = document.getElementById('inp-senha2').value;
+
+  if (senha.length < 8)        return showAlertSenha('A senha precisa ter no mínimo 8 caracteres.');
+  if (!/[A-Z]/.test(senha))    return showAlertSenha('A senha precisa ter pelo menos 1 letra maiúscula.');
+  if (!/\d/.test(senha))       return showAlertSenha('A senha precisa ter pelo menos 1 número.');
+  if (senha !== senha2)         return showAlertSenha('As senhas não conferem.');
+
+  setLoadingSenha(true);
+  try {
+    // updateUser() grava a nova senha no banco via sessão autenticada pelo verifyOtp
+    const { error } = await db.auth.updateUser({ password: senha });
+
+    if (error) {
+      setLoadingSenha(false);
+      const m = (error.message || '').toLowerCase();
+      if (m.includes('expired') || m.includes('invalid') || m.includes('session')) {
+        return showAlertSenha('Sessão expirada. Volte ao login e solicite um novo código.');
+      }
+      return showAlertSenha(error.message || 'Erro ao atualizar senha.');
+    }
+
+    // Senha gravada no banco — faz logout para forçar novo login
+    await db.auth.signOut();
+
+    document.getElementById('step-form').style.display = 'none';
+    document.getElementById('step-success').style.display = 'block';
+
+  } catch (e) {
+    setLoadingSenha(false);
+    showAlertSenha('Erro ao salvar senha. Tente novamente.');
+    console.error(e);
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  applyStoredTheme();
+  setupOtpInputs();
+
+  try {
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch (e) {
+    console.error('Erro Supabase:', e);
+    document.getElementById('step-otp').style.display = 'none';
+    document.getElementById('step-erro').style.display = 'block';
+    document.getElementById('erroMsg').textContent = 'Erro ao conectar. Tente novamente mais tarde.';
+    return;
+  }
+
+  // Pega o e-mail da URL (?email=usuario@exemplo.com)
+  const params = new URLSearchParams(window.location.search);
+  userEmail = params.get('email');
+
+  if (!userEmail) {
+    // Sem e-mail na URL — não tem como verificar OTP
+    document.getElementById('step-otp').style.display = 'none';
+    document.getElementById('step-erro').style.display = 'block';
+    document.getElementById('erroMsg').textContent = 'Acesse esta página pelo link enviado no seu e-mail. Se você esqueceu a senha, vá ao login e clique em "Esqueci a senha".';
+    return;
+  }
+
+  // Mostra o e-mail mascarado no hint
+  const masked = maskEmail(userEmail);
+  document.getElementById('email-display').textContent = masked;
+  document.getElementById('email-hint').style.display = 'block';
+
+  // Inicia timer de reenvio
+  startTimer(60);
+
+  // Foca no primeiro dígito
+  setTimeout(() => document.getElementById('d0').focus(), 300);
+});
+
+// ════════════════════════════════════════════════════════════
+//  UTIL — máscara de e-mail (ex: us***@gmail.com)
+// ════════════════════════════════════════════════════════════
+function maskEmail(email) {
+  const [user, domain] = email.split('@');
+  if (!domain) return email;
+  const visible = user.length > 2 ? user.slice(0, 2) : user[0];
+  return visible + '***@' + domain;
+}
+</script>
+
+</body>
+</html>

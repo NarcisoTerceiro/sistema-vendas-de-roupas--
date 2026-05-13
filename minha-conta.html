@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Meu Perfil · Benedictus Camisaria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ── THEME ── */
+[data-theme="light"]{
+  --bg:#F5F1EA;--bg2:#EDE8DF;--ink:#222;--muted:#777;--muted2:#aaa;
+  --gold:#B8965A;--gold2:#9A7A45;--card:#fff;--border:rgba(180,160,120,0.25);
+  --sh:rgba(34,34,34,0.08);--sh2:rgba(34,34,34,0.18);--sh-gold:rgba(184,150,90,0.25);
+  --danger:#c0392b;--danger-bg:rgba(192,57,43,0.1);--success:#27ae60;
+}
+[data-theme="dark"]{
+  --bg:#0f1526;--bg2:#161e33;--ink:#e8d5a3;--muted:#6a7a9a;--muted2:#3a4a6a;
+  --gold:#c8a96e;--gold2:#a08050;--card:#1a2340;--border:rgba(200,169,110,0.18);
+  --sh:rgba(0,0,0,0.4);--sh2:rgba(0,0,0,0.6);--sh-gold:rgba(200,169,110,0.2);
+  --danger:#e07a7a;--danger-bg:rgba(200,64,64,0.12);--success:#6dbf7e;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);min-height:100vh;}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;user-select:none;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px;}
+
+/* ── NAV ── */
+.top-nav{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);box-shadow:0 2px 12px var(--sh);}
+.back-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--border);color:var(--ink);padding:8px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .25s;text-decoration:none;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(200,169,110,.06);}
+.brand{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);}
+.brand em{color:var(--gold);font-style:normal;}
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.icon-btn{background:var(--bg2);border:1px solid var(--border);color:var(--muted);width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;}
+.icon-btn:hover{color:var(--gold);border-color:var(--gold);}
+
+/* ── WRAP ── */
+.wrap{max-width:960px;margin:0 auto;padding:0 20px 80px;}
+
+/* ── PROFILE BANNER (substituiu a capa) ── */
+.profile-banner{
+  background: linear-gradient(135deg, var(--bg2) 0%, rgba(200,169,110,0.08) 50%, var(--bg2) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 36px 28px 0;
+  position: relative;
+  overflow: hidden;
+}
+.profile-banner::before{
+  content:'';position:absolute;inset:0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(200,169,110,0.12) 0%, transparent 65%);
+  pointer-events:none;
+}
+.profile-banner::after{
+  content:'Benedictus';
+  font-family:'Cormorant Garamond',serif;
+  font-size:120px;font-weight:600;letter-spacing:0.15em;
+  color:rgba(200,169,110,0.05);
+  position:absolute;right:-10px;top:50%;transform:translateY(-50%);
+  pointer-events:none;white-space:nowrap;line-height:1;
+  user-select:none;
+}
+
+/* ── PROFILE HEADER ── */
+.profile-header{display:flex;align-items:center;gap:20px;padding:0;position:relative;z-index:10;margin-bottom:0;padding-bottom:28px;}
+.avatar-wrap{position:relative;flex-shrink:0;}
+.avatar{width:96px;height:96px;border-radius:50%;border:3px solid var(--gold);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0f1526;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;font-style:italic;box-shadow:0 0 0 4px var(--bg),0 8px 24px var(--sh2);overflow:hidden;}
+.avatar img{width:100%;height:100%;object-fit:cover;}
+.profile-info{flex:1;padding-bottom:6px;}
+.profile-name{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);font-weight:600;line-height:1.1;}
+.profile-badges{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;}
+.badge-platinum{background:linear-gradient(90deg,rgba(200,169,110,.2),rgba(200,169,110,.08));border:1px solid rgba(200,169,110,.4);color:var(--gold);font-size:9px;letter-spacing:.22em;text-transform:uppercase;padding:4px 12px;border-radius:20px;font-weight:600;}
+.badge-id{background:var(--bg2);border:1px solid var(--border);color:var(--muted);font-size:9px;letter-spacing:.15em;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start;}
+@media(max-width:820px){.grid{grid-template-columns:1fr;}}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:20px;transition:border-color .25s;}
+.card:hover{border-color:rgba(200,169,110,0.3);}
+.card-title{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);display:flex;align-items:center;gap:10px;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.card-title .mat{color:var(--gold);font-size:22px;}
+
+/* ── FORM FIELDS ── */
+.fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:600px){.fields-grid{grid-template-columns:1fr;}}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field.full{grid-column:1/-1;}
+.field label{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;}
+.field-display{font-size:15px;color:var(--ink);padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .2s;}
+.field-display:hover{border-color:var(--gold);}
+.field-display .val{flex:1;}
+.field-display .mat{font-size:16px;color:var(--muted);transition:color .2s;}
+.field-display:hover .mat{color:var(--gold);}
+.field input,.field select{font-size:15px;color:var(--ink);background:var(--bg2);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;transition:box-shadow .2s;}
+.field input:focus,.field select:focus{box-shadow:0 0 0 2px rgba(200,169,110,0.25);}
+.field input[type=tel]{letter-spacing:.04em;}
+
+.edit-actions{display:flex;gap:10px;margin-top:20px;}
+.btn-save{flex:1;background:var(--gold);color:#0f1526;border:none;padding:12px 20px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;}
+.btn-save:hover{background:#e8d5a3;box-shadow:0 6px 20px var(--sh-gold);}
+.btn-save:disabled{opacity:.5;cursor:not-allowed;}
+.btn-cancel{background:transparent;color:var(--muted);border:1px solid var(--border);padding:12px 20px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;transition:all .25s;}
+.btn-cancel:hover{border-color:var(--danger);color:var(--danger);}
+
+/* ── ENDEREÇO ── */
+.endereco-display{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;}
+.endereco-display .label-tag{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:8px;display:block;}
+.endereco-display .rua{font-size:15px;color:var(--ink);margin-bottom:4px;}
+.endereco-display .complemento{font-size:13px;color:var(--muted);line-height:1.6;}
+.btn-alterar{position:absolute;top:14px;right:14px;background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .22s;}
+.btn-alterar:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── PEDIDOS PREVIEW ── */
+.pedido-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;transition:all .22s;cursor:pointer;text-decoration:none;}
+.pedido-row:hover{border-color:var(--gold);box-shadow:0 4px 14px var(--sh-gold);}
+.pedido-num{font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--ink);}
+.pedido-date{font-size:11px;color:var(--muted);margin-top:2px;}
+.pedido-right{text-align:right;}
+.pedido-valor{font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);font-weight:600;}
+.status-pill{font-size:9px;letter-spacing:.18em;text-transform:uppercase;padding:4px 10px;border-radius:10px;font-weight:500;display:inline-block;margin-top:4px;}
+.s-entregue{background:rgba(58,142,78,.14);color:#6dbf7e;border:1px solid rgba(58,142,78,.3);}
+.s-processando,.s-pago{background:rgba(200,169,110,.14);color:var(--gold);border:1px solid rgba(200,169,110,.3);}
+.s-pendente{background:rgba(200,160,70,.14);color:#c8a046;border:1px solid rgba(200,160,70,.3);}
+.s-enviado{background:rgba(80,140,200,.14);color:#7ab0e0;border:1px solid rgba(80,140,200,.3);}
+.s-cancelado{background:rgba(200,64,64,.14);color:#e07a7a;border:1px solid rgba(200,64,64,.3);}
+
+.ver-todos-btn{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:12px;border-radius:8px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;margin-top:6px;text-decoration:none;}
+.ver-todos-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── SUPORTE ── */
+.suporte-card .mat-suporte{width:48px;height:48px;border-radius:50%;background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.2);display:flex;align-items:center;justify-content:center;color:var(--gold);margin-bottom:14px;}
+.suporte-card p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.btn-wpp{width:100%;background:#25d366;color:#fff;border:none;padding:12px;border-radius:8px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;}
+.btn-wpp:hover{background:#1ebe5d;box-shadow:0 6px 20px rgba(37,211,102,0.3);}
+
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.modal-bg.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:540px;max-height:85vh;overflow-y:auto;}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;}
+.modal-close:hover .mat{color:var(--danger);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card);color:var(--ink);padding:14px 20px;border-radius:10px;border:1px solid var(--border);box-shadow:0 10px 30px var(--sh2);font-size:13px;z-index:3000;display:flex;align-items:center;gap:10px;transition:transform .35s cubic-bezier(.4,0,.2,1);max-width:90vw;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{border-color:rgba(200,64,64,.4);}
+.toast.error .mat{color:#e07a7a;}
+.toast.success .mat{color:#6dbf7e;}
+
+/* ── LOADING STATE ── */
+.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--border) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;height:20px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── AUTH REQUIRED ── */
+.auth-box{text-align:center;padding:80px 20px;background:var(--card);border:1px solid var(--border);border-radius:16px;margin:40px auto;max-width:420px;}
+.auth-box .mat{font-size:64px;color:var(--gold);display:block;margin-bottom:16px;}
+.auth-box h2{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);margin-bottom:8px;}
+.auth-box p{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.btn-login{background:var(--gold);color:#0f1526;border:none;padding:13px 28px;border-radius:8px;font-size:11px;letter-spacing:.28em;text-transform:uppercase;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .25s;}
+.btn-login:hover{background:#e8d5a3;box-shadow:0 6px 20px var(--sh-gold);}
+
+/* ── SPINNER ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite;}
+
+/* ── MENU 3 PONTINHOS ── */
+.dots-menu-wrap{position:relative;margin-left:auto;}
+.dots-btn{background:var(--bg2);border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .22s;flex-shrink:0;}
+.dots-btn:hover{color:var(--gold);border-color:var(--gold);}
+.dots-dropdown{position:absolute;top:calc(100% + 6px);right:0;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 36px var(--sh2);padding:6px;z-index:200;opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .2s,transform .2s;}
+.dots-dropdown.open{opacity:1;pointer-events:all;transform:translateY(0);}
+.dots-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;font-size:13px;color:var(--ink);cursor:pointer;transition:background .15s;border:none;background:none;width:100%;font-family:'DM Sans',sans-serif;text-align:left;}
+.dots-item:hover{background:var(--bg2);}
+.dots-item.danger{color:#e07a7a;}
+.dots-item.danger:hover{background:rgba(224,122,122,0.08);}
+.dots-item .mat{font-size:18px;color:var(--muted);}
+.dots-item.danger .mat{color:#e07a7a;}
+
+/* ── MODAL EXCLUIR CONTA ── */
+.del-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+.del-modal-bg.open{display:flex;}
+.del-modal{background:var(--card);border:1px solid rgba(200,64,64,.35);border-radius:16px;padding:32px 28px;width:100%;max-width:420px;text-align:center;}
+.del-modal-icon{width:64px;height:64px;border-radius:50%;background:rgba(200,64,64,.1);border:1px solid rgba(200,64,64,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.del-modal-icon .mat{font-size:32px;color:#e07a7a;}
+.del-modal h2{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:8px;}
+.del-modal p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:22px;}
+.del-modal-actions{display:flex;gap:10px;flex-direction:column;}
+.btn-delete-confirm{background:#c84040;color:#fff;border:none;padding:13px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;}
+.btn-delete-confirm:hover{background:#a83030;box-shadow:0 6px 20px rgba(200,64,64,.3);}
+.btn-delete-confirm:disabled{opacity:.5;cursor:not-allowed;}
+.btn-delete-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;transition:all .25s;}
+.btn-delete-cancel:hover{border-color:var(--muted);color:var(--ink);}
+
+/* ── PHOTO HINT removido ── */
+
+/* ── DIVIDER ── */
+.section-sep{font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.section-sep::before,.section-sep::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Mobile */
+@media(max-width:600px){
+  .top-nav{padding:12px 14px;}
+  .brand{font-size:18px;}
+  .back-btn span:last-child{display:none;}
+  .profile-banner{padding:24px 16px 0;}
+  .profile-banner::after{font-size:60px;}
+  .profile-header{padding-bottom:20px;}
+  .avatar{width:76px;height:76px;font-size:24px;}
+  .profile-name{font-size:22px;}
+  .wrap{padding:0 14px 60px;}
+  .card{padding:20px 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <a href="index.html" class="back-btn">
+    <span class="mat">arrow_back</span>
+    <span>Voltar à loja</span>
+  </a>
+  <div class="brand">Benedictus<em>.</em></div>
+  <div class="nav-actions" style="display:flex;align-items:center;gap:8px;">
+    <button class="icon-btn" onclick="toggleTheme()" title="Alternar tema">
+      <span class="mat" id="theme-icon">light_mode</span>
+    </button>
+    <div class="dots-menu-wrap" id="dots-menu-wrap">
+      <button class="dots-btn" onclick="toggleDotsMenu(event)" title="Mais opções">
+        <span class="mat" style="font-size:20px;">more_vert</span>
+      </button>
+      <div class="dots-dropdown" id="dots-dropdown" onclick="event.stopPropagation()">
+        <button class="dots-item danger" onclick="abrirModalExcluir()">
+          <span class="mat">person_remove</span>Excluir minha conta
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- AUTH REQUIRED STATE -->
+<div id="auth-box" style="display:none;" class="wrap" style="padding-top:40px;">
+  <div class="auth-box">
+    <span class="mat">lock_person</span>
+    <h2>Acesso restrito</h2>
+    <p>Faça login para ver e editar seu perfil, endereço e histórico de pedidos.</p>
+    <a href="login.html?action=login" class="btn-login">
+      <span class="mat">login</span>Fazer Login
+    </a>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main" style="display:none;">
+
+  <!-- PROFILE BANNER -->
+  <div class="profile-banner">
+    <div class="wrap" style="padding-bottom:0;">
+      <!-- PROFILE HEADER -->
+      <div class="profile-header">
+      <div class="avatar-wrap">
+        <div class="avatar" id="avatar-el">
+          <span id="avatar-initials">AB</span>
+        </div>
+
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="profile-name">Carregando...</div>
+        <div class="profile-badges">
+          <span class="badge-platinum"><span class="mat" style="font-size:11px;font-variation-settings:'FILL' 1,'wght' 400">star</span> &nbsp;Cliente Platinum</span>
+          <span class="badge-id" id="badge-id">ID: —</span>
+        </div>
+      </div>
+    </div>
+    </div><!-- /.wrap banner -->
+  </div><!-- /.profile-banner -->
+
+  <div class="wrap" style="padding-top:32px;">
+    <div class="grid">
+
+      <!-- ── COLUNA ESQUERDA ── -->
+      <div>
+
+        <!-- INFORMAÇÕES PESSOAIS -->
+        <div class="card" id="card-pessoal">
+          <div class="card-title">
+            <span class="mat">badge</span>
+            Informações Pessoais
+            <button class="btn-alterar" style="margin-left:auto;" onclick="toggleEditPessoal()" id="btn-edit-pessoal">
+              <span class="mat" style="font-size:15px;">edit</span> Editar
+            </button>
+          </div>
+
+          <!-- VIEW MODE -->
+          <div id="view-pessoal">
+            <div class="fields-grid">
+              <div class="field">
+                <label>Nome Completo</label>
+                <div class="field-display" onclick="toggleEditPessoal()">
+                  <span class="val" id="v-nome">—</span>
+                  <span class="mat">edit</span>
+                </div>
+              </div>
+              <div class="field">
+                <label>CPF</label>
+                <div class="field-display" onclick="toggleEditPessoal()">
+                  <span class="val" id="v-cpf">—</span>
+                  <span class="mat">edit</span>
+                </div>
+              </div>
+              <div class="field">
+                <label>E-mail</label>
+                <div class="field-display" onclick="toggleEditPessoal()">
+                  <span class="val" id="v-email">—</span>
+                  <span class="mat">edit</span>
+                </div>
+              </div>
+              <div class="field">
+                <label>Celular</label>
+                <div class="field-display" onclick="toggleEditPessoal()">
+                  <span class="val" id="v-celular">—</span>
+                  <span class="mat">edit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EDIT MODE -->
+          <div id="edit-pessoal" style="display:none;">
+            <div class="fields-grid">
+              <div class="field full">
+                <label>Nome Completo</label>
+                <input type="text" id="i-nome" placeholder="Seu nome completo"/>
+              </div>
+              <div class="field">
+                <label>CPF</label>
+                <input type="text" id="i-cpf" placeholder="000.000.000-00" maxlength="14"/>
+              </div>
+              <div class="field">
+                <label>Celular</label>
+                <input type="tel" id="i-celular" placeholder="+55 (11) 99999-0000"/>
+              </div>
+              <div class="field full">
+                <label>E-mail</label>
+                <input type="email" id="i-email" placeholder="seu@email.com" readonly style="opacity:.6;cursor:not-allowed;" title="E-mail não pode ser alterado"/>
+              </div>
+            </div>
+            <div class="edit-actions">
+              <button class="btn-save" id="btn-salvar-pessoal" onclick="salvarPessoal()">
+                <span class="mat" style="font-size:17px;">save</span> Salvar alterações
+              </button>
+              <button class="btn-cancel" onclick="toggleEditPessoal()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ENDEREÇO DE ENTREGA -->
+        <div class="card">
+          <div class="card-title">
+            <span class="mat">location_on</span>
+            Endereço de Entrega
+            <button class="btn-alterar" style="margin-left:auto;" onclick="abrirModalEndereco()">
+              <span class="mat" style="font-size:15px;">edit</span> Editar
+            </button>
+          </div>
+
+          <div class="endereco-display" id="endereco-display" onclick="abrirModalEndereco()" style="cursor:pointer;" title="Clique para editar">
+            <span class="label-tag">Principal</span>
+            <div class="rua" id="v-rua">—</div>
+            <div class="complemento" id="v-complemento">—</div>
+          </div>
+        </div>
+
+        <!-- HISTÓRICO DE PEDIDOS (preview) -->
+        <div class="card">
+          <div class="card-title">
+            <span class="mat">history</span>
+            Últimos Pedidos
+          </div>
+
+          <div id="pedidos-preview">
+            <div class="skeleton" style="height:64px;margin-bottom:10px;"></div>
+            <div class="skeleton" style="height:64px;margin-bottom:10px;"></div>
+          </div>
+
+          <a href="meus-pedidos.html" class="ver-todos-btn">
+            Ver todos os pedidos <span class="mat">arrow_forward</span>
+          </a>
+        </div>
+
+      </div>
+
+      <!-- ── COLUNA DIREITA ── -->
+      <div>
+
+        <!-- SUPORTE CONCIERGE -->
+        <div class="card suporte-card">
+          <div class="card-title" style="border:none;margin-bottom:14px;padding-bottom:0;">
+            <div class="mat-suporte" style="width:44px;height:44px;border-radius:50%;background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.2);display:flex;align-items:center;justify-content:center;color:var(--gold);">
+              <span class="mat">support_agent</span>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;">Suporte Concierge</div>
+              <div style="font-size:11px;color:var(--gold);margin-top:2px;">● Disponível agora</div>
+            </div>
+          </div>
+          <p>Dúvidas sobre tamanhos, tecidos ou rastreio? Fale com seu consultor exclusivo.</p>
+          <button class="btn-wpp" onclick="abrirWpp()">
+            <span class="mat" style="font-variation-settings:'FILL' 1,'wght' 400">chat</span>
+            Iniciar Conversa
+          </button>
+        </div>
+
+        <!-- SEGURANÇA -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px;">
+            <span class="mat">shield</span>
+            Segurança
+          </div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
+            Sua conta está protegida. Para alterar a senha, use o link de redefinição enviado por e-mail.
+          </div>
+          <button class="btn-alterar" style="width:100%;text-align:center;justify-content:center;display:flex;align-items:center;gap:7px;padding:11px;" onclick="enviarRedefinicao()">
+            <span class="mat" style="font-size:16px;">lock_reset</span> Redefinir senha
+          </button>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ENDEREÇO ── -->
+<div class="modal-bg" id="modal-endereco">
+  <div class="modal">
+    <div class="modal-title">
+      Endereço de Entrega
+      <button class="modal-close" onclick="fecharModalEndereco()"><span class="mat">close</span></button>
+    </div>
+    <div class="fields-grid">
+      <div class="field full">
+        <label>CEP</label>
+        <input type="text" id="m-cep" placeholder="00000-000" maxlength="9" oninput="buscarCEP(this.value)"/>
+      </div>
+      <div class="field full">
+        <label>Rua / Avenida</label>
+        <input type="text" id="m-rua" placeholder="Rua das Flores"/>
+      </div>
+      <div class="field">
+        <label>Número</label>
+        <input type="text" id="m-numero" placeholder="100"/>
+      </div>
+      <div class="field">
+        <label>Complemento</label>
+        <input type="text" id="m-complemento" placeholder="Ap 12, Bloco B"/>
+      </div>
+      <div class="field">
+        <label>Bairro</label>
+        <input type="text" id="m-bairro" placeholder="Centro"/>
+      </div>
+      <div class="field">
+        <label>Cidade</label>
+        <input type="text" id="m-cidade" placeholder="São Paulo"/>
+      </div>
+      <div class="field">
+        <label>Estado (UF)</label>
+        <input type="text" id="m-uf" placeholder="SP" maxlength="2"/>
+      </div>
+    </div>
+    <div class="edit-actions">
+      <button class="btn-save" id="btn-salvar-end" onclick="salvarEndereco()">
+        <span class="mat" style="font-size:17px;">save</span> Salvar endereço
+      </button>
+      <button class="btn-cancel" onclick="fecharModalEndereco()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Excluir Conta -->
+<div class="del-modal-bg" id="modal-excluir">
+  <div class="del-modal">
+    <div class="del-modal-icon">
+      <span class="mat">warning</span>
+    </div>
+    <h2>Excluir conta?</h2>
+    <p>Essa ação é <strong>irreversível</strong>. Todos os seus dados — perfil, endereço e histórico de pedidos — serão permanentemente deletados.</p>
+    <div class="del-modal-actions">
+      <button class="btn-delete-confirm" id="btn-confirmar-excluir" onclick="confirmarExclusao()">
+        <span class="mat">delete_forever</span> Sim, excluir minha conta
+      </button>
+      <button class="btn-delete-cancel" onclick="fecharModalExcluir()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast">
+  <span class="mat" id="toast-icon">check_circle</span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  CONFIG SUPABASE
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
+const WHATSAPP_NUM = '5583998015544';
+
+let db = null;
+let usuario = null;
+let perfil = {};
+
+// ════════════════════════════════════════════════════════════
+//  TEMA
+// ════════════════════════════════════════════════════════════
+function applyTheme() {
+  const saved = localStorage.getItem('bened_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-icon').textContent = saved === 'dark' ? 'light_mode' : 'dark_mode';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('bened_theme', next);
+  document.getElementById('theme-icon').textContent = next === 'dark' ? 'light_mode' : 'dark_mode';
+}
+applyTheme();
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: { session } } = await db.auth.getSession();
+
+  if (!session) {
+    document.getElementById('auth-box').style.display = 'block';
+    return;
+  }
+
+  usuario = session.user;
+  document.getElementById('main').style.display = 'block';
+
+  carregarPerfil();
+  carregarPedidosPreview();
+});
+
+// ════════════════════════════════════════════════════════════
+//  CARREGAR PERFIL — busca em profiles (checkout) e clientes
+// ════════════════════════════════════════════════════════════
+async function carregarPerfil() {
+  // Busca nas duas tabelas em paralelo
+  const [resProfiles, resClientes] = await Promise.all([
+    db.from('profiles').select('*').eq('id', usuario.id).maybeSingle(),
+    db.from('clientes').select('*').eq('user_id', usuario.id).maybeSingle()
+  ]);
+
+  const prof   = resProfiles.data  || {};
+  const client = resClientes.data  || {};
+
+  // Mescla: clientes tem prioridade (edições feitas aqui),
+  // profiles como fallback (dados do checkout), auth como último recurso.
+  perfil = {
+    nome:        client.nome       || prof.nome       || usuario.user_metadata?.nome || usuario.user_metadata?.full_name || usuario.email?.split('@')[0] || '',
+    cpf:         client.cpf        || prof.cpf         || '',
+    celular:     client.celular    || prof.telefone    || '',
+    email:       usuario.email     || prof.email       || '',
+    cep:         client.cep        || prof.cep         || '',
+    endereco:    client.endereco   || prof.endereco    || '',
+    numero:      client.numero     || prof.numero      || '',
+    complemento: (client.complemento != null ? client.complemento : prof.complemento) || '',
+    bairro:      client.bairro     || prof.bairro      || '',
+    cidade:      client.cidade     || prof.cidade      || '',
+    uf:          client.uf         || prof.uf          || '',
+  };
+
+  const { nome, cpf, celular, email } = perfil;
+
+  atualizarHeaderPerfil(nome, email);
+  atualizarViewPessoal(nome, cpf, email, celular);
+  atualizarViewEndereco(perfil);
+}
+
+function atualizarHeaderPerfil(nome, email) {
+  document.getElementById('profile-name').textContent = nome;
+  const iniciais = nome.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  document.getElementById('avatar-initials').textContent = iniciais;
+  // ID anônimo baseado no user id
+  const shortId = usuario.id.slice(0, 8).toUpperCase();
+  document.getElementById('badge-id').textContent = `ID: #${shortId}`;
+}
+
+function atualizarViewPessoal(nome, cpf, email, celular) {
+  document.getElementById('v-nome').textContent = nome || '—';
+  document.getElementById('v-cpf').textContent = cpf ? formatarCPF(cpf) : '—';
+  document.getElementById('v-email').textContent = email || '—';
+  document.getElementById('v-celular').textContent = celular || '—';
+
+  // Preenche inputs
+  document.getElementById('i-nome').value = nome || '';
+  document.getElementById('i-cpf').value = cpf ? formatarCPF(cpf) : '';
+  document.getElementById('i-email').value = email || '';
+  document.getElementById('i-celular').value = celular || '';
+}
+
+function atualizarViewEndereco(p) {
+  if (!p || !p.endereco) {
+    document.getElementById('v-rua').textContent = 'Nenhum endereço cadastrado';
+    document.getElementById('v-complemento').textContent = 'Clique em "Alterar" para adicionar';
+    return;
+  }
+  document.getElementById('v-rua').textContent = `${p.endereco}, Nº ${p.numero || '—'}`;
+  const comp = [p.complemento, p.bairro, `${p.cidade || ''}/${p.uf || ''}`, p.cep ? `CEP: ${formatarCEP(p.cep)}` : ''].filter(Boolean).join(' · ');
+  document.getElementById('v-complemento').textContent = comp || '—';
+}
+
+// ════════════════════════════════════════════════════════════
+//  EDITAR PESSOAL
+// ════════════════════════════════════════════════════════════
+let editandoPessoal = false;
+function toggleEditPessoal() {
+  editandoPessoal = !editandoPessoal;
+  document.getElementById('view-pessoal').style.display = editandoPessoal ? 'none' : 'block';
+  document.getElementById('edit-pessoal').style.display = editandoPessoal ? 'block' : 'none';
+  document.getElementById('btn-edit-pessoal').innerHTML = editandoPessoal
+    ? '<span class="mat" style="font-size:15px;">close</span> Cancelar'
+    : '<span class="mat" style="font-size:15px;">edit</span> Editar';
+}
+
+document.getElementById('i-cpf').addEventListener('input', function() {
+  this.value = maskCPF(this.value);
+});
+document.getElementById('i-celular').addEventListener('input', function() {
+  this.value = maskCelular(this.value);
+});
+
+async function salvarPessoal() {
+  const btn = document.getElementById('btn-salvar-pessoal');
+  const nome = document.getElementById('i-nome').value.trim();
+  const cpf = document.getElementById('i-cpf').value.replace(/\D/g, '');
+  const celular = document.getElementById('i-celular').value.trim();
+
+  if (!nome) { showToast('Informe seu nome completo', 'error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mat spin">autorenew</span> Salvando...';
+
+  // Grava em clientes (chave: user_id)
+  const payloadClientes = { user_id: usuario.id, nome, cpf, celular, email: usuario.email };
+  // Grava em profiles (chave: id) — mesmos campos que o checkout usa
+  const payloadProfiles = { id: usuario.id, nome, cpf, telefone: celular, email: usuario.email };
+
+  const [r1, r2] = await Promise.all([
+    db.from('clientes').upsert(payloadClientes, { onConflict: 'user_id' }),
+    db.from('profiles').upsert(payloadProfiles, { onConflict: 'id' })
+  ]);
+
+  btn.disabled = false;
+  btn.innerHTML = '<span class="mat" style="font-size:17px;">save</span> Salvar alterações';
+
+  if (r1.error && r2.error) {
+    console.error(r1.error, r2.error);
+    showToast('Erro ao salvar. Tente novamente.', 'error');
+    return;
+  }
+
+  perfil = { ...perfil, nome, cpf, celular, email: usuario.email };
+  atualizarViewPessoal(nome, cpf, usuario.email, celular);
+  atualizarHeaderPerfil(nome, usuario.email);
+  toggleEditPessoal();
+  showToast('Perfil atualizado com sucesso!', 'success');
+}
+
+// ════════════════════════════════════════════════════════════
+//  MODAL ENDEREÇO
+// ════════════════════════════════════════════════════════════
+function abrirModalEndereco() {
+  // Preenche com dados atuais
+  document.getElementById('m-cep').value = perfil.cep ? formatarCEP(perfil.cep) : '';
+  document.getElementById('m-rua').value = perfil.endereco || '';
+  document.getElementById('m-numero').value = perfil.numero || '';
+  document.getElementById('m-complemento').value = perfil.complemento || '';
+  document.getElementById('m-bairro').value = perfil.bairro || '';
+  document.getElementById('m-cidade').value = perfil.cidade || '';
+  document.getElementById('m-uf').value = perfil.uf || '';
+  document.getElementById('modal-endereco').classList.add('open');
+}
+function fecharModalEndereco() {
+  document.getElementById('modal-endereco').classList.remove('open');
+}
+document.getElementById('modal-endereco').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalEndereco();
+});
+
+// Auto-fill via ViaCEP
+async function buscarCEP(val) {
+  const cep = val.replace(/\D/g, '');
+  if (cep.length === 8) {
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const d = await r.json();
+      if (!d.erro) {
+        document.getElementById('m-rua').value = d.logradouro || '';
+        document.getElementById('m-bairro').value = d.bairro || '';
+        document.getElementById('m-cidade').value = d.localidade || '';
+        document.getElementById('m-uf').value = d.uf || '';
+        document.getElementById('m-numero').focus();
+      }
+    } catch(e) {}
+  }
+  // Mask CEP
+  document.getElementById('m-cep').value = maskCEP(val);
+}
+
+async function salvarEndereco() {
+  const btn = document.getElementById('btn-salvar-end');
+  const cep = document.getElementById('m-cep').value.replace(/\D/g, '');
+  const endereco = document.getElementById('m-rua').value.trim();
+  const numero = document.getElementById('m-numero').value.trim();
+  const complemento = document.getElementById('m-complemento').value.trim();
+  const bairro = document.getElementById('m-bairro').value.trim();
+  const cidade = document.getElementById('m-cidade').value.trim();
+  const uf = document.getElementById('m-uf').value.trim().toUpperCase();
+
+  if (!endereco || !numero || !cidade) {
+    showToast('Preencha rua, número e cidade', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mat spin">autorenew</span> Salvando...';
+
+  const endFields = { cep, endereco, numero, complemento: complemento || null, bairro, cidade, uf };
+
+  // Grava em clientes E em profiles para manter sincronia com o checkout
+  const [r1, r2] = await Promise.all([
+    db.from('clientes').upsert({ user_id: usuario.id, ...endFields }, { onConflict: 'user_id' }),
+    db.from('profiles').upsert({ id: usuario.id, ...endFields }, { onConflict: 'id' })
+  ]);
+
+  btn.disabled = false;
+  btn.innerHTML = '<span class="mat" style="font-size:17px;">save</span> Salvar endereço';
+
+  if (r1.error && r2.error) {
+    console.error(r1.error, r2.error);
+    showToast('Erro ao salvar endereço', 'error');
+    return;
+  }
+
+  perfil = { ...perfil, ...endFields };
+  atualizarViewEndereco(perfil);
+  fecharModalEndereco();
+  showToast('Endereço atualizado!', 'success');
+}
+
+// ════════════════════════════════════════════════════════════
+//  FOTO DE CAPA — removida
+// ════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════
+//  PEDIDOS PREVIEW (últimos 3)
+// ════════════════════════════════════════════════════════════
+async function carregarPedidosPreview() {
+  const { data, error } = await db
+    .from('pedidos')
+    .select('id, created_at, total, status')
+    .eq('user_id', usuario.id)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  const container = document.getElementById('pedidos-preview');
+
+  if (error || !data || !data.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px;">
+        <span class="mat" style="font-size:36px;display:block;margin-bottom:8px;">receipt_long</span>
+        Nenhum pedido encontrado
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = data.map(p => {
+    const statusKey = (p.status || 'pendente').toLowerCase();
+    const statusLabel = {
+      pendente: 'Pendente', pago: 'Pago', processando: 'Processando',
+      enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado'
+    }[statusKey] || p.status;
+
+    const num = '#BD-' + String(p.id).slice(-4).toUpperCase();
+    const data_fmt = formatarData(p.created_at);
+    const total_fmt = 'R$ ' + formatPrice(p.total);
+
+    return `
+      <a class="pedido-row" href="meus-pedidos.html">
+        <div>
+          <div class="pedido-num">${num}</div>
+          <div class="pedido-date">${data_fmt}</div>
+        </div>
+        <div class="pedido-right">
+          <div class="pedido-valor">${total_fmt}</div>
+          <span class="status-pill s-${statusKey}">${statusLabel}</span>
+        </div>
+      </a>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+//  MENU 3 PONTINHOS
+// ════════════════════════════════════════════════════════════
+function toggleDotsMenu(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('dots-dropdown').classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  const dd = document.getElementById('dots-dropdown');
+  if (dd) dd.classList.remove('open');
+});
+
+// ════════════════════════════════════════════════════════════
+//  MODAL EXCLUIR CONTA
+// ════════════════════════════════════════════════════════════
+function abrirModalExcluir() {
+  document.getElementById('dots-dropdown').classList.remove('open');
+  document.getElementById('modal-excluir').classList.add('open');
+}
+function fecharModalExcluir() {
+  document.getElementById('modal-excluir').classList.remove('open');
+}
+document.getElementById('modal-excluir').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalExcluir();
+});
+
+async function confirmarExclusao() {
+  const btn = document.getElementById('btn-confirmar-excluir');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mat spin">autorenew</span> Excluindo...';
+
+  try {
+    const uid = usuario.id;
+
+    // Deleta registros nas tabelas em paralelo
+    await Promise.all([
+      db.from('clientes').delete().eq('user_id', uid),
+      db.from('profiles').delete().eq('id', uid),
+      db.from('pedidos').delete().eq('user_id', uid),
+    ]);
+
+    // Desloga e deleta a conta do auth via função RPC do Supabase
+    // (requer função delete_user no banco — se não existir, só desloga)
+    try {
+      await db.rpc('delete_user');
+    } catch(e) {
+      // Se a RPC não existir, apenas faz signOut
+      console.warn('RPC delete_user não disponível, fazendo só signOut');
+    }
+
+    await db.auth.signOut();
+    window.location.href = 'index.html';
+  } catch(e) {
+    console.error('Erro ao excluir conta:', e);
+    btn.disabled = false;
+    btn.innerHTML = '<span class="mat">delete_forever</span> Sim, excluir minha conta';
+    showToast('Erro ao excluir conta. Tente novamente.', 'error');
+    fecharModalExcluir();
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOGOUT / RESET SENHA
+// ════════════════════════════════════════════════════════════
+async function fazerLogout() {
+  await db.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+async function enviarRedefinicao() {
+  if (!usuario?.email) return;
+  const { error } = await db.auth.resetPasswordForEmail(usuario.email);
+  if (error) { showToast('Erro ao enviar e-mail', 'error'); return; }
+  showToast(`Link de redefinição enviado para ${usuario.email}`, 'success');
+}
+
+// ════════════════════════════════════════════════════════════
+//  WHATSAPP
+// ════════════════════════════════════════════════════════════
+function abrirWpp() {
+  const nome = document.getElementById('v-nome').textContent || 'Cliente';
+  const msg = encodeURIComponent(`Olá! Sou ${nome} e gostaria de ajuda com minha conta Benedictus.`);
+  window.open(`https://api.whatsapp.com/send?phone=${WHATSAPP_NUM}&text=${msg}`, '_blank');
+}
+
+// ════════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════════
+function formatarCPF(v) {
+  const d = v.replace(/\D/g,'');
+  return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+function formatarCEP(v) {
+  const d = v.replace(/\D/g,'');
+  return d.replace(/(\d{5})(\d{3})/, '$1-$2');
+}
+function maskCPF(v) {
+  let d = v.replace(/\D/g,'').slice(0,11);
+  return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+function maskCelular(v) {
+  let d = v.replace(/\D/g,'').slice(0,11);
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+}
+function maskCEP(v) {
+  let d = v.replace(/\D/g,'').slice(0,8);
+  return d.length > 5 ? `${d.slice(0,5)}-${d.slice(5)}` : d;
+}
+function formatPrice(v) {
+  return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+function formatarData(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+let toastTimer = null;
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
+  const msgEl = document.getElementById('toast-msg');
+  el.className = `toast ${type}`;
+  icon.textContent = type === 'error' ? 'error' : 'check_circle';
+  msgEl.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

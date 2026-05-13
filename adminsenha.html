@@ -181,6 +181,9 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
   .login-input{font-size:16px;}
 }
 </style>
+
+<!-- SDK do Supabase (necessário pra consultar a tabela admin_credenciais) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -198,6 +201,11 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
       </div>
     </div>
     <div class="login-box">
+      <!-- Aviso quando redirecionado por falta de auth -->
+      <div id="login-expired-msg" style="display:none;background:var(--warn-dim,rgba(200,160,70,.1));border:1px solid rgba(200,160,70,0.35);color:var(--warn,#c8a046);padding:10px 14px;border-radius:8px;font-size:11px;letter-spacing:0.04em;margin-bottom:18px;display:none;align-items:center;gap:8px;">
+        <span class="mat" style="font-size:16px;">lock</span>
+        <span>Faça login para acessar o painel.</span>
+      </div>
       <!-- ETAPA 1: USUÁRIO -->
       <div id="login-step-1">
         <div class="login-section-label">Acesso Restrito</div>
@@ -254,12 +262,13 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
 })();
 
 // ── CONFIGURAÇÃO SUPABASE ─────────────────────────────────
-const SUPABASE_URL = 'https://vtdhpnzpwemvvmhhomsg.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0ZGhwbnpwd2VtdnZtaGhvbXNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MDEyNTYsImV4cCI6MjA5MzI3NzI1Nn0.3x3AD0jiFHCChrfoalkRdAqepWhJLWwDTJjnP3OjSWY';
+const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
 
 // ── CREDENCIAIS DO ADMIN ──────────────────────────────────
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = '2026';
+// As credenciais ficam guardadas no Supabase (tabela admin_credenciais),
+// não no código. Assim ninguém vê a senha abrindo o HTML.
+const ADMIN_USER_DEFAULT = 'admin'; // só pra exibir no aviso "Bem-vindo, admin"
 
 // ── CLIENTE SUPABASE ──────────────────────────────────────
 // IMPORTANTE: variável nomeada "db" para não conflitar com o SDK global "supabase"
@@ -272,7 +281,7 @@ function initSupabase() {
       db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } else {
       console.error('Supabase SDK não encontrado!');
-      showToast('SDK do banco não carregado', 'err');
+      console.error('SDK do banco não carregado');
     }
   } catch (e) {
     console.error('Erro ao inicializar Supabase:', e);
@@ -297,20 +306,101 @@ function toggleTheme() {
   updateThemeIcons();
 }
 
-function loginStep1() {
+// ── CACHE DA CREDENCIAL TRAZIDA DO BANCO ────────────────────────
+// É buscada no Supabase só quando o usuário tenta logar.
+// NUNCA fica na URL nem é gravada em localStorage/sessionStorage.
+let _credencialBanco = null;
+
+// ── RATE LIMITING (anti-força bruta) ────────────────────────────
+// Conta tentativas falhadas. Bloqueia progressivamente.
+function rlState() {
+  try { return JSON.parse(localStorage.getItem('bened_rl') || '{"tries":0,"until":0}'); }
+  catch { return { tries:0, until:0 }; }
+}
+function rlSave(s) { try { localStorage.setItem('bened_rl', JSON.stringify(s)); } catch(_){} }
+function rlBlockedRemaining() {
+  const s = rlState();
+  const rem = s.until - Date.now();
+  return rem > 0 ? rem : 0;
+}
+function rlRegisterFail() {
+  const s = rlState();
+  s.tries = (s.tries || 0) + 1;
+  // 3 falhas → 30s | 5 falhas → 5 min | 8 falhas → 30 min
+  if (s.tries >= 8)      s.until = Date.now() + 30 * 60 * 1000;
+  else if (s.tries >= 5) s.until = Date.now() + 5  * 60 * 1000;
+  else if (s.tries >= 3) s.until = Date.now() + 30 * 1000;
+  rlSave(s);
+}
+function rlReset() { rlSave({ tries:0, until:0 }); }
+function rlMsgTempo(ms) {
+  const s = Math.ceil(ms / 1000);
+  if (s < 60) return s + 's';
+  const m = Math.ceil(s / 60);
+  return m + ' min';
+}
+
+async function buscarCredencialBanco(usuario) {
+  if (!db) return null;
+  try {
+    const { data, error } = await db
+      .from('admin_credenciais')
+      .select('usuario, senha')
+      .eq('usuario', usuario)
+      .maybeSingle();
+    // não loga nada — não dar pistas no DevTools
+    if (error) return null;
+    return data || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function loginStep1() {
   const user    = document.getElementById('l-user').value.trim();
   const errUser = document.getElementById('l-err-user');
-  if (user === ADMIN_USER) {
-    errUser.style.display = 'none';
-    document.getElementById('login-step-1').style.display = 'none';
-    document.getElementById('login-step-2').style.display = '';
-    document.getElementById('login-user-label').textContent = user;
-    document.getElementById('l-pass').value = '';
-    document.getElementById('l-pass').focus();
-  } else {
+  const btn     = document.querySelector('#login-step-1 .login-btn');
+
+  if (!user) {
     errUser.style.display = 'block';
     document.getElementById('l-user').focus();
+    return;
   }
+
+  // Bloqueio por rate limiting
+  const rem = rlBlockedRemaining();
+  if (rem > 0) {
+    errUser.textContent = 'Muitas tentativas. Aguarde ' + rlMsgTempo(rem) + '.';
+    errUser.style.display = 'block';
+    return;
+  }
+
+  // Loading no botão
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+
+  // Busca a credencial cadastrada no Supabase
+  _credencialBanco = await buscarCredencialBanco(user);
+
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+
+  // Se o usuário NÃO existe no banco, não avança e mostra erro.
+  if (!_credencialBanco) {
+    rlRegisterFail();
+    errUser.textContent = 'Usuário não encontrado.';
+    const remNow = rlBlockedRemaining();
+    if (remNow > 0) errUser.textContent += ' Bloqueado por ' + rlMsgTempo(remNow) + '.';
+    errUser.style.display = 'block';
+    document.getElementById('l-user').focus();
+    return;
+  }
+
+  // Usuário válido — avança pro step 2
+  errUser.style.display = 'none';
+  document.getElementById('login-step-1').style.display = 'none';
+  document.getElementById('login-step-2').style.display = '';
+  document.getElementById('login-user-label').textContent = _credencialBanco.usuario;
+  document.getElementById('l-pass').value = '';
+  document.getElementById('l-pass').focus();
 }
 
 function voltarStep1() {
@@ -318,17 +408,56 @@ function voltarStep1() {
   document.getElementById('login-step-1').style.display = '';
   document.getElementById('l-err').style.display = 'none';
   document.getElementById('l-pass').value = '';
+  _credencialBanco = null;
   document.getElementById('l-user').focus();
 }
 
-function doLogin() {
+async function doLogin() {
   const pass = document.getElementById('l-pass').value;
   const err  = document.getElementById('l-err');
-  if (pass === ADMIN_PASS) {
+  const btn  = document.querySelector('#login-step-2 .login-btn');
+
+  // Bloqueio por rate limiting
+  const rem = rlBlockedRemaining();
+  if (rem > 0) {
+    err.textContent = 'Muitas tentativas. Aguarde ' + rlMsgTempo(rem) + '.';
+    err.style.display = 'block';
+    return;
+  }
+
+  // Loading no botão
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+
+  // Atraso artificial (~500ms) — dificulta força bruta automatizada
+  // e dá tempo igual pra sucesso e falha (não dá pra medir diferença)
+  await new Promise(r => setTimeout(r, 500));
+
+  // Confere com a credencial buscada do banco no step 1
+  const ok = _credencialBanco
+          && pass
+          && pass === _credencialBanco.senha;
+
+  if (ok) {
+    rlReset();
     err.style.display = 'none';
-    sessionStorage.setItem('bened_auth', '1');
+    const userOk = _credencialBanco.usuario;
+
+    // Marca sessão como autenticada (válida só até fechar a aba)
+    sessionStorage.setItem('bened_auth',      '1');
+    sessionStorage.setItem('bened_auth_time', Date.now().toString());
+    sessionStorage.setItem('bened_auth_user', userOk);
+
+    // Limpa a credencial da memória — não fica em variável após o redirect
+    _credencialBanco = null;
+
     window.location.href = 'admin.html';
   } else {
+    rlRegisterFail();
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    // Mensagem genérica — não diz se foi o usuário ou a senha
+    err.textContent = 'Credenciais inválidas.';
+    const remNow = rlBlockedRemaining();
+    if (remNow > 0) err.textContent += ' Bloqueado por ' + rlMsgTempo(remNow) + '.';
     err.style.display = 'block';
     document.getElementById('l-pass').value = '';
     document.getElementById('l-pass').focus();
@@ -336,10 +465,18 @@ function doLogin() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initSupabase();
+
   // Se já estiver logado, vai direto pro admin
   if (sessionStorage.getItem('bened_auth') === '1') {
     window.location.href = 'admin.html';
     return;
+  }
+
+  // Aviso de "faça login para acessar" se chegou aqui via redirect do admin
+  if (new URLSearchParams(window.location.search).get('expired') === '1') {
+    const msg = document.getElementById('login-expired-msg');
+    if (msg) msg.style.display = 'flex';
   }
 
   const t = localStorage.getItem('bened_theme');
@@ -355,4 +492,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
-</html>  
+</html>

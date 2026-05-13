@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Benedictus · Pedidos Admin</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+[data-theme="dark"]{
+  --bg:#0a0f1e;--bg2:#0f1624;--navy:#141c30;--navy2:#1a2540;--navy3:#1f2d4e;
+  --ink:#f2ede5;--ink2:#e0d9ce;--muted:#8a90a2;--muted2:#545d70;
+  --gold:#c8a96e;--gold2:#a08050;--gold3:#e8c98e;--gold4:#f2daa2;
+  --surface:#141c30;--surface2:#1a2540;--surface3:#1f2d4e;
+  --nav-bg:rgba(10,15,30,0.97);--border:rgba(200,169,110,0.18);--border2:rgba(200,169,110,0.09);
+  --sh:rgba(0,0,0,0.65);--sh2:rgba(0,0,0,0.85);--sh-gold:rgba(200,169,110,0.18);--sh-navy:rgba(20,28,48,0.7);
+  --danger:#e05555;--danger-dim:rgba(224,85,85,0.12);--success:#6dbf7e;--success-dim:rgba(109,191,126,0.1);
+  --warn:#c8a046;--warn-dim:rgba(200,160,70,0.1);--info:#5b9bd5;--info-dim:rgba(91,155,213,0.12);
+}
+[data-theme="light"]{
+  --bg:#eef1f7;--bg2:#e4e8f2;--navy:#161e33;--navy2:#1e2a42;--navy3:#243050;
+  --ink:#161e33;--ink2:#243050;--muted:#5a6480;--muted2:#8a90aa;
+  --gold:#9a7440;--gold2:#7a5830;--gold3:#c8a96e;--gold4:#b89050;
+  --surface:#ffffff;--surface2:#f4f6fc;--surface3:#e8edf8;
+  --nav-bg:rgba(255,255,255,0.97);--border:rgba(22,30,51,0.14);--border2:rgba(22,30,51,0.07);
+  --sh:rgba(22,30,51,0.1);--sh2:rgba(22,30,51,0.18);--sh-gold:rgba(154,116,64,0.18);--sh-navy:rgba(22,30,51,0.12);
+  --danger:#c84040;--danger-dim:rgba(200,64,64,0.08);--success:#3a8e4e;--success-dim:rgba(58,142,78,0.08);
+  --warn:#b08030;--warn-dim:rgba(176,128,48,0.08);--info:#2e6faa;--info-dim:rgba(46,111,170,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;overflow-x:hidden;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);overflow-x:hidden;min-height:100vh;transition:background .4s,color .4s;max-width:100vw;}
+[data-theme="dark"] body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 10% 0%,rgba(20,28,48,0.95) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 90% 100%,rgba(200,169,110,0.04) 0%,transparent 60%);}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px;}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;transition:font-variation-settings .2s;}
+
+/* ══ TOPBAR ══ */
+.topbar{position:sticky;top:0;z-index:300;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--nav-bg);border-bottom:1px solid var(--border2);backdrop-filter:blur(16px);gap:14px;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.topbar-brand{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);letter-spacing:0.1em;cursor:pointer;}
+.topbar-brand em{color:var(--gold);font-style:normal;}
+.topbar-divider{width:1px;height:22px;background:var(--border2);}
+.topbar-badge{font-size:8px;letter-spacing:0.38em;text-transform:uppercase;color:var(--gold);background:rgba(200,169,110,0.1);border:1px solid var(--border);padding:4px 10px;border-radius:20px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.topbar-btn{display:flex;align-items:center;gap:7px;padding:9px 16px;background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;font-family:'DM Sans',sans-serif;transition:all .25s;border-radius:8px;}
+.topbar-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(200,169,110,0.06);}
+.topbar-btn .mat{font-size:16px;}
+.theme-toggle-btn{width:36px;height:36px;border:1px solid var(--border2);background:transparent;border-radius:50%;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .25s;}
+.theme-toggle-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ══ LAYOUT ══ */
+.layout{display:flex;min-height:calc(100vh - 56px);position:relative;z-index:1;overflow-x:hidden;width:100%;}
+
+/* ══ SIDEBAR — oculta, não usada ══ */
+.sidebar,.sidebar-overlay{display:none !important;}
+.dot-live{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:5px;vertical-align:middle;animation:pulse-dot 2s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(109,191,126,0.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(109,191,126,0)}}
+
+/* ══ MAIN — ocupa tudo sem sidebar ══ */
+.main{margin-left:0;flex:1;padding:20px 16px;min-height:calc(100vh - 56px);min-width:0;overflow-x:hidden;width:100%;}
+
+/* ══ TOPBAR COMPACTA ══ */
+.topbar{height:56px;padding:0 16px;}
+.topbar-badge,.topbar-divider{display:none;}
+.topbar-btn-sair span:not(.mat){display:inline;}
+.layout{min-height:calc(100vh - 56px);}
+
+/* botão sair com label visível sempre */
+.topbar-btn-sair{padding:8px 14px;border-color:var(--border);color:var(--muted);}
+.page-header{margin-bottom:28px;}
+.page-eyebrow{font-size:8px;letter-spacing:0.6em;text-transform:uppercase;color:var(--gold);margin-bottom:9px;display:flex;align-items:center;gap:12px;}
+.page-eyebrow::before{content:'';display:block;width:22px;height:1px;background:var(--gold);}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,3vw,40px);color:var(--ink);font-weight:300;letter-spacing:0.02em;}
+.page-title em{font-style:italic;color:var(--gold);}
+.page-divider{width:48px;height:1.5px;background:linear-gradient(90deg,var(--gold),transparent);margin-top:14px;border-radius:2px;}
+.page-subtitle{font-size:11px;color:var(--muted);margin-top:7px;letter-spacing:0.06em;}
+
+/* ══ STATS ══ */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;transition:all .35s;cursor:default;}
+[data-theme="dark"] .stat-card{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 14px 36px var(--sh);}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--c,var(--gold)),transparent);}
+.stat-card.c-warn{--c:var(--warn);}
+.stat-card.c-success{--c:var(--success);}
+.stat-card.c-info{--c:var(--info);}
+.stat-card.c-danger{--c:var(--danger);}
+.stat-bg-num{position:absolute;bottom:-12px;right:8px;font-family:'Cormorant Garamond',serif;font-size:64px;font-weight:300;color:rgba(200,169,110,0.05);line-height:1;user-select:none;pointer-events:none;}
+.stat-eyebrow{font-size:8px;letter-spacing:0.38em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.stat-eyebrow .mat{font-size:13px;}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:42px;color:var(--ink);font-weight:300;line-height:1;margin-bottom:5px;}
+.stat-sub{font-size:10px;color:var(--muted2);}
+.btn-zerar-total{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:4px 9px;font-size:7px;letter-spacing:0.2em;text-transform:uppercase;background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .25s;border-radius:14px;font-weight:500;}
+.btn-zerar-total:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim);}
+.btn-zerar-total .mat{font-size:11px;}
+
+/* ══ FILTROS & BUSCA ══ */
+.actions-bar{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.search-wrap{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--border2);padding:10px 16px;width:100%;transition:all .3s;border-radius:10px;}
+[data-theme="dark"] .search-wrap{background:var(--navy);}
+.search-wrap:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px var(--sh-gold);}
+.search-wrap .mat{font-size:16px;color:var(--muted);}
+.search-wrap input{background:none;border:none;outline:none;font-size:13px;color:var(--ink);font-family:'DM Sans',sans-serif;flex:1;min-width:0;}
+.search-wrap input::placeholder{color:var(--muted2);font-size:11px;}
+.chips-row{display:flex;align-items:center;gap:6px;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
+.chips-row::-webkit-scrollbar{display:none;}
+.filter-chips{display:contents;}
+.chip{padding:8px 14px;font-size:8px;letter-spacing:0.22em;text-transform:uppercase;background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .25s;border-radius:24px;white-space:nowrap;flex-shrink:0;}
+.chip:hover{border-color:var(--border);color:var(--ink2);background:var(--surface2);}
+.chip.active{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600;}
+[data-theme="light"] .chip.active{color:var(--navy);}
+.btn-refresh{display:flex;align-items:center;gap:7px;padding:9px 14px;background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:8px;letter-spacing:0.22em;text-transform:uppercase;font-family:'DM Sans',sans-serif;transition:all .25s;border-radius:10px;white-space:nowrap;flex-shrink:0;margin-left:auto;}
+.btn-refresh:hover{border-color:var(--gold);color:var(--gold);background:rgba(200,169,110,0.06);}
+.btn-refresh .mat{font-size:15px;}
+.btn-refresh.spin .mat{animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══ TABELA ══ */
+.table-wrap{background:var(--surface);border:1px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 4px 24px var(--sh);}
+[data-theme="dark"] .table-wrap{background:var(--navy);}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;min-width:780px;}
+thead th{padding:13px 16px;font-size:8px;letter-spacing:0.36em;text-transform:uppercase;color:var(--gold);font-weight:500;text-align:left;border-bottom:1px solid var(--border2);background:rgba(200,169,110,0.04);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border2);transition:background .2s;cursor:pointer;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(200,169,110,0.03);}
+tbody td{padding:13px 16px;vertical-align:middle;font-size:13px;}
+
+/* status badges */
+.status-badge{display:inline-flex;align-items:center;gap:5px;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;padding:5px 11px;border-radius:20px;font-weight:500;white-space:nowrap;}
+.status-badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.status-pendente{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(200,160,70,0.25);}
+.status-pendente::before{background:var(--warn);}
+.status-confirmado{background:var(--info-dim);color:var(--info);border:1px solid rgba(91,155,213,0.25);}
+.status-confirmado::before{background:var(--info);}
+.status-enviado{background:rgba(100,140,255,0.1);color:#6488ff;border:1px solid rgba(100,140,255,0.25);}
+.status-enviado::before{background:#6488ff;}
+.status-entregue{background:var(--success-dim);color:var(--success);border:1px solid rgba(109,191,126,0.25);}
+.status-entregue::before{background:var(--success);}
+.status-cancelado{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(224,85,85,0.25);}
+.status-cancelado::before{background:var(--danger);}
+.status-finalizado{background:rgba(100,100,120,0.14);color:#9a9ab0;border:1px solid rgba(100,100,120,0.3);}
+.status-finalizado::before{background:#9a9ab0;}
+
+.pedido-num{font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--ink);}
+.pedido-data{font-size:10px;color:var(--muted);margin-top:2px;}
+.cliente-nome{font-size:13px;color:var(--ink);font-weight:400;}
+.cliente-tel{font-size:10px;color:var(--muted);margin-top:2px;}
+.pedido-total{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--gold);}
+.row-actions{display:flex;gap:6px;justify-content:flex-end;}
+.action-btn{width:32px;height:32px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .25s;border-radius:8px;flex-shrink:0;}
+.action-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(200,169,110,0.08);}
+.action-btn.del:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim);}
+.action-btn .mat{font-size:15px;}
+
+/* paginação */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border2);flex-wrap:wrap;gap:10px;}
+.pagination-info{font-size:10px;color:var(--muted);letter-spacing:0.06em;}
+.pagination-btns{display:flex;gap:6px;}
+.page-btn{width:32px;height:32px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;font-family:'DM Sans',sans-serif;transition:all .25s;border-radius:8px;}
+.page-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.page-btn.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+.page-btn:disabled{opacity:0.3;cursor:not-allowed;}
+
+/* empty state */
+.empty-state{text-align:center;padding:64px 20px;color:var(--muted);}
+.empty-state .mat{font-size:52px;color:var(--muted2);display:block;margin-bottom:16px;font-variation-settings:'FILL' 0,'wght' 100,'GRAD' 0,'opsz' 48;}
+.empty-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--muted);margin-bottom:6px;}
+.empty-sub{font-size:11px;color:var(--muted2);}
+
+/* spinner */
+.spinner-wrap{display:flex;align-items:center;justify-content:center;padding:80px 20px;gap:14px;color:var(--muted);}
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+
+/* ══ MODAL DETALHE ══ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:24px 16px 40px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:720px;position:relative;animation:slideUp .3s cubic-bezier(0.4,0,0.2,1) both;flex-shrink:0;box-shadow:0 48px 120px var(--sh2);}
+[data-theme="dark"] .modal{background:linear-gradient(160deg,var(--navy) 0%,var(--bg) 100%);}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold2) 20%,var(--gold) 50%,var(--gold3) 80%,transparent);border-radius:16px 16px 0 0;}
+.modal-head{padding:24px 28px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);}
+.modal-title em{font-style:italic;color:var(--gold);}
+.modal-close{background:var(--surface2);border:1px solid var(--border2);border-radius:50%;width:34px;height:34px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .25s;flex-shrink:0;}
+.modal-close:hover{background:var(--danger);color:#fff;border-color:var(--danger);}
+.modal-body{padding:24px 28px;display:flex;flex-direction:column;gap:18px;}
+.modal-foot{padding:18px 28px;border-top:1px solid var(--border2);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;align-items:center;}
+
+/* blocos internos do modal */
+.det-section{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px 18px;}
+[data-theme="dark"] .det-section{background:rgba(255,255,255,0.025);}
+.det-section-label{font-size:8px;letter-spacing:0.46em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.det-section-label .mat{font-size:14px;}
+.det-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px;}
+.det-row:last-child{border-bottom:none;}
+.det-key{color:var(--muted);letter-spacing:0.06em;flex-shrink:0;}
+.det-val{color:var(--ink);text-align:right;font-weight:400;}
+.item-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid var(--border2);}
+.item-row:last-child{border-bottom:none;}
+.item-nome{font-size:13px;color:var(--ink);}
+.item-vars{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.item-var{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:rgba(200,169,110,0.1);border:1px solid var(--border);padding:2px 7px;border-radius:10px;}
+.item-preco{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);white-space:nowrap;text-align:right;}
+.item-qty{font-size:10px;color:var(--muted);text-align:right;}
+.total-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid var(--border2);}
+.total-row:last-child{border-bottom:none;}
+.total-row.final{padding-top:10px;margin-top:4px;}
+.total-row.final .total-key{font-size:13px;color:var(--ink);font-weight:500;}
+.total-row.final .total-val{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);}
+.total-key{color:var(--muted);}
+.total-val{color:var(--ink);font-weight:400;}
+
+/* select de status no modal */
+.status-select{background:var(--surface2);border:1px solid var(--border);color:var(--ink);padding:9px 32px 9px 12px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;transition:all .3s;border-radius:8px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%238a90a0' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+.status-select:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sh-gold);}
+.status-select option{background:var(--surface);}
+.btn-salvar-status{display:flex;align-items:center;gap:7px;padding:10px 20px;background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--navy);border:none;cursor:pointer;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .3s;border-radius:8px;}
+.btn-salvar-status:hover{opacity:.88;transform:translateY(-1px);}
+.btn-salvar-status:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* Campo de Rastreio (admin) */
+.rastreio-box{margin-top:14px;padding:14px 16px;background:var(--info-dim);border:1px solid rgba(91,155,213,0.3);border-radius:10px;animation:fadeInRastreio .3s ease;}
+@keyframes fadeInRastreio{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+.rastreio-label{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:0.28em;text-transform:uppercase;color:var(--info);font-weight:500;margin-bottom:10px;}
+.rastreio-label .mat{font-size:15px;}
+.rastreio-obrig{margin-left:auto;font-size:7px;letter-spacing:0.2em;padding:3px 8px;border-radius:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border2);text-transform:uppercase;}
+.rastreio-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--ink);padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;border-radius:8px;letter-spacing:0.06em;transition:all .25s;text-transform:uppercase;}
+[data-theme="dark"] .rastreio-input{background:var(--navy2);}
+.rastreio-input:focus{border-color:var(--info);box-shadow:0 0 0 3px rgba(91,155,213,0.18);}
+.rastreio-input::placeholder{color:var(--muted2);text-transform:none;letter-spacing:0;}
+.rastreio-hint{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5;}
+.btn-wpp{display:flex;align-items:center;gap:7px;padding:10px 18px;background:#25d366;color:#fff;border:none;cursor:pointer;font-size:9px;letter-spacing:0.28em;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .3s;border-radius:8px;text-decoration:none;}
+.btn-wpp:hover{background:#1ebe5d;transform:translateY(-1px);}
+.btn-wpp .mat{font-size:16px;}
+.btn-secundario{display:flex;align-items:center;gap:7px;padding:10px 18px;background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:9px;letter-spacing:0.28em;text-transform:uppercase;font-family:'DM Sans',sans-serif;transition:all .25s;border-radius:8px;}
+.btn-secundario:hover{border-color:var(--gold);color:var(--gold);}
+
+/* toast */
+.toast{position:fixed;top:20px;right:24px;background:var(--surface);border:1px solid var(--border);color:var(--ink);padding:13px 18px;font-size:13px;z-index:9999;transform:translateX(140%);transition:transform .4s cubic-bezier(0.4,0,0.2,1);display:flex;align-items:center;gap:10px;min-width:240px;border-left:3px solid var(--gold);box-shadow:0 8px 32px var(--sh2);border-radius:0 8px 8px 0;}
+.toast.show{transform:translateX(0);}
+.toast.err{border-left-color:var(--danger);}
+.toast.warn{border-left-color:var(--warn);}
+.toast .mat{font-size:18px;color:var(--gold);}
+.toast.err .mat{color:var(--danger);}
+.toast.warn .mat{color:var(--warn);}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+
+
+/* total inline no mobile (dentro do td-pedido-right) — oculto no desktop */
+.td-total-inline{display:none;}
+
+/* ══ RESPONSIVE ══ */
+
+/* Tablet */
+@media(max-width:1024px){
+  .main{padding:16px 12px;}
+  /* Stats: 2 colunas + último card ocupa as 2 */
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stats-grid .stat-card:last-child{grid-column:1 / -1;}
+}
+
+/* Mobile */
+@media(max-width:600px){
+  /* ── Topbar ── */
+  .topbar{padding:0 14px;height:56px;}
+  .topbar-brand{font-size:17px;}
+  .layout{min-height:calc(100vh - 56px);}
+
+  /* ── Main ── */
+  .main{padding:14px 12px;}
+
+  /* ── Page header ── */
+  .page-title{font-size:24px;}
+  .page-eyebrow{font-size:7px;letter-spacing:0.4em;}
+  .page-header{margin-bottom:18px;}
+
+  /* ── Stats: 2 cols, último ocupa linha inteira ── */
+  .stats-grid{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .stats-grid .stat-card:last-child{grid-column:1 / -1;}
+  .stat-card{padding:14px 12px;}
+  .stat-val{font-size:32px;}
+  .stat-eyebrow{font-size:7px;letter-spacing:0.2em;margin-bottom:6px;}
+  .stat-sub{font-size:9px;}
+  .stat-bg-num{font-size:48px;}
+
+  /* ── Search & chips ── */
+  .actions-bar{gap:8px;margin-bottom:12px;}
+  .search-wrap{padding:10px 14px;}
+  .chips-row{gap:5px;padding-bottom:2px;}
+  .chip{padding:7px 12px;font-size:8px;}
+  .btn-refresh span:last-child{display:none;}
+  .btn-refresh{padding:9px 11px;}
+
+  /* ── Tabela → Cards ── */
+  .table-wrap{
+    background:transparent !important;
+    box-shadow:none;
+    border:none;
+  }
+  [data-theme="dark"] .table-wrap{background:transparent !important;}
+  .table-scroll{overflow-x:unset;}
+  table{min-width:unset;width:100%;}
+  thead{display:none;}
+
+  tbody tr{
+    display:block;
+    background:var(--surface);
+    border:1px solid var(--border2);
+    border-radius:14px;
+    margin-bottom:10px;
+    padding:14px 14px 10px;
+    position:relative;
+    cursor:pointer;
+    transition:background .2s;
+  }
+  [data-theme="dark"] tbody tr{background:var(--navy);}
+  tbody tr:last-child{border-bottom:1px solid var(--border2);}
+  tbody tr:hover{background:rgba(200,169,110,0.05);}
+  tbody td{display:block;padding:0;border:none !important;font-size:13px;}
+
+  /* Topo do card: nº pedido à esquerda | status + total à direita */
+  .td-pedido{
+    display:flex !important;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:8px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--border2) !important;
+  }
+  /* coluna direita do topo: status em cima, total embaixo */
+  .td-pedido-right{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .td-status{display:none !important;}
+  .td-status-mobile{display:inline-flex !important;}
+
+  /* Total inline aparece no mobile, desktop some */
+  .td-total-inline{display:block;font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--gold);}
+  .td-total-desktop{display:none !important;}
+
+  /* Total: agora dentro da coluna direita, sem absolute */
+  .td-total{position:static !important;}
+  .td-total .pedido-total{font-size:15px;}
+
+  /* Cliente: sem padding-right pois total não é mais absolute */
+  .td-cliente{margin-bottom:6px;padding-right:0;}
+
+  /* Detalhes secundários em linha */
+  .td-local,.td-itens,.td-pag{
+    font-size:11px !important;
+    color:var(--muted) !important;
+    display:inline !important;
+  }
+  .td-local::after{content:' · ';}
+  .td-pag::before{content:' · ';}
+
+  /* Ações */
+  .td-actions{margin-top:10px;padding-top:10px;border-top:1px solid var(--border2) !important;}
+  .row-actions{justify-content:flex-start;}
+
+  /* ── Paginação ── */
+  .pagination{padding:10px 12px;gap:6px;}
+  .pagination-info{font-size:9px;width:100%;text-align:center;}
+  .pagination-btns{width:100%;justify-content:center;}
+
+  /* ── Modal → Bottom sheet ── */
+  .modal-overlay{padding:0;align-items:flex-end;}
+  .modal{
+    border-radius:20px 20px 0 0;
+    max-width:100%;width:100%;
+    max-height:92dvh;overflow-y:auto;
+    animation:slideUpSheet .32s cubic-bezier(0.32,0.72,0,1) both;
+  }
+  @keyframes slideUpSheet{from{transform:translateY(100%);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .modal::before{border-radius:20px 20px 0 0;}
+  .modal-head::before{content:'';display:block;width:36px;height:4px;background:var(--muted2);border-radius:2px;margin:0 auto 12px;}
+  .modal-head{padding:14px 16px 12px;position:sticky;top:0;background:var(--surface);z-index:10;border-radius:20px 20px 0 0;}
+  [data-theme="dark"] .modal-head{background:var(--navy);}
+  .modal-title{font-size:20px;}
+  .modal-body{padding:14px;gap:12px;}
+  .modal-foot{padding:12px 14px;position:sticky;bottom:0;background:var(--surface);z-index:10;border-top:1px solid var(--border2);flex-wrap:wrap;gap:8px;}
+  [data-theme="dark"] .modal-foot{background:var(--navy);}
+  .det-section{padding:12px;}
+  .det-row{flex-wrap:wrap;gap:3px;}
+  .det-val{text-align:left !important;}
+  .btn-wpp,.btn-secundario,.btn-salvar-status{flex:1;justify-content:center;min-width:0;}
+
+  /* ── Toast na base ── */
+  .toast{top:auto;bottom:16px;right:10px;left:10px;min-width:unset;transform:translateY(120%);}
+  .toast.show{transform:translateY(0);}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-brand" onclick="window.location.href='admin.html'">Benedictus<em>.</em></div>
+  </div>
+  <div class="topbar-right">
+    <button class="theme-toggle-btn" onclick="toggleTheme()">
+      <span class="mat" id="theme-icon">light_mode</span>
+    </button>
+    <button class="topbar-btn topbar-btn-sair" onclick="window.location.href='index.html'">
+      <span class="mat">logout</span><span>Sair</span>
+    </button>
+  </div>
+</nav>
+
+
+
+<div class="layout">
+
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- HEADER -->
+    <div class="page-header">
+      <div class="page-eyebrow">Gestão de Pedidos</div>
+      <h2 class="page-title">Pedidos <em>Recebidos</em></h2>
+      <p class="page-subtitle" id="page-sub">Carregando pedidos…</p>
+      <div class="page-divider"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card c-warn">
+        <div class="stat-eyebrow"><span class="mat">schedule</span> Pendentes</div>
+        <div class="stat-val" id="stat-pendente">—</div>
+        <div class="stat-sub">aguardando ação</div>
+        <div class="stat-bg-num" id="stat-bg-pendente">—</div>
+      </div>
+      <div class="stat-card c-info">
+        <div class="stat-eyebrow"><span class="mat">thumb_up</span> Confirmados</div>
+        <div class="stat-val" id="stat-confirmado">—</div>
+        <div class="stat-sub">aprovados</div>
+        <div class="stat-bg-num">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-eyebrow"><span class="mat">local_shipping</span> Enviados</div>
+        <div class="stat-val" id="stat-enviado">—</div>
+        <div class="stat-sub">a caminho</div>
+        <div class="stat-bg-num">—</div>
+      </div>
+      <div class="stat-card c-success">
+        <div class="stat-eyebrow"><span class="mat">check_circle</span> Entregues</div>
+        <div class="stat-val" id="stat-entregue">—</div>
+        <div class="stat-sub">concluídos</div>
+        <div class="stat-bg-num">—</div>
+      </div>
+      <div class="stat-card c-danger">
+        <div class="stat-eyebrow">
+          <span class="mat">payments</span> Total (mês)
+          <button class="btn-zerar-total" id="btn-zerar-total" onclick="zerarTotal()" title="Zerar total exibido">
+            <span class="mat">restart_alt</span> Zerar
+          </button>
+        </div>
+        <div class="stat-val" id="stat-total">—</div>
+        <div class="stat-sub">em pedidos</div>
+        <div class="stat-bg-num">R$</div>
+      </div>
+    </div>
+
+    <!-- AÇÕES & FILTROS -->
+    <div class="actions-bar">
+      <div class="search-wrap">
+        <span class="mat">search</span>
+        <input type="text" id="busca-inp" placeholder="Buscar por cliente, nº pedido, cidade…" oninput="renderTabela()"/>
+      </div>
+      <div class="chips-row">
+        <div class="filter-chips" id="filter-chips">
+          <button class="chip active" onclick="setFiltro('todos')">Todos</button>
+          <button class="chip" onclick="setFiltro('pendente')">Pendente</button>
+          <button class="chip" onclick="setFiltro('confirmado')">Confirmado</button>
+          <button class="chip" onclick="setFiltro('enviado')">Enviado</button>
+          <button class="chip" onclick="setFiltro('cancelado')">Cancelado</button>
+          <button class="chip" onclick="setFiltro('finalizado')">Finalizados</button>
+        </div>
+        <button class="btn-refresh" id="btn-refresh" onclick="carregarPedidos()">
+          <span class="mat">refresh</span><span>Atualizar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table id="tabela-pedidos">
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Cidade/UF</th>
+              <th>Itens</th>
+              <th>Total</th>
+              <th>Pagamento</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pedidos">
+            <tr><td colspan="8">
+              <div class="spinner-wrap"><div class="spinner"></div><span>Carregando…</span></div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination" style="display:none;">
+        <div class="pagination-info" id="pag-info"></div>
+        <div class="pagination-btns" id="pag-btns"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══ MODAL DETALHE DO PEDIDO ══ -->
+<div class="modal-overlay" id="modal-pedido" onclick="if(event.target===this)fecharModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-titulo">Pedido <em>#—</em></div>
+      <button class="modal-close" onclick="fecharModal()"><span class="mat">close</span></button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Status atual + alterar -->
+      <div class="det-section">
+        <div class="det-section-label"><span class="mat">edit_note</span> Status do Pedido</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span id="modal-status-badge" class="status-badge">—</span>
+          <select class="status-select" id="modal-status-select" onchange="atualizarCampoRastreio()">
+            <option value="pendente">⏳ Pendente</option>
+            <option value="confirmado">👍 Confirmado</option>
+            <option value="enviado">🚚 Enviado</option>
+            <option value="finalizado">✅ Finalizado</option>
+            <option value="cancelado">❌ Cancelado</option>
+          </select>
+          <button class="btn-salvar-status" id="btn-salvar-status" onclick="salvarStatus()">
+            <span class="mat">save</span> Salvar
+          </button>
+        </div>
+
+        <!-- Campo de Código de Rastreio (aparece só para envio fora de Mamanguape/Rio Tinto) -->
+        <div class="rastreio-box" id="rastreio-box" style="display:none;">
+          <div class="rastreio-label">
+            <span class="mat">local_shipping</span>
+            Código de Rastreio dos Correios
+            <span class="rastreio-obrig" id="rastreio-obrig">opcional</span>
+          </div>
+          <input type="text" id="modal-rastreio-input" class="rastreio-input"
+                 placeholder="Ex.: BR123456789BR" maxlength="20"
+                 autocomplete="off" spellcheck="false"/>
+          <div class="rastreio-hint" id="rastreio-hint">
+            Cliente está fora de Mamanguape e Rio Tinto. Se você já tem o código, cole aqui — o cliente verá na tela "Meus Pedidos". Pode salvar sem o código e adicionar depois.
+          </div>
+        </div>
+      </div>
+
+      <!-- Cliente -->
+      <div class="det-section">
+        <div class="det-section-label"><span class="mat">person</span> Cliente</div>
+        <div id="modal-cliente"></div>
+      </div>
+
+      <!-- Endereço -->
+      <div class="det-section">
+        <div class="det-section-label"><span class="mat">location_on</span> Endereço de Entrega</div>
+        <div id="modal-endereco"></div>
+      </div>
+
+      <!-- Itens -->
+      <div class="det-section">
+        <div class="det-section-label"><span class="mat">shopping_bag</span> Itens do Pedido</div>
+        <div id="modal-itens"></div>
+      </div>
+
+      <!-- Totais -->
+      <div class="det-section">
+        <div class="det-section-label"><span class="mat">payments</span> Pagamento e Totais</div>
+        <div id="modal-totais"></div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <a class="btn-wpp" id="btn-wpp-modal" href="#" target="_blank">
+        <span class="mat">chat</span> WhatsApp
+      </a>
+      <button class="btn-secundario" onclick="fecharModal()">
+        <span class="mat">close</span> Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="mat" id="toast-icon">check_circle</span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
+const WHATSAPP_NUM  = '5583998015544';
+const POR_PAGINA    = 20;
+
+let db          = null;
+let todosOS     = [];   // todos os pedidos carregados
+let filtroAtivo = 'todos';
+let paginaAtual = 1;
+let pedidoAtual = null; // pedido aberto no modal
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  carregarTheme();
+  try {
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) { showToast('Erro ao conectar ao banco', 'err'); }
+
+  // Busca o offset do mês atual antes de renderizar os pedidos
+  // (assim o "Total do mês" já aparece zerado se foi zerado antes)
+  await carregarOffsetMes();
+  await carregarPedidos();
+
+  // auto-refresh a cada 60s
+  setInterval(carregarPedidos, 60000);
+});
+
+// ════════════════════════════════════════════════
+//  CARREGAR PEDIDOS
+// ════════════════════════════════════════════════
+async function carregarPedidos() {
+  const btn = document.getElementById('btn-refresh');
+  if (btn) btn.classList.add('spin');
+  try {
+    const { data, error } = await db
+      .from('pedidos')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    // Esconde cancelados do admin (mas mantém no banco para cliente ser notificado)
+    todosOS = (data || []).filter(p => (p.status || 'pendente') !== 'cancelado');
+    atualizarStats();
+    renderTabela();
+    document.getElementById('page-sub').textContent =
+      `${todosOS.length} pedido${todosOS.length !== 1 ? 's' : ''} no total · atualizado agora`;
+  } catch(e) {
+    showToast('Erro ao carregar pedidos: ' + (e.message || e), 'err');
+  } finally {
+    if (btn) btn.classList.remove('spin');
+  }
+}
+
+// ════════════════════════════════════════════════
+//  STATS
+// ════════════════════════════════════════════════
+
+// Cache do offset do mês atual (em memória). Buscado no Supabase ao carregar
+// a página e atualizado sempre que o admin clica em "Zerar".
+// Salvo na tabela `config` do Supabase com chave tipo "total_offset_2026_4"
+// (formato: ano_mes onde mes é 0-11). Persiste entre dispositivos.
+let _offsetMesAtual = 0;
+
+// Gera a chave usada no banco pro mês/ano de uma data
+function chaveOffset(ano, mes) {
+  return `total_offset_${ano}_${mes}`;
+}
+
+// Busca no Supabase o offset salvo pro mês atual.
+// Chamada uma vez quando a página carrega.
+async function carregarOffsetMes() {
+  if (!db) return;
+  const agora = new Date();
+  const chave = chaveOffset(agora.getFullYear(), agora.getMonth());
+  try {
+    const { data, error } = await db
+      .from('config')
+      .select('valor')
+      .eq('chave', chave)
+      .maybeSingle();
+    // PGRST116 = "no rows" (mês ainda sem offset) — não é erro real
+    if (error && error.code !== 'PGRST116') throw error;
+    _offsetMesAtual = parseFloat(data?.valor) || 0;
+  } catch (e) {
+    // Fallback: se o banco falhar, tenta ler do localStorage (compatibilidade
+    // com a versão antiga que só salvava local)
+    const chaveLocal = `bened_total_offset_${agora.getFullYear()}_${agora.getMonth()}`;
+    _offsetMesAtual = parseFloat(localStorage.getItem(chaveLocal)) || 0;
+    console.warn('Offset: usando fallback local —', e?.message || e);
+  }
+}
+
+function atualizarStats() {
+  // Contadores por status
+  const conta = s => todosOS.filter(p => (p.status||'pendente') === s).length;
+  ['pendente','confirmado','enviado','entregue'].forEach(s => {
+    const el = document.getElementById('stat-' + s);
+    if (el) el.textContent = conta(s);
+    const bg = document.getElementById('stat-bg-' + s);
+    if (bg) bg.textContent = conta(s);
+  });
+
+  // Total do mês (em pedidos não-cancelados)
+  const agora = new Date();
+  const mes   = agora.getMonth();
+  const ano   = agora.getFullYear();
+  const totalMes = todosOS
+    .filter(p => {
+      const d = new Date(p.created_at);
+      return d.getMonth() === mes
+          && d.getFullYear() === ano
+          && (p.status || 'pendente') !== 'cancelado';
+    })
+    .reduce((acc, p) => acc + (parseFloat(p.total) || 0), 0);
+
+  // Aplica o offset (zeramento manual) — vem do Supabase via _offsetMesAtual
+  const totalExibido = Math.max(0, totalMes - _offsetMesAtual);
+
+  const el = document.getElementById('stat-total');
+  if (el) el.textContent = 'R$ ' + formatPrice(totalExibido);
+}
+
+// Zera o total exibido do mês.
+// Não apaga pedidos; só salva no Supabase um "offset" igual ao total atual,
+// fazendo o card mostrar R$ 0,00. Pedidos novos depois disso somam normal.
+async function zerarTotal() {
+  if (!confirm('Zerar o total exibido deste mês?\n\nOs pedidos não serão alterados. O zeramento é salvo no banco, então aparecerá em qualquer dispositivo.')) {
+    return;
+  }
+
+  // Calcula o total atual do mês
+  const agora = new Date();
+  const mes   = agora.getMonth();
+  const ano   = agora.getFullYear();
+  const totalMes = todosOS
+    .filter(p => {
+      const d = new Date(p.created_at);
+      return d.getMonth() === mes
+          && d.getFullYear() === ano
+          && (p.status || 'pendente') !== 'cancelado';
+    })
+    .reduce((acc, p) => acc + (parseFloat(p.total) || 0), 0);
+
+  const btn = document.getElementById('btn-zerar-total');
+  if (btn) btn.disabled = true;
+
+  try {
+    // Upsert no Supabase: insere se não existir, atualiza se existir.
+    // A coluna `chave` é primary key, então o upsert resolve por ela.
+    const { error } = await db
+      .from('config')
+      .upsert({
+        chave:         chaveOffset(ano, mes),
+        valor:         String(totalMes),
+        atualizado_em: new Date().toISOString(),
+      }, { onConflict: 'chave' });
+    if (error) throw error;
+
+    // Atualiza cache local e re-renderiza
+    _offsetMesAtual = totalMes;
+    // Também salva no localStorage como fallback se o Supabase cair depois
+    localStorage.setItem(`bened_total_offset_${ano}_${mes}`, String(totalMes));
+    atualizarStats();
+    showToast('Total do mês zerado (salvo no banco).');
+  } catch (e) {
+    showToast('Erro ao zerar no banco: ' + (e.message || e), 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ════════════════════════════════════════════════
+//  FILTRO
+// ════════════════════════════════════════════════
+function setFiltro(f) {
+  filtroAtivo = f;
+  paginaAtual = 1;
+
+  // chips
+  document.querySelectorAll('.chip').forEach(c => {
+    const txt = c.textContent.toLowerCase().trim();
+    const match = f === 'todos' ? txt === 'todos'
+      : f === 'finalizado' ? txt === 'finalizados'
+      : txt === f;
+    c.classList.toggle('active', match);
+  });
+  // sidebar
+  ['todos','pendente','confirmado','enviado','cancelado','finalizado'].forEach(s => {
+    const el = document.getElementById('nav-' + s);
+    if (el) el.classList.toggle('active', s === f);
+  });
+  renderTabela();
+  closeSidebar();
+}
+
+// ════════════════════════════════════════════════
+//  RENDER TABELA
+// ════════════════════════════════════════════════
+function renderTabela() {
+  const busca = (document.getElementById('busca-inp')?.value || '').toLowerCase().trim();
+
+  let lista = todosOS.filter(p => {
+    // finalizados só aparecem se o filtro for 'finalizado'
+    if ((p.status || 'pendente') === 'finalizado' && filtroAtivo !== 'finalizado') return false;
+    if (filtroAtivo !== 'todos' && filtroAtivo !== 'finalizado' && (p.status || 'pendente') !== filtroAtivo) return false;
+    if (filtroAtivo === 'finalizado' && (p.status || 'pendente') !== 'finalizado') return false;
+    if (!busca) return true;
+    const num = '#' + String(p.id).padStart(6,'0');
+    return (
+      num.includes(busca) ||
+      (p.cliente_nome  || '').toLowerCase().includes(busca) ||
+      (p.cliente_email || '').toLowerCase().includes(busca) ||
+      (p.cliente_celular || '').toLowerCase().includes(busca) ||
+      (p.cidade || '').toLowerCase().includes(busca) ||
+      (p.uf    || '').toLowerCase().includes(busca)
+    );
+  });
+
+  const total  = lista.length;
+  const inicio = (paginaAtual - 1) * POR_PAGINA;
+  const pagina = lista.slice(inicio, inicio + POR_PAGINA);
+
+  const tbody = document.getElementById('tbody-pedidos');
+
+  if (!pagina.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="8">
+        <div class="empty-state">
+          <span class="mat">inbox</span>
+          <div class="empty-title">Nenhum pedido encontrado</div>
+          <div class="empty-sub">${busca ? 'Tente outra busca.' : 'Ainda não há pedidos nessa categoria.'}</div>
+        </div>
+      </td></tr>`;
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+
+  tbody.innerHTML = pagina.map(p => rowPedido(p)).join('');
+  renderPaginacao(total);
+}
+
+function rowPedido(p) {
+  const num    = '#' + String(p.id).padStart(6,'0');
+  const status = (p.status || 'pendente').toLowerCase();
+  const itens  = Array.isArray(p.itens) ? p.itens : [];
+  const pag    = p.pagamento === 'pix' ? '💠 PIX' : p.pagamento === 'dinheiro' ? '💵 Dinheiro' : (p.pagamento || '—');
+  const local  = [p.cidade, p.uf].filter(Boolean).join('/') || '—';
+  const resumoItens = itens.length
+    ? `${itens.length} ${itens.length === 1 ? 'item' : 'itens'}`
+    : '—';
+
+  return `
+    <tr onclick="abrirModal(${p.id})">
+      <td class="td-pedido">
+        <div>
+          <div class="pedido-num">${esc(num)}</div>
+          <div class="pedido-data">${formatarData(p.created_at)}</div>
+        </div>
+        <div class="td-pedido-right">
+          <span class="status-badge status-${status} td-status-mobile" style="display:none;">${statusLabel(status)}</span>
+          <div class="pedido-total td-total-inline">R$ ${formatPrice(p.total)}</div>
+        </div>
+      </td>
+      <td class="td-cliente">
+        <div class="cliente-nome">${esc(p.cliente_nome || '—')}</div>
+        <div class="cliente-tel">${esc(p.cliente_celular || '')}</div>
+      </td>
+      <td class="td-local" style="color:var(--muted);font-size:12px;">${esc(local)}</td>
+      <td class="td-itens" style="color:var(--muted);font-size:12px;">${resumoItens}</td>
+      <td class="td-total td-total-desktop"><div class="pedido-total">R$ ${formatPrice(p.total)}</div></td>
+      <td class="td-pag" style="font-size:12px;">${pag}</td>
+      <td class="td-status"><span class="status-badge status-${status}">${statusLabel(status)}</span></td>
+      <td class="td-actions">
+        <div class="row-actions" onclick="event.stopPropagation()">
+          <button class="action-btn" title="Ver detalhes" onclick="abrirModal(${p.id})">
+            <span class="mat">open_in_new</span>
+          </button>
+          <a class="action-btn" title="WhatsApp" target="_blank"
+             href="https://api.whatsapp.com/send?phone=${WHATSAPP_NUM}&text=${encodeURIComponent('Olá ' + (p.cliente_nome||'') + '! Sobre seu pedido #' + String(p.id).padStart(6,'0') + ' 😊')}">
+            <span class="mat">chat</span>
+          </a>
+        </div>
+      </td>
+    </tr>`;
+}
+
+// ════════════════════════════════════════════════
+//  PAGINAÇÃO
+// ════════════════════════════════════════════════
+function renderPaginacao(total) {
+  const pagDiv  = document.getElementById('pagination');
+  const infoEl  = document.getElementById('pag-info');
+  const btnsEl  = document.getElementById('pag-btns');
+  const pages   = Math.ceil(total / POR_PAGINA);
+  const inicio  = (paginaAtual - 1) * POR_PAGINA + 1;
+  const fim     = Math.min(paginaAtual * POR_PAGINA, total);
+
+  pagDiv.style.display = total > POR_PAGINA ? '' : 'none';
+  if (!total) return;
+
+  infoEl.textContent = `Mostrando ${inicio}–${fim} de ${total}`;
+
+  let html = `<button class="page-btn" onclick="irPagina(${paginaAtual-1})" ${paginaAtual===1?'disabled':''}>
+    <span class="mat" style="font-size:14px;">chevron_left</span>
+  </button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (pages > 7 && (i > 2 && i < pages-1 && Math.abs(i - paginaAtual) > 1)) {
+      if (i === 3 || i === pages-2) html += `<button class="page-btn" disabled>…</button>`;
+      continue;
+    }
+    html += `<button class="page-btn ${i===paginaAtual?'active':''}" onclick="irPagina(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="irPagina(${paginaAtual+1})" ${paginaAtual===pages?'disabled':''}>
+    <span class="mat" style="font-size:14px;">chevron_right</span>
+  </button>`;
+  btnsEl.innerHTML = html;
+}
+
+function irPagina(n) {
+  const pages = Math.ceil(filtrado().length / POR_PAGINA);
+  if (n < 1 || n > pages) return;
+  paginaAtual = n;
+  renderTabela();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function filtrado() {
+  return todosOS.filter(p => {
+    if ((p.status||'pendente') === 'finalizado' && filtroAtivo !== 'finalizado') return false;
+    if (filtroAtivo === 'finalizado') return (p.status||'pendente') === 'finalizado';
+    return filtroAtivo === 'todos' || (p.status||'pendente') === filtroAtivo;
+  });
+}
+
+// ════════════════════════════════════════════════
+//  MODAL DETALHE
+// ════════════════════════════════════════════════
+function abrirModal(id) {
+  const p = todosOS.find(x => x.id === id);
+  if (!p) return;
+  pedidoAtual = p;
+
+  const num    = '#' + String(p.id).padStart(6,'0');
+  const status = (p.status || 'pendente').toLowerCase();
+  const itens  = Array.isArray(p.itens) ? p.itens : [];
+
+  document.getElementById('modal-titulo').innerHTML = `Pedido <em>${esc(num)}</em>`;
+
+  // status badge + select
+  const badge = document.getElementById('modal-status-badge');
+  badge.className = `status-badge status-${status}`;
+  badge.textContent = statusLabel(status);
+  document.getElementById('modal-status-select').value = status;
+
+  // preenche o input de rastreio com o que já estiver salvo (se houver)
+  document.getElementById('modal-rastreio-input').value = p.codigo_rastreio || '';
+  // mostra ou esconde o bloco conforme cidade + status escolhido
+  atualizarCampoRastreio();
+
+  // cliente
+  document.getElementById('modal-cliente').innerHTML = `
+    <div class="det-row"><span class="det-key">Nome</span><span class="det-val">${esc(p.cliente_nome||'—')}</span></div>
+    <div class="det-row"><span class="det-key">Celular</span><span class="det-val">${esc(p.cliente_celular||'—')}</span></div>
+    ${p.cliente_email ? `<div class="det-row"><span class="det-key">E-mail</span><span class="det-val">${esc(p.cliente_email)}</span></div>` : ''}
+    ${p.cliente_cpf   ? `<div class="det-row"><span class="det-key">CPF</span><span class="det-val">${esc(formatarCPF(p.cliente_cpf))}</span></div>` : ''}
+    <div class="det-row"><span class="det-key">Pedido em</span><span class="det-val">${formatarData(p.created_at)}</span></div>
+  `;
+
+  // endereço
+  const end = [
+    p.endereco && `${p.endereco}, Nº ${p.numero||'—'}${p.complemento ? ' — ' + p.complemento : ''}`,
+    p.bairro && `Bairro: ${p.bairro}`,
+    (p.cidade || p.uf) && `${p.cidade||''}${p.cidade&&p.uf?'/':''}${p.uf||''}`,
+    p.cep && `CEP: ${(p.cep||'').replace(/(\d{5})(\d{3})/,'$1-$2')}`
+  ].filter(Boolean);
+  let endHTML = end.map(l =>
+    `<div class="det-row"><span class="det-val" style="text-align:left;">${esc(l)}</span></div>`
+  ).join('') || '<div class="det-row"><span class="det-val" style="text-align:left;color:var(--muted);">Sem endereço</span></div>';
+  // Se já tem código de rastreio salvo, mostra aqui também
+  if (p.codigo_rastreio) {
+    endHTML += `<div class="det-row" style="margin-top:6px;padding-top:8px;border-top:1px solid var(--border2);">
+      <span class="det-key" style="color:var(--info);">🚚 Rastreio</span>
+      <span class="det-val" style="color:var(--info);font-family:monospace;letter-spacing:0.05em;">${esc(p.codigo_rastreio)}</span>
+    </div>`;
+  }
+  document.getElementById('modal-endereco').innerHTML = endHTML;
+
+  // itens
+  document.getElementById('modal-itens').innerHTML = itens.length
+    ? itens.map(it => {
+        const generoLabel = it.genero === 'feminino' ? '♀ Feminino' : it.genero === 'masculino' ? '♂ Masculino' : it.genero === 'unissex' ? '⚥ Unissex' : '';
+        const vars = [
+          it.tamanho && `Tam: ${it.tamanho}`,
+          it.cor && `Cor: ${it.cor}`,
+          generoLabel && `Gênero: ${generoLabel}`
+        ].filter(Boolean);
+        const sub = (it.preco||0) * (it.qty||1);
+        return `
+          <div class="item-row">
+            <div>
+              <div class="item-nome">${esc(it.nome||'Item')}</div>
+              ${vars.length ? `<div class="item-vars">${vars.map(v=>`<span class="item-var">${esc(v)}</span>`).join('')}</div>` : ''}
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div class="item-preco">R$ ${formatPrice(sub)}</div>
+              <div class="item-qty">${it.qty}× R$ ${formatPrice(it.preco||0)}</div>
+            </div>
+          </div>`;
+      }).join('')
+    : '<div style="font-size:12px;color:var(--muted);padding:8px 0;">Sem itens registrados</div>';
+
+  // totais
+  const pagLabel = p.pagamento === 'pix' ? '💠 PIX' : p.pagamento === 'dinheiro' ? '💵 Dinheiro na entrega' : (p.pagamento||'—');
+  document.getElementById('modal-totais').innerHTML = `
+    <div class="total-row"><span class="total-key">Subtotal</span><span class="total-val">R$ ${formatPrice(p.subtotal)}</span></div>
+    <div class="total-row"><span class="total-key">Frete${p.frete_nome ? ' (' + esc(p.frete_nome) + ')' : ''}</span><span class="total-val">${parseFloat(p.frete_valor)>0 ? 'R$ ' + formatPrice(p.frete_valor) : 'Grátis'}</span></div>
+    <div class="total-row"><span class="total-key">Pagamento</span><span class="total-val">${pagLabel}${p.troco_para ? ' — troco para ' + esc(p.troco_para) : ''}</span></div>
+    <div class="total-row final"><span class="total-key">Total</span><span class="total-val">R$ ${formatPrice(p.total)}</span></div>
+  `;
+
+  // botão WhatsApp
+  const msgWA = `Olá ${p.cliente_nome||''}! Sobre seu pedido ${num} 😊`;
+  document.getElementById('btn-wpp-modal').href =
+    `https://api.whatsapp.com/send?phone=${WHATSAPP_NUM}&text=${encodeURIComponent(msgWA)}`;
+
+  document.getElementById('modal-pedido').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function fecharModal() {
+  document.getElementById('modal-pedido').classList.remove('open');
+  document.body.style.overflow = '';
+  pedidoAtual = null;
+}
+
+// ════════════════════════════════════════════════
+//  RASTREIO DOS CORREIOS
+// ════════════════════════════════════════════════
+// Normaliza o nome da cidade pra comparar sem acento/case
+function normalizarCidade(c) {
+  return (c || '').toString()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // tira acentos
+    .toLowerCase().trim();
+}
+// Retorna true se a cidade EXIGE rastreio (i.e. não é Mamanguape nem Rio Tinto)
+function cidadeRequerRastreio(cidade) {
+  const c = normalizarCidade(cidade);
+  if (!c) return false; // sem cidade definida, não pede
+  return c !== 'mamanguape' && c !== 'rio tinto';
+}
+// Mostra ou esconde o input de rastreio conforme cidade + status escolhido
+function atualizarCampoRastreio() {
+  if (!pedidoAtual) return;
+  const box        = document.getElementById('rastreio-box');
+  const statusSel  = document.getElementById('modal-status-select').value;
+  const precisa    = cidadeRequerRastreio(pedidoAtual.cidade);
+  // Só aparece quando: cidade fora das duas E status escolhido é "enviado"
+  box.style.display = (precisa && statusSel === 'enviado') ? 'block' : 'none';
+}
+
+// ════════════════════════════════════════════════
+//  SALVAR STATUS
+// ════════════════════════════════════════════════
+async function salvarStatus() {
+  if (!pedidoAtual) return;
+  const novoStatus = document.getElementById('modal-status-select').value;
+  const btn = document.getElementById('btn-salvar-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mat spin" style="font-size:14px;display:inline-block;">autorenew</span> Salvando…';
+
+  try {
+    // ── Se virou CANCELADO: marca no banco para o cliente ser notificado ──
+    //    (o pedido será deletado automaticamente quando o cliente clicar em "Entendido"
+    //     na notificação de cancelamento na tela "Meus Pedidos")
+    if (novoStatus === 'cancelado') {
+      const pedidoId = pedidoAtual.id;
+      const num      = '#' + String(pedidoId).padStart(6, '0');
+
+      if (!confirm(`Tem certeza que deseja CANCELAR o pedido ${num}?\n\n⚠️ O cliente será notificado e o pedido será removido do banco assim que ele visualizar.`)) {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="mat">save</span> Salvar';
+        return;
+      }
+
+      const { error: updError } = await db
+        .from('pedidos')
+        .update({ status: 'cancelado' })
+        .eq('id', pedidoId);
+      if (updError) throw updError;
+
+      fecharModal();
+      todosOS = todosOS.filter(x => x.id !== pedidoId);
+      atualizarStats();
+      renderTabela();
+      showToast('Pedido ' + num + ' cancelado. Cliente será notificado.');
+      return;
+    }
+
+    // ── Monta o payload do update ──
+    const payload = { status: novoStatus };
+
+    // ── Se virou ENVIADO e cidade exige rastreio: pega o código SE preenchido (opcional) ──
+    if (novoStatus === 'enviado' && cidadeRequerRastreio(pedidoAtual.cidade)) {
+      const codigoRaw = document.getElementById('modal-rastreio-input').value || '';
+      const codigo = codigoRaw.trim().toUpperCase().replace(/\s+/g, '');
+      // Se preencheu, valida tamanho mínimo. Se não, segue sem código.
+      if (codigo) {
+        if (codigo.length < 8) {
+          showToast('Código de rastreio inválido (mínimo 8 caracteres). Deixe em branco se ainda não tiver.', 'err');
+          document.getElementById('modal-rastreio-input').focus();
+          btn.disabled = false;
+          btn.innerHTML = '<span class="mat">save</span> Salvar';
+          return;
+        }
+        payload.codigo_rastreio = codigo;
+      }
+    }
+
+    const { error } = await db
+      .from('pedidos')
+      .update(payload)
+      .eq('id', pedidoAtual.id);
+    if (error) throw error;
+
+    // Atualiza local
+    const idx = todosOS.findIndex(x => x.id === pedidoAtual.id);
+    if (idx !== -1) {
+      todosOS[idx].status = novoStatus;
+      if (payload.codigo_rastreio) todosOS[idx].codigo_rastreio = payload.codigo_rastreio;
+    }
+    pedidoAtual.status = novoStatus;
+    if (payload.codigo_rastreio) pedidoAtual.codigo_rastreio = payload.codigo_rastreio;
+
+    // Atualiza badge no modal
+    const badge = document.getElementById('modal-status-badge');
+    badge.className = `status-badge status-${novoStatus}`;
+    badge.textContent = statusLabel(novoStatus);
+
+    atualizarStats();
+    renderTabela();
+    if (payload.codigo_rastreio) {
+      showToast('Salvo! Status: ' + statusLabel(novoStatus) + ' · Rastreio: ' + payload.codigo_rastreio);
+    } else {
+      showToast('Status atualizado para: ' + statusLabel(novoStatus));
+    }
+
+    // ── Se virou FINALIZADO: sai do "Todos" e vai para seção Finalizados ──
+    if (novoStatus === 'finalizado') {
+      fecharModal();
+      atualizarStats();
+      renderTabela();
+      showToast('Pedido #' + String(pedidoAtual?.id || '').padStart(6,'0') + ' finalizado e arquivado.');
+      return;
+    }
+  } catch(e) {
+    showToast('Erro ao salvar status: ' + (e.message||e), 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="mat">save</span> Salvar';
+  }
+}
+
+// ════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════
+function statusLabel(s) {
+  return { pendente:'Pendente', confirmado:'Confirmado', enviado:'Enviado', entregue:'Entregue', cancelado:'Cancelado', finalizado:'Finalizado' }[s] || s;
+}
+
+function formatarData(iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch { return iso; }
+}
+
+function formatPrice(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? '0,00' : n.toFixed(2).replace('.',',');
+}
+
+function formatarCPF(c) {
+  const d = (c||'').replace(/\D/g,'');
+  return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4') : c;
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════
+let _toastT = null;
+function showToast(msg, type='') {
+  const el  = document.getElementById('toast');
+  const ico = document.getElementById('toast-icon');
+  const txt = document.getElementById('toast-msg');
+  if (!el) return;
+  el.className  = 'toast' + (type==='err' ? ' err' : type==='warn' ? ' warn' : '');
+  txt.textContent = msg;
+  ico.textContent = type==='err' ? 'error_outline' : type==='warn' ? 'warning' : 'check_circle';
+  el.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ════════════════════════════════════════════════
+//  SIDEBAR (mobile)
+// ════════════════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// ════════════════════════════════════════════════
+//  TEMA
+// ════════════════════════════════════════════════
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('bened_theme', nxt);
+  updateThemeIcon();
+}
+function carregarTheme() {
+  const t = localStorage.getItem('bened_theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  updateThemeIcon();
+}
+function updateThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const el = document.getElementById('theme-icon');
+  if (el) el.textContent = isDark ? 'light_mode' : 'dark_mode';
+}
+
+// fecha modal com ESC
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModal(); });
+</script>
+</body>
+</html>
