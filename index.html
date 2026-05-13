@@ -1372,6 +1372,46 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       width:100%;
     }
     .ivory-card__cta--disabled:hover{background:#3a342d;}
+
+    /* ── animação do botão de confirmar no modal ── */
+    .var-modal-confirm{position:relative;overflow:hidden;}
+    .var-modal-confirm .vm-confirm-icon,
+    .var-modal-confirm .vm-confirm-check{
+      display:inline-flex;align-items:center;justify-content:center;
+      transition:transform .35s, opacity .25s;
+    }
+    .var-modal-confirm .vm-confirm-icon .mat{font-size:18px;}
+    .var-modal-confirm .vm-confirm-check{
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);
+      opacity:0;
+    }
+    .var-modal-confirm .vm-confirm-check .mat{font-size:24px;color:#0f1526;}
+    .var-modal-confirm .vm-confirm-label{transition:opacity .25s, transform .35s;}
+    /* Estado: clicado / sucesso */
+    .var-modal-confirm.adding .vm-confirm-icon{
+      transform:translateY(-30px);opacity:0;
+    }
+    .var-modal-confirm.adding .vm-confirm-label{
+      opacity:0;transform:translateX(10px);
+    }
+    .var-modal-confirm.adding .vm-confirm-check{
+      opacity:1;transform:translate(-50%,-50%) scale(1);
+      transition:transform .45s cubic-bezier(.34,1.56,.64,1) .15s, opacity .25s .15s;
+    }
+    .var-modal-confirm.adding{
+      background:#a8e6a3 !important;
+      box-shadow:0 8px 24px rgba(168,230,163,.4) !important;
+    }
+
+    /* ── bloco de formas de pagamento no card (compacto) ── */
+    .ivory-card__pagamento{
+      margin-top:8px;
+      display:flex;align-items:center;gap:6px;
+      font-size:10px;color:var(--muted);
+      font-family:'DM Sans',sans-serif;line-height:1.3;
+    }
+    .ivory-card__pagamento .mat{font-size:13px;color:var(--gold);flex-shrink:0;}
+    .ivory-card__pagamento strong{color:var(--gold);font-weight:600;white-space:nowrap;}
     /* texto */
     .cta-span{
       display:block;text-align:center;position:relative;z-index:1;
@@ -1610,8 +1650,8 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <div class="destaque-title">Entrega &amp; Pagamento</div>
       <div class="destaque-desc">Entrega rápida na sua porta e pagamento facilitado — escolha como prefere pagar.</div>
       <div class="destaque-tags">
-        <span class="destaque-tag"><span class="mat">credit_card</span>Cartão</span>
-        <span class="destaque-tag"><span class="mat">pix</span>PIX</span>
+        <span class="destaque-tag"><span class="mat">qr_code_2</span>PIX</span>
+        <span class="destaque-tag"><span class="mat">credit_card</span>12x sem juros</span>
       </div>
     </div>
   </div>
@@ -1836,6 +1876,14 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
         </div>
         <div class="vm-sizes" id="vm-sizes"></div>
       </div>
+      <div class="var-modal-section" id="vm-tipo-sec" style="display:none;">
+        <div class="var-modal-label">
+          <span class="mat" style="font-size:14px;">checkroom</span>
+          Modelagem
+          <span class="sel" id="vm-sel-tipo"></span>
+        </div>
+        <div class="vm-sizes" id="vm-tipos"></div>
+      </div>
       <div class="var-modal-section" id="vm-color-sec" style="display:none;">
         <div class="var-modal-label">
           <span class="mat" style="font-size:14px;">palette</span>
@@ -1848,7 +1896,9 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div class="var-modal-foot">
       <div class="var-modal-err" id="vm-err"></div>
       <button class="var-modal-confirm" id="vm-confirm-btn" onclick="confirmarVarModal()">
-        <span class="mat">add_shopping_cart</span>Adicionar à Sacola
+        <span class="vm-confirm-icon"><span class="mat">add_shopping_cart</span></span>
+        <span class="vm-confirm-check"><span class="mat">check_circle</span></span>
+        <span class="vm-confirm-label">Adicionar à Sacola</span>
       </button>
     </div>
   </div>
@@ -1932,6 +1982,7 @@ let currentSearch= '';
 let vmProduto = null;
 let vmTamanho = null;
 let vmCor     = null;
+let vmTipo    = null;
 
 // Dados do checkout
 let checkoutData = { nome:'', email:'', cpf:'', endereco:'', numero:'', bairro:'', complemento:'', cidade:'', uf:'', celular:'', pagamento:'', cep:'' };
@@ -2116,9 +2167,9 @@ async function loadColecoes() {
 }
 
 function inicializarEstadoColecoes() {
-  // Garante que cada coleção tenha um estado de toggle (padrão: premium)
+  // Garante que cada coleção tenha um estado de toggle (padrão: algodao)
   allColecoes.forEach(c => {
-    if (!COLECAO_STATE[c.slug]) COLECAO_STATE[c.slug] = 'premium';
+    if (!COLECAO_STATE[c.slug]) COLECAO_STATE[c.slug] = 'algodao';
   });
 }
 
@@ -2173,7 +2224,7 @@ function renderColecoes() {
 function buildColecaoSection(id, titulo, icon) {
   const trackId = `track-${id}`;
   const dotsId  = `dots-${id}`;
-  const state   = COLECAO_STATE[id] || 'premium';
+  const state   = COLECAO_STATE[id] || 'algodao';
   return `
     <div style="margin-bottom:60px;">
       <!-- Cabeçalho: tudo à esquerda -->
@@ -2183,14 +2234,20 @@ function buildColecaoSection(id, titulo, icon) {
         </span>
         <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,2.8vw,34px);font-weight:300;color:var(--ink);margin-bottom:14px;">${titulo}</div>
 
+        <!-- Label do toggle -->
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+          <span class="mat" style="font-size:14px;color:var(--gold);">checkroom</span>
+          Escolha o tipo de tecido:
+        </div>
+
         <!-- Toggle + Setas em linha, à esquerda -->
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="col-toggle">
-            <button class="col-toggle-btn ${state==='premium'?'active':''}" onclick="setColecaoTipo('${id}','premium')">
-              <span class="mat">workspace_premium</span>Premium
-            </button>
             <button class="col-toggle-btn ${state==='algodao'?'active':''}" onclick="setColecaoTipo('${id}','algodao')">
               <span class="mat">eco</span>100% Algodão
+            </button>
+            <button class="col-toggle-btn ${state==='premium'?'active':''}" onclick="setColecaoTipo('${id}','premium')">
+              <span class="mat">workspace_premium</span>Premium
             </button>
           </div>
           <button class="promo-car-arrow" onclick="scrollColecao('${id}',-1)"><span class="mat">arrow_back</span></button>
@@ -2465,72 +2522,9 @@ function renderPromoCarousel() {
       e.stopPropagation();
       const cta = card.querySelector('.ivory-card__cta');
       if (cta.disabled || cta.classList.contains('ivory-card__cta--disabled')) return;
-      if (cta.classList.contains('active')) return;
       const p  = allProducts.find(x => String(x.id) === String(pid));
       if (!p) return;
-      const sz  = card.querySelector('.ivory-sz-btn.active')?.dataset.sz   || '';
-      const cor = card.querySelector('.ivory-color-dot.active')?.dataset.cor || '';
-      const tp  = card.querySelector('.ivory-tp-btn.active')?.dataset.tp   || '';
-      const szFinal = tp ? (sz ? `${sz} (${tp})` : tp) : sz;
-      const ok = adicionarAoCarrinho(p, szFinal, cor);
-      if (ok === false) return; // estoque esgotado ou limite atingido — não roda animação
-
-      // Animação idêntica ao original
-      const morph = cta.querySelector('.cta-morph path');
-      const shirt = cta.querySelectorAll('.cta-shirt svg > path');
-
-      cta.classList.add('active');
-
-      gsap.to(cta, { keyframes: [
-        { '--bg-scale': .97, duration: .15 },
-        { '--bg-scale': 1, delay: .125, duration: 1.2, ease: 'elastic.out(1,.6)' }
-      ]});
-
-      gsap.to(cta, { keyframes: [
-        { '--shirt-scale': 1, '--shirt-y': '-42px', '--cart-x': '0px', '--cart-scale': 1, duration: .4, ease: 'power1.in' },
-        { '--shirt-y': '-40px', duration: .3 },
-        { '--shirt-y': '16px', '--shirt-scale': .9, duration: .25, ease: 'none' },
-        { '--shirt-scale': 0, duration: .3, ease: 'none' }
-      ]});
-
-      gsap.to(cta, { '--shirt-second-y': '0px', delay: .835, duration: .12 });
-
-      gsap.to(cta, { keyframes: [
-        { '--cart-clip': '12px', '--cart-clip-x': '3px', delay: .9, duration: .06 },
-        { '--cart-y': '2px', duration: .1 },
-        { '--cart-tick-offset': '0px', '--cart-y': '0px', duration: .2,
-          onComplete() { cta.style.overflow = 'hidden'; }
-        },
-        { '--cart-x': '52px', '--cart-rotate': '-15deg', duration: .2 },
-        { '--cart-x': '104px', '--cart-rotate': '0deg', duration: .2, clearProps: true,
-          onComplete() {
-            cta.style.overflow = 'hidden';
-            cta.style.setProperty('--text-o', 0);
-            cta.style.setProperty('--text-x', '0px');
-            cta.style.setProperty('--cart-x', '-104px');
-          }
-        },
-        { '--text-o': 1, '--text-x': '8px', '--cart-x': '-48px', '--cart-scale': .75, duration: .25, clearProps: true,
-          onComplete() { cta.classList.remove('active'); }
-        }
-      ]});
-
-      gsap.to(cta, { keyframes: [{ '--text-o': 0, duration: .3 }] });
-
-      if (morph && window.MorphSVGPlugin) {
-        gsap.to(morph, { keyframes: [
-          { morphSVG: 'M0 12C6 12 20 10 32 0C43.9024 9.99999 58 12 64 12V13H0V12Z', duration: .25, ease: 'power1.out' },
-          { morphSVG: 'M0 12C6 12 17 12 32 12C47.9024 12 58 12 64 12V13H0V12Z', duration: .15, ease: 'none' }
-        ]});
-      }
-
-      if (shirt.length && window.MorphSVGPlugin) {
-        gsap.to(shirt, { keyframes: [
-          { morphSVG: 'M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L23.5 8L20.5 11L19 9.5L18 22.5C18 22.5 14 21.5 12 21.5C10 21.5 5.99997 22.5 5.99997 22.5L4.99997 9.5L3.5 11L0.5 8L4.99997 3Z', duration: .25, delay: .25 },
-          { morphSVG: 'M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L23.5 8L20.5 11L19 9.5L18.5 22.5C18.5 22.5 13.5 22.5 12 22.5C10.5 22.5 5.5 22.5 5.5 22.5L4.99997 9.5L3.5 11L0.5 8L4.99997 3Z', duration: .85, ease: 'elastic.out(1,.5)' },
-          { morphSVG: 'M4.99997 3L8.99997 1.5C8.99997 1.5 10.6901 3 12 3C13.3098 3 15 1.5 15 1.5L19 3L22.5 8L19.5 10.5L19 9.5L17.1781 18.6093C17.062 19.1901 16.778 19.7249 16.3351 20.1181C15.4265 20.925 13.7133 22.3147 12 23C10.2868 22.3147 8.57355 20.925 7.66487 20.1181C7.22198 19.7249 6.93798 19.1901 6.82183 18.6093L4.99997 9.5L4.5 10.5L1.5 8L4.99997 3Z', duration: 0, delay: 1.25 }
-        ]});
-      }
+      abrirVarModal(p.id, card.querySelector('.ivory-color-dot.active')?.dataset.cor || '');
     });
   });
 }
@@ -2647,52 +2641,9 @@ function bindIvoryCards(grid) {
       e.stopPropagation();
       const cta = card.querySelector('.ivory-card__cta');
       if (cta.disabled || cta.classList.contains('ivory-card__cta--disabled')) return;
-      if (cta.classList.contains('active')) return;
       const p  = allProducts.find(x => String(x.id) === String(pid));
       if (!p) return;
-      const sz  = card.querySelector('.ivory-sz-btn.active')?.dataset.sz   || '';
-      const cor = card.querySelector('.ivory-color-dot.active')?.dataset.cor || '';
-      const tp  = card.querySelector('.ivory-tp-btn.active')?.dataset.tp   || '';
-      const szFinal = tp ? (sz ? `${sz} (${tp})` : tp) : sz;
-      const ok = adicionarAoCarrinho(p, szFinal, cor);
-      if (ok === false) return;
-
-      const morph = cta.querySelector('.cta-morph path');
-      const shirt = cta.querySelectorAll('.cta-shirt svg > path');
-      cta.classList.add('active');
-
-      if (window.gsap) {
-        gsap.to(cta, { keyframes: [
-          { '--bg-scale': .97, duration: .15 },
-          { '--bg-scale': 1, delay: .125, duration: 1.2, ease: 'elastic.out(1,.6)' }
-        ]});
-        gsap.to(cta, { keyframes: [
-          { '--shirt-scale': 1, '--shirt-y': '-42px', '--cart-x': '0px', '--cart-scale': 1, duration: .4, ease: 'power1.in' },
-          { '--shirt-y': '-40px', duration: .3 },
-          { '--shirt-y': '16px', '--shirt-scale': .9, duration: .25, ease: 'none' },
-          { '--shirt-scale': 0, duration: .3, ease: 'none' }
-        ]});
-        gsap.to(cta, { '--shirt-second-y': '0px', delay: .835, duration: .12 });
-        gsap.to(cta, { keyframes: [
-          { '--cart-clip': '12px', '--cart-clip-x': '3px', delay: .9, duration: .06 },
-          { '--cart-y': '2px', duration: .1 },
-          { '--cart-tick-offset': '0px', '--cart-y': '0px', duration: .2,
-            onComplete() { cta.style.overflow = 'hidden'; } },
-          { '--cart-x': '52px', '--cart-rotate': '-15deg', duration: .2 },
-          { '--cart-x': '104px', '--cart-rotate': '0deg', duration: .2, clearProps: true,
-            onComplete() {
-              cta.style.overflow = 'hidden';
-              cta.style.setProperty('--text-o', 0);
-              cta.style.setProperty('--text-x', '0px');
-              cta.style.setProperty('--cart-x', '-104px');
-            } },
-          { '--text-o': 1, '--text-x': '8px', '--cart-x': '-48px', '--cart-scale': .75, duration: .25, clearProps: true,
-            onComplete() { cta.classList.remove('active'); } }
-        ]});
-        gsap.to(cta, { keyframes: [{ '--text-o': 0, duration: .3 }] });
-      } else {
-        setTimeout(() => cta.classList.remove('active'), 300);
-      }
+      abrirVarModal(p.id, card.querySelector('.ivory-color-dot.active')?.dataset.cor || '');
     });
   });
 }
@@ -2819,9 +2770,12 @@ function ivoryCardHTML(p, tipo) {
       </div>
     </div>
     ${coresHTML}
-    ${tamHTML}
-    ${tipoHTML}
     ${ctaHTML}
+    ${semEstoque ? '' : `
+    <div class="ivory-card__pagamento">
+      <span class="mat">credit_card</span>
+      <span>PIX ou <strong>12x de R$ ${formatPrice(parseFloat(p.preco)/12)}</strong> sem juros</span>
+    </div>`}
   </div>
 </article>`;
 }
@@ -2891,7 +2845,7 @@ function corHex(nome) {
   return COR_HEX[k] || '#888';
 }
 
-function abrirVarModal(id) {
+function abrirVarModal(id, corPre) {
   const p = allProducts.find(x => String(x.id) === String(id));
   if (!p) return;
   if (p.estoque === 0) { showToast('Produto esgotado', 'error'); return; }
@@ -2899,6 +2853,7 @@ function abrirVarModal(id) {
   vmProduto = p;
   vmTamanho = null;
   vmCor     = null;
+  vmTipo    = null;
 
   const thumb = getFirstImage(p);
   document.getElementById('vm-img-wrap').innerHTML = thumb
@@ -2922,6 +2877,28 @@ function abrirVarModal(id) {
     sizeSec.style.display = 'none';
   }
 
+  // Modelagem (Tipo)
+  const tipoSec = document.getElementById('vm-tipo-sec');
+  let tiposList = [];
+  if (p.tipo_peca === 'ambos')       tiposList = ['Normal', 'Baby'];
+  else if (p.tipo_peca === 'normal') tiposList = ['Normal'];
+  else if (p.tipo_peca === 'baby')   tiposList = ['Baby'];
+  if (tiposList.length) {
+    tipoSec.style.display = '';
+    document.getElementById('vm-tipos').innerHTML = tiposList.map(t =>
+      `<button class="vm-size-btn" onclick="selVmTipo(this,'${esc(t)}')">${esc(t)}</button>`
+    ).join('');
+    document.getElementById('vm-sel-tipo').textContent = '';
+    // Se só tem 1 tipo, pré-seleciona
+    if (tiposList.length === 1) {
+      vmTipo = tiposList[0];
+      document.querySelector('#vm-tipos .vm-size-btn')?.classList.add('active');
+      document.getElementById('vm-sel-tipo').textContent = '— ' + tiposList[0];
+    }
+  } else {
+    tipoSec.style.display = 'none';
+  }
+
   // Cores
   const colorSec = document.getElementById('vm-color-sec');
   const cores    = Array.isArray(p.cores) ? p.cores : [];
@@ -2933,6 +2910,19 @@ function abrirVarModal(id) {
        </button>`
     ).join('');
     document.getElementById('vm-sel-color').textContent = '';
+    // Pré-seleciona a cor escolhida no card
+    if (corPre) {
+      const normKey = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+      const btns = document.querySelectorAll('#vm-colors .vm-color-btn');
+      btns.forEach((b, i) => {
+        if (normKey(cores[i]) === normKey(corPre)) {
+          b.classList.add('active');
+          vmCor = cores[i];
+          document.getElementById('vm-sel-color').textContent = '— ' + cores[i];
+        }
+      });
+      if (vmCor) atualizarVmImg();
+    }
   } else {
     colorSec.style.display = 'none';
   }
@@ -2963,6 +2953,13 @@ function selVmCor(btn, val) {
   atualizarVmImg();
 }
 
+function selVmTipo(btn, val) {
+  document.querySelectorAll('#vm-tipos .vm-size-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  vmTipo = val;
+  document.getElementById('vm-sel-tipo').textContent = '— ' + val;
+}
+
 function atualizarVmImg() {
   if (!vmProduto) return;
   const corImgs = vmProduto.cor_imagens || {};
@@ -2987,12 +2984,22 @@ function confirmarVarModal() {
 
   const precisaTamanho = Array.isArray(vmProduto.tamanhos) && vmProduto.tamanhos.length > 0;
   const precisaCor     = Array.isArray(vmProduto.cores)    && vmProduto.cores.length    > 0;
+  const tipoPeca       = vmProduto.tipo_peca;
+  const precisaTipo    = tipoPeca === 'ambos'; // só precisa escolher se tem ambos
   const errEl          = document.getElementById('vm-err');
   errEl.textContent    = '';
 
   if (precisaTamanho && !vmTamanho) {
     errEl.textContent = '⚠ Selecione um tamanho';
     document.getElementById('vm-size-sec')?.animate(
+      [{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],
+      {duration:300, iterations:2}
+    );
+    return;
+  }
+  if (precisaTipo && !vmTipo) {
+    errEl.textContent = '⚠ Selecione a modelagem';
+    document.getElementById('vm-tipo-sec')?.animate(
       [{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],
       {duration:300, iterations:2}
     );
@@ -3007,8 +3014,24 @@ function confirmarVarModal() {
     return;
   }
 
-  adicionarAoCarrinho(vmProduto, vmTamanho, vmCor);
-  fecharVarModal();
+  // Combina tamanho + tipo (compatível com o formato antigo do card: "M (Normal)")
+  const szFinal = vmTipo ? (vmTamanho ? `${vmTamanho} (${vmTipo})` : vmTipo) : vmTamanho;
+  const ok = adicionarAoCarrinho(vmProduto, szFinal, vmCor);
+  if (ok === false) return;
+
+  // Animação simples: ícone sobe, checkmark aparece, fecha o modal
+  const cta = document.getElementById('vm-confirm-btn');
+  if (cta) {
+    cta.classList.add('adding');
+    cta.disabled = true;
+    setTimeout(() => {
+      cta.classList.remove('adding');
+      cta.disabled = false;
+      fecharVarModal();
+    }, 800);
+  } else {
+    fecharVarModal();
+  }
 }
 
 // ════════════════════════════════════════════════════════════
