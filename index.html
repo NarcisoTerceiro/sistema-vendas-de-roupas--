@@ -1260,30 +1260,42 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     .promo-car-dot{width:6px;height:6px;border-radius:3px;background:rgba(196,169,125,.25);border:none;cursor:pointer;padding:0;transition:all .3s;}
     .promo-car-dot.active{width:22px;background:#c4a97d;}
 
-    /* card — foto ocupa tudo */
+    /* card — fundo azul, info dourada, borda e brilho dourados */
     .ivory-card{
       position:relative;flex-shrink:0;width:300px;scroll-snap-align:start;
       border-radius:18px;overflow:hidden;
       background:var(--card-bg);
-      box-shadow:0 24px 60px rgba(0,0,0,.55);
-      transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s;
+      border:1.5px solid #c8a96e;
+      box-shadow:
+        0 0 0 1px rgba(200,169,110,.2),
+        0 0 24px rgba(200,169,110,.25),
+        0 24px 60px rgba(0,0,0,.55);
+      transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s,border-color .35s;
       cursor:pointer;
+      display:flex;flex-direction:column;
     }
     @media(max-width:768px){.ivory-card{width:260px;}}
     @media(max-width:480px){.ivory-card{width:calc(85vw);max-width:300px;}}
-    .ivory-card:hover{transform:translateY(-5px);box-shadow:0 36px 80px rgba(0,0,0,.7);}
+    .ivory-card:hover{
+      transform:translateY(-5px);
+      border-color:#d4b87a;
+      box-shadow:
+        0 0 0 1px rgba(200,169,110,.35),
+        0 0 40px rgba(200,169,110,.45),
+        0 36px 80px rgba(0,0,0,.7);
+    }
 
-    /* foto ocupa o card inteiro — info flutua sobre ela */
-    .ivory-card__img-wrap{position:absolute;inset:0;}
-    .ivory-card__img-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .7s cubic-bezier(.22,1,.36,1);filter:brightness(.85) saturate(.9);}
-    .ivory-card:hover .ivory-card__img-wrap img{transform:scale(1.06);}
-    .ivory-card__img-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08) 0%,transparent 30%,rgba(26,23,20,.6) 60%,rgba(26,23,20,.97) 100%);pointer-events:none;}
+    /* BLOCO 1 — foto INTEIRA (sem corte), fundo azul do card */
+    .ivory-card__img-wrap{position:relative;width:100%;height:340px;overflow:hidden;background:var(--card-bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+    @media(max-width:480px){.ivory-card__img-wrap{height:300px;}}
+    .ivory-card__img-wrap img{width:100%;height:100%;object-fit:contain;display:block;transition:transform .7s cubic-bezier(.22,1,.36,1);}
+    .ivory-card:hover .ivory-card__img-wrap img{transform:scale(1.04);}
     .ivory-card__img-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.18);gap:8px;}
     .ivory-card__img-ph .mat{font-size:52px;}
 
-    /* altura fixa para o card (foto preenche) */
-    .ivory-card__inner{position:relative;z-index:5;display:flex;flex-direction:column;justify-content:flex-end;min-height:480px;padding:0 18px 20px;}
-    @media(max-width:480px){.ivory-card__inner{min-height:420px;padding:0 14px 16px;}}
+    /* BLOCO 2 — informações em fundo azul (mesmo do card) */
+    .ivory-card__inner{position:relative;z-index:5;display:flex;flex-direction:column;padding:18px 18px 20px;background:var(--card-bg);}
+    @media(max-width:480px){.ivory-card__inner{padding:16px 14px;}}
 
     .ivory-card__badge{position:absolute;top:16px;left:16px;z-index:10;display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;border:1px solid rgba(196,169,125,.45);background:rgba(26,23,20,.58);backdrop-filter:blur(8px);font-size:9px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:#c4a97d;}
     .ivory-card__badge::before{content:'';width:5px;height:5px;border-radius:50%;background:#c4a97d;animation:ivoryPulse 2s ease-in-out infinite;}
@@ -1293,7 +1305,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     .ivory-card__wish svg{width:15px;height:15px;stroke:rgba(255,255,255,.7);fill:none;stroke-width:1.5;transition:stroke .2s,fill .2s;}
     .ivory-card__wish.wished svg{stroke:#c4a97d;fill:rgba(196,169,125,.3);}
 
-    .ivory-card__meta{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+    .ivory-card__meta{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
     .ivory-card__thumb{width:44px;height:44px;border-radius:9px;overflow:hidden;border:1.5px solid rgba(196,169,125,.35);flex-shrink:0;background:#2a2520;}
     .ivory-card__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
     .ivory-card__thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.2);}
@@ -1306,7 +1318,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     .ivory-card__colors{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
     .ivory-color-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:1.5px solid transparent;transition:transform .15s,box-shadow .15s;flex-shrink:0;}
     .ivory-color-dot:hover{transform:scale(1.18);}
-    .ivory-color-dot.active{box-shadow:0 0 0 2px #1a1714,0 0 0 3.5px #c4a97d;}
+    .ivory-color-dot.active{box-shadow:0 0 0 2px #1a2340,0 0 0 3.5px #c4a97d;}
     .ivory-card__sizes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
     .ivory-sz-btn{min-width:34px;height:34px;padding:0 7px;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:rgba(255,255,255,.6);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:border-color .18s,color .18s,background .18s;display:flex;align-items:center;justify-content:center;}
     .ivory-sz-btn:hover,.ivory-sz-btn.active{border-color:#c4a97d;color:#c4a97d;background:rgba(196,169,125,.15);}
@@ -2760,8 +2772,7 @@ function ivoryCardHTML(p, tipo) {
   </button>
   <div class="ivory-card__inner">
     <div class="ivory-card__meta">
-      <div class="ivory-card__thumb">${thumbHTML}</div>
-      <div>
+      <div style="flex:1;min-width:0;">
         <div class="ivory-card__name">${esc(p.nome)}</div>
         <div class="ivory-card__prices">
           <span class="ivory-card__price-now">R$ ${formatPrice(p.preco)}</span>
