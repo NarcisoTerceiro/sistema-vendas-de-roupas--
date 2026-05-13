@@ -1033,9 +1033,6 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div class="mobile-nav-link" onclick="sc('secao-best-sellers');closeMobile()">
       <span class="mat">workspace_premium</span>Best Seller
     </div>
-    <div class="mobile-nav-link" onclick="mostrarMaisVendidos();closeMobile()">
-      <span class="mat">trending_up</span>Mais Vendidos
-    </div>
     <div class="mobile-nav-link" onclick="sc('quem-somos');closeMobile()">
       <span class="mat">people</span>Quem Somos
     </div>
@@ -1043,10 +1040,6 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div class="mobile-nav-link" onclick="window.open('https://wa.me/5583998015544','_blank');closeMobile()">
       <span class="mat">support_agent</span>Atendimento
     </div>
-    <div class="mobile-nav-divider"></div>
-    <a class='mobile-nav-link' href='adminsenha.html'>
-      <span class="mat">admin_panel_settings</span>ADM
-    </a>
     <div class="mobile-nav-divider"></div>
     <div id="auth-buttons-mobile">
       <div class="mobile-nav-link" onclick="closeMobile();abrirModalAuth('login')">
@@ -1125,11 +1118,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <button class="nav-link" onclick="window.scrollTo({top:0,behavior:'smooth'})">Início</button>
     <button class="nav-link active cat-btn" data-cat="" onclick="catFilter('')">Coleções</button>
     <button class="nav-link" onclick="sc('secao-best-sellers')">Best Seller</button>
-    <button class="nav-link" onclick="mostrarMaisVendidos()">Mais Vendidos</button>
     <button class="nav-link" onclick="sc('quem-somos')">Quem Somos</button>
-    <a href="adminsenha.html" class="nav-link nav-link-adm">
-      <span class="mat">admin_panel_settings</span>ADM
-    </a>
   </div>
 </nav>
 
@@ -1157,7 +1146,6 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <p class="hero-sub">Descubra peças exclusivas para todos os momentos da sua vida.</p>
       <div class="hero-cta">
         <button class="btn-primary" onclick="sc('secao-best-sellers')">Best Seller</button>
-        <button class="btn-outline" onclick="mostrarMaisVendidos()">Mais Vendidos</button>
       </div>
     </div>
   </div>
@@ -1478,34 +1466,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   }
 </style>
 
-<!-- ════ MAIS VENDIDOS ════ -->
-<div id="secao-mais-vendidos" style="display:none;">
-  <div class="section reveal" style="padding-bottom:24px;">
-    <span class="section-eyebrow">Os Favoritos</span>
-    <h2 class="section-title">Mais <em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">Vendidos</em></h2>
-    <div class="section-divider"></div>
-  </div>
-
-  <div class="promo-car-wrap reveal">
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 48px;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-      <div>
-        <span class="section-eyebrow" style="margin-bottom:6px;"><span class="mat" style="font-size:14px;">trending_up</span> Mais Vendidos</span>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(20px,2.5vw,30px);font-weight:300;color:var(--ink);">As peças que mais saem da nossa loja</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="promo-car-arrow" onclick="scrollMaisVendidos(-1)"><span class="mat">arrow_back</span></button>
-        <button class="promo-car-arrow" onclick="scrollMaisVendidos(1)"><span class="mat">arrow_forward</span></button>
-      </div>
-    </div>
-    <div id="mais-vendidos-track" class="promo-ivory-track"></div>
-    <div class="promo-car-dots" id="mais-vendidos-dots"></div>
-  </div>
-</div>
-
 <style>
-  /* esconder scrollbar do mais-vendidos */
-  #mais-vendidos-track::-webkit-scrollbar{display:none;}
-
   /* ── Seção de garantias / destaques (depois dos carrosséis) ── */
   .destaques-section{padding:80px 48px;background:var(--bg2);position:relative;overflow:hidden;}
   .destaques-section::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--sh-gold) 0%,transparent 60%);opacity:.5;pointer-events:none;filter:blur(60px);}
@@ -1806,7 +1767,6 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <span class="footer-col-title">Navegação</span>
       <span class="footer-link" onclick="catFilter('');sc('colecao')">Coleções</span>
       <span class="footer-link" onclick="sc('secao-best-sellers')">Best Seller</span>
-      <span class="footer-link" onclick="mostrarMaisVendidos()">Mais Vendidos</span>
       <span class="footer-link" onclick="sc('quem-somos')">Quem Somos</span>
     </div>
     <div>
@@ -1998,7 +1958,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderColecao();       // monta carrosséis
   renderPromoCarousel();
   renderBestSellers();
-  // renderMaisVendidos() — só renderiza quando o usuário clica no botão "Mais Vendidos"
 
   // Atualiza botões de auth (caso o authSoft já tenha resolvido a sessão)
   if (typeof atualizarBotoesAuth === 'function') atualizarBotoesAuth();
@@ -2636,170 +2595,6 @@ function scrollBest(dir) {
 }
 
 // ════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════
-//  MAIS VENDIDOS (calculado em tempo real dos pedidos reais)
-// ════════════════════════════════════════════════════════════
-//
-// Como funciona:
-//  1. Busca TODOS os pedidos não-cancelados no Supabase
-//  2. Soma a quantidade vendida de cada produto (somando o campo `qty` em
-//     cada item do JSON `itens` de cada pedido)
-//  3. Ordena por quantidade total vendida (maior → menor)
-//  4. Só exibe produtos que tiveram pelo menos 1 venda E que ainda existem
-//     no catálogo (allProducts)
-//  5. Se ninguém tiver vendido nada, a seção fica escondida (não mostra
-//     nada falso, nem "fallback" por estoque)
-//
-// Cacheia o resultado em memória até a página recarregar.
-
-let _maisVendidosCache = null;          // ranking calculado (array de produtos)
-let _maisVendidosCarregando = false;    // evita chamadas paralelas
-
-// Calcula o ranking real consultando a tabela `pedidos`
-async function calcularMaisVendidos() {
-  if (!db) return [];
-
-  // Busca pedidos válidos (qualquer status menos "cancelado")
-  // Pega só o campo `itens` (JSON) — economiza banda
-  const { data: pedidos, error } = await db
-    .from('pedidos')
-    .select('itens, status')
-    .neq('status', 'cancelado');
-
-  if (error) {
-    console.warn('Erro ao calcular mais vendidos:', error.message);
-    return [];
-  }
-  if (!pedidos || !pedidos.length) return [];
-
-  // Soma a qty de cada produto a partir do JSON `itens` de cada pedido
-  // O id usado é o `it.id` que é o id do produto na tabela `produtos`
-  const totalPorProduto = new Map();   // produto_id → qty total vendida
-  pedidos.forEach(p => {
-    if (!Array.isArray(p.itens)) return;
-    p.itens.forEach(it => {
-      if (!it || it.id == null) return;
-      const qty = parseInt(it.qty, 10) || 0;
-      if (qty <= 0) return;
-      const pid = String(it.id);
-      totalPorProduto.set(pid, (totalPorProduto.get(pid) || 0) + qty);
-    });
-  });
-
-  if (!totalPorProduto.size) return [];
-
-  // Casa o id com o produto atual no catálogo (allProducts)
-  // Ignora produtos que não existem mais (foram removidos do catálogo)
-  const ranking = [];
-  totalPorProduto.forEach((qty, pid) => {
-    const produto = allProducts.find(p => String(p.id) === pid);
-    if (produto) ranking.push({ produto, qty });
-  });
-
-  // Ordena pelo total de vendas (decrescente) e devolve só os 12 primeiros
-  ranking.sort((a, b) => b.qty - a.qty);
-  return ranking.slice(0, 12).map(r => r.produto);
-}
-
-// Renderiza a seção com os produtos rankeados.
-// Recebe a lista já ordenada (vinda do calcularMaisVendidos).
-function renderMaisVendidos(ranked) {
-  const sec   = document.getElementById('secao-mais-vendidos');
-  const track = document.getElementById('mais-vendidos-track');
-  const dots  = document.getElementById('mais-vendidos-dots');
-  if (!sec || !track) return;
-
-  // Sem nenhuma venda válida → não mostra a seção
-  if (!ranked || !ranked.length) {
-    sec.style.display = 'none';
-    track.innerHTML = '';
-    if (dots) dots.innerHTML = '';
-    return;
-  }
-
-  sec.style.display = '';
-
-  // Monta os mesmos cards dourados (ivory) das promoções/best seller,
-  // injetando um badge circular com a posição (1, 2, 3…) no canto do card
-  track.innerHTML = ranked.map((p, i) => {
-    const html = ivoryCardHTML(p, 'mais_vendidos');
-    return html.replace(
-      'class="ivory-card__badge',
-      `style="position:absolute;top:52px;left:16px;z-index:11;background:var(--gold);color:#0f1526;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;box-shadow:0 4px 12px var(--sh-gold);" class="ivory-ranking-badge" data-rank="${i+1}">` +
-      (i+1) + `</div><div class="ivory-card__badge`
-    );
-  }).join('');
-
-  // Pontinhos de navegação do carrossel
-  if (dots) {
-    const total = ranked.length;
-    dots.innerHTML = Array.from({length: total}, (_,i) =>
-      `<button class="promo-car-dot${i===0?' active':''}" data-i="${i}"></button>`
-    ).join('');
-    // Clicar no dot → rola o carrossel
-    dots.querySelectorAll('.promo-car-dot').forEach(d => {
-      d.addEventListener('click', () => {
-        const cardW = (track.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
-        track.scrollTo({left: parseInt(d.dataset.i) * cardW, behavior:'smooth'});
-      });
-    });
-    // Rolar o carrossel → atualiza o dot ativo
-    track.addEventListener('scroll', () => {
-      const cardW = (track.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
-      const idx   = Math.round(track.scrollLeft / cardW);
-      dots.querySelectorAll('.promo-car-dot').forEach((d,i) =>
-        d.classList.toggle('active', i === idx));
-    }, {passive:true});
-  }
-
-  // Liga interações dos cards (cor, tamanho, favoritar, adicionar ao carrinho)
-  bindIvoryCards(track);
-}
-
-// Seta de navegação do carrossel (botões de prev/next)
-function scrollMaisVendidos(dir) {
-  const track = document.getElementById('mais-vendidos-track');
-  if (!track) return;
-  const cardW = (track.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
-  track.scrollBy({left: dir * cardW, behavior:'smooth'});
-}
-
-// Chamada quando o usuário clica em "Mais Vendidos" no menu/footer.
-// A primeira vez busca no banco; depois usa cache. Se ninguém vendeu
-// nada, mostra um toast e não rola pra lugar nenhum.
-async function mostrarMaisVendidos() {
-  const sec = document.getElementById('secao-mais-vendidos');
-  if (!sec) return;
-
-  // Evita disparar várias buscas se o usuário clicar feito doido
-  if (_maisVendidosCarregando) return;
-
-  // Primeira vez: busca e calcula
-  if (_maisVendidosCache === null) {
-    _maisVendidosCarregando = true;
-    showToast('Carregando mais vendidos…', 'info');
-    try {
-      _maisVendidosCache = await calcularMaisVendidos();
-    } catch (e) {
-      console.warn('Falha ao buscar mais vendidos:', e);
-      _maisVendidosCache = [];
-    }
-    _maisVendidosCarregando = false;
-    renderMaisVendidos(_maisVendidosCache);
-  }
-
-  // Sem dados → toast amigável e nada mais
-  if (!_maisVendidosCache.length) {
-    showToast('Ainda não temos dados de vendas suficientes', 'info');
-    return;
-  }
-
-  // Mostra a seção e rola até ela
-  sec.style.display = '';
-  requestAnimationFrame(() => sc('secao-mais-vendidos'));
-}
-
-// ════════════════════════════════════════════════════════════
 //  Bind das interações dos ivory-cards (extraído pra reuso)
 // ════════════════════════════════════════════════════════════
 function bindIvoryCards(grid) {
@@ -2971,7 +2766,7 @@ function ivoryCardHTML(p, tipo) {
 
   // ── Estado de estoque
   const semEstoque = (typeof p.estoque === 'number' && p.estoque <= 0);
-  const badgeLabel = tipo === 'best' ? 'Premium' : tipo === 'mais_vendidos' ? 'Top Venda' : (tipo === 'colecao' ? 'Coleção' : 'Promoção');
+  const badgeLabel = tipo === 'best' ? 'Premium' : (tipo === 'colecao' ? 'Coleção' : 'Promoção');
   const badgeHTML  = semEstoque
     ? `<div class="ivory-card__badge ivory-card__badge--out">Esgotado</div>`
     : `<div class="ivory-card__badge">${badgeLabel}</div>`;
