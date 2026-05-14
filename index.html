@@ -3696,8 +3696,8 @@ async function buscarCEP() {
 
     // 2. Taxa fixa para cidades atendidas localmente (sem consultar Frenet)
     const TAXAS_FIXAS = [
-      { cep: '58280000', cidade: 'Mamanguape', valor: 5, prazo: 1 },
-      { cep: '58297000', cidade: 'Rio Tinto',  valor: 8, prazo: 1 },
+      { cep: '58280000', cidade: 'Mamanguape', valor: 1, prazo: 1 },
+      { cep: '58297000', cidade: 'Rio Tinto',  valor: 1, prazo: 1 },
     ];
     const taxaFixa = TAXAS_FIXAS.find(t => t.cep === cepRaw);
 
