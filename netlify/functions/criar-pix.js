@@ -1,7 +1,8 @@
 // netlify/functions/criar-pix.js
 // Cria cobrança PIX via API PicPay e retorna QR Code para o front.
 
-const PICPAY_BASE = 'https://checkout-api.picpay.com';
+const PICPAY_BASE_AUTH   = 'https://checkout-api.picpay.com';
+const PICPAY_BASE_CHARGE = 'https://checkout-api.picpay.com/api/v1';
 
 exports.handler = async (event) => {
   const headers = {
@@ -36,7 +37,7 @@ exports.handler = async (event) => {
     }
 
     // ── 1. Token ────────────────────────────────────────────
-    const tokenRes = await fetch(`${PICPAY_BASE}/oauth2/token`, {
+    const tokenRes = await fetch(`${PICPAY_BASE_AUTH}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -82,7 +83,7 @@ exports.handler = async (event) => {
 
     console.log('Payload enviado ao PicPay:', JSON.stringify(payload));
 
-    const chargeRes = await fetch(`${PICPAY_BASE}/charge/pix`, {
+    const chargeRes = await fetch(`${PICPAY_BASE_CHARGE}/charge/pix`, {
       method: 'POST',
       headers: {
         'Content-Type':  'application/json',
@@ -91,7 +92,14 @@ exports.handler = async (event) => {
       body: JSON.stringify(payload)
     });
 
-    const chargeData = await chargeRes.json();
+    const chargeText = await chargeRes.text();
+let chargeData = {};
+
+try {
+  chargeData = chargeText ? JSON.parse(chargeText) : {};
+} catch {
+  chargeData = { message: chargeText };
+}
 
     if (!chargeRes.ok) {
       console.error('Charge PicPay erro:', JSON.stringify(chargeData));

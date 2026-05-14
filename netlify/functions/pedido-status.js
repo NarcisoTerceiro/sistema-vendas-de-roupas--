@@ -2,7 +2,8 @@
 // Consulta o status de uma cobrança PIX no PicPay.
 // Recebe ?id={merchantChargeId} e retorna { status: 'approved' | 'pending' | 'rejected' | 'cancelled' | 'expired' }
 
-const PICPAY_BASE = 'https://checkout-api.picpay.com'; // ⚠️ Confirme essa URL com seu painel PicPay
+const PICPAY_BASE_AUTH   = 'https://checkout-api.picpay.com';
+const PICPAY_BASE_CHARGE = 'https://checkout-api.picpay.com/api/v1';
 
 exports.handler = async (event) => {
   const headers = {
@@ -32,7 +33,7 @@ exports.handler = async (event) => {
     }
 
     // ── 1. Token ────────────────────────────────────────────
-    const tokenRes = await fetch(`${PICPAY_BASE}/oauth2/token`, {
+    const tokenRes = await fetch(`${PICPAY_BASE_AUTH}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -49,7 +50,7 @@ exports.handler = async (event) => {
     const { access_token } = await tokenRes.json();
 
     // ── 2. Consulta a cobrança ──────────────────────────────
-    const chargeRes = await fetch(`${PICPAY_BASE}/charge/${encodeURIComponent(id)}`, {
+    const chargeRes = await fetch(`${PICPAY_BASE_CHARGE}/charge/${encodeURIComponent(id)}`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${access_token}` }
     });
