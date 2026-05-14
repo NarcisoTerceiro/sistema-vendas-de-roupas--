@@ -1,7 +1,8 @@
 // netlify/functions/criar-pix.js
 // Cria um Link de Pagamento PicPay para cartão, Pix e Carteira PicPay.
 
-const PICPAY_BASE = 'https://checkout-api.picpay.com';
+const PICPAY_AUTH_BASE = 'https://checkout-api.picpay.com';
+const PICPAY_PAYMENT_LINK_BASE = 'https://api.picpay.com/v1';
 
 exports.handler = async (event) => {
   const headers = {
@@ -61,10 +62,10 @@ exports.handler = async (event) => {
     }
 
     // 1. Gerar token
-    const tokenRes = await fetch(`${PICPAY_BASE}/oauth2/token`, {
+    const tokenRes = await fetch(`${PICPAY_AUTH_BASE}/oauth2/token`, {
       method: 'POST',
       headers: {
-        'accept': 'application/json',
+        accept: 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -83,7 +84,8 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({
           success: false,
-          error: 'Falha autenticação PicPay'
+          error: 'Falha autenticação PicPay',
+          debug: tokenText
         })
       };
     }
@@ -91,12 +93,9 @@ exports.handler = async (event) => {
     const tokenData = JSON.parse(tokenText);
     const accessToken = tokenData.access_token;
 
-    // 2. Criar link de pagamento
     const amountCentavos = Math.round(Number(amount));
 
-    const merchantChargeId = String(
-      pedidoId || `bnd-${Date.now()}`
-    )
+    const merchantChargeId = String(pedidoId || `bnd-${Date.now()}`)
       .replace(/[^a-zA-Z0-9-]/g, '')
       .slice(0, 36);
 
@@ -123,12 +122,13 @@ exports.handler = async (event) => {
 
     console.log('Payload Link de Pagamento PicPay:', JSON.stringify(payload));
 
-    const paymentRes = await fetch(`${PICPAY_BASE}/paymentlink/create`, {
+    // 2. Criar Link de Pagamento
+    const paymentRes = await fetch(`${PICPAY_PAYMENT_LINK_BASE}/paymentlink/create`, {
       method: 'POST',
       headers: {
-        'accept': 'application/json',
+        accept: 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify(payload)
     });
@@ -150,10 +150,24 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({
           success: false,
-          error: paymentData.message || paymentData.error || JSON.stringify(paymentData)
+          error: paymentData.message || paymentData.error || JSON.stringify(paymentData),
+          debug: paymentData
         })
       };
     }
+
+    const paymentUrl =
+      paymentData.url ||
+      paymentData.paymentUrl ||
+      paymentData.payment_url ||
+      paymentData.checkoutUrl ||
+      paymentData.checkout_url ||
+      paymentData.link ||
+      paymentData.payment_link ||
+      paymentData.links?.payment ||
+      paymentData.links?.checkout;
+
+    console.log('Resposta Link de Pagamento PicPay:', JSON.stringify(paymentData));
 
     return {
       statusCode: 200,
@@ -161,12 +175,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         success: true,
         paymentLinkId: paymentData.id || paymentData.paymentLinkId || paymentData.payment_link_id,
-        paymentUrl:
-          paymentData.url ||
-          paymentData.paymentUrl ||
-          paymentData.payment_url ||
-          paymentData.checkoutUrl ||
-          paymentData.checkout_url,
+        paymentUrl,
         raw: paymentData
       })
     };
@@ -179,7 +188,8 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({
         success: false,
-        error: 'Erro interno'
+        error: 'Erro interno',
+        debug: String(err?.message || err)
       })
     };
   }
