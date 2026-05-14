@@ -156,7 +156,7 @@ exports.handler = async (event) => {
     const produtoFinal = produtosTotal > 0 ? produtosTotal : amountCentavos - freteTotal;
     const deliveryFinal = freteTotal > 0 ? freteTotal : 0;
 
-    // 3. Payload correto para Link de Pagamento PicPay
+    // 3. Payload do Link de Pagamento PicPay
     const payload = {
       seller: {
         merchantChargeId
@@ -182,7 +182,8 @@ exports.handler = async (event) => {
       },
 
       options: {
-        allow_create_pix_key: true
+        allow_create_pix_key: true,
+        card_max_installment_number: 12
       }
     };
 
@@ -230,7 +231,7 @@ exports.handler = async (event) => {
 
     console.log('Resposta Link de Pagamento PicPay:', JSON.stringify(paymentData));
 
-    // 5. Tentar localizar a URL do checkout na resposta
+    // 5. Capturar link de checkout retornado pelo PicPay
     const paymentUrl =
       paymentData.url ||
       paymentData.paymentUrl ||
