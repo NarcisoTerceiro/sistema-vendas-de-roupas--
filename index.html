@@ -1939,7 +1939,7 @@ const WHATSAPP_NUM  = '5583998015544';
 // ── Mercado Pago / Checkout Bricks ────────────────────────
 // Troque pelo Public Key da sua aplicação no Mercado Pago Developers.
 // IMPORTANTE: a Public Key pode ficar no front-end. O Access Token fica apenas na Netlify.
-const MERCADOPAGO_PUBLIC_KEY = 'COLE_SUA_PUBLIC_KEY_AQUI';
+const MERCADOPAGO_PUBLIC_KEY = 'TEST-4821515513999909-051412-14b786003fc8eb6c2097737b3e6b9776-269107173';
 const MERCADOPAGO_API_URL    = '/.netlify/functions/criar-pagamento-mp';
 let mercadoPagoBrickController = null;
 
@@ -3717,6 +3717,7 @@ async function buscarCEP() {
     const TAXAS_FIXAS = [
       { cep: '58280000', cidade: 'Mamanguape', valor: 1, prazo: 1 },
       { cep: '58297000', cidade: 'Rio Tinto',  valor: 1, prazo: 1 },
+
     ];
     const taxaFixa = TAXAS_FIXAS.find(t => t.cep === cepRaw);
 
@@ -4140,11 +4141,11 @@ async function abrirCheckoutMercadoPago() {
     return;
   }
 
-  if (!MERCADOPAGO_PUBLIC_KEY || MERCADOPAGO_PUBLIC_KEY === 'TEST-4821515513999909-051412-14b786003fc8eb6c2097737b3e6b9776-269107173') {
+  if (!MERCADOPAGO_PUBLIC_KEY || MERCADOPAGO_PUBLIC_KEY === 'COLE_SUA_PUBLIC_KEY_AQUI') {
     container.innerHTML = `
       <div style="padding:20px;text-align:center;color:#333;line-height:1.7;">
         <b>Falta configurar a Public Key do Mercado Pago.</b><br>
-        No arquivo <code>index.html</code>, troque <code>TEST-4821515513999909-051412-14b786003fc8eb6c2097737b3e6b9776-269107173</code> pela Public Key da sua aplicação.
+        No arquivo <code>index.html</code>, configure a Public Key da sua aplicação.
       </div>`;
     if (statusEl) statusEl.textContent = 'Public Key do Mercado Pago ainda não configurada.';
     return;
