@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://sdk.mercadopago.com/js/v2"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════
      AUTH SOFT — Detecta se há sessão ativa, mas NÃO bloqueia o site
@@ -405,6 +406,16 @@ nav.scrolled{box-shadow:0 4px 32px var(--sh2);}
 .pix-area{background:var(--bg);border:1px solid var(--border);padding:20px;text-align:center;border-radius:8px;}
 .pix-qr{width:180px;height:180px;background:var(--card-bg);border:1px solid var(--border);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;border-radius:8px;}
 .pix-copy-input{background:var(--card-bg);border:1px solid var(--border);color:var(--muted);padding:10px 12px;font-size:11px;font-family:'DM Sans',sans-serif;width:100%;outline:none;word-break:break-all;resize:none;border-radius:4px;}
+
+
+
+/* ══ MERCADO PAGO CHECKOUT ══ */
+.mp-checkout-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.mp-status{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px;text-align:center;}
+.mp-brick-wrap{background:#fff;border-radius:10px;padding:12px;color:#222;min-height:180px;}
+[data-theme="dark"] .mp-brick-wrap{background:#fff;color:#222;}
+.mp-alert{border:1px solid rgba(200,169,110,.35);background:rgba(200,169,110,.08);border-radius:8px;padding:12px;font-size:11px;color:var(--muted);line-height:1.7;margin-top:10px;}
+.mp-retry-btn{width:100%;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:12px;border-radius:6px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;margin-top:10px;}
 
 /* ══ TOAST ══ */
 .toast{position:fixed;top:20px;right:24px;background:var(--card-bg);border:1px solid var(--border);color:var(--ink);padding:14px 20px;font-size:13px;z-index:9999;transform:translateX(140%);transition:transform .4s cubic-bezier(0.4,0,0.2,1);display:flex;align-items:center;gap:10px;min-width:260px;border-left:3px solid var(--gold);box-shadow:0 8px 32px var(--sh2);border-radius:0 8px 8px 0;}
@@ -1924,6 +1935,14 @@ window.addEventListener('load', () => {
 const SUPABASE_URL  = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
 const WHATSAPP_NUM  = '5583998015544';
+
+// ── Mercado Pago / Checkout Bricks ────────────────────────
+// Troque pelo Public Key da sua aplicação no Mercado Pago Developers.
+// IMPORTANTE: a Public Key pode ficar no front-end. O Access Token fica apenas na Netlify.
+const MERCADOPAGO_PUBLIC_KEY = 'COLE_SUA_PUBLIC_KEY_AQUI';
+const MERCADOPAGO_API_URL    = '/.netlify/functions/criar-pagamento-mp';
+let mercadoPagoBrickController = null;
+
 
 // ── PicPay / Link de Pagamento ─────────────────────────
 const PIX_API_URL          = '/.netlify/functions/criar-pix';
@@ -3988,8 +4007,8 @@ function showStepPagamento() {
   document.getElementById('cart-content').style.display    = 'none';
   document.getElementById('payment-content').style.display = 'flex';
 
-  // Checkout PicPay como forma de pagamento — selecionado automaticamente
-  checkoutData.pagamento = 'picpay';
+  // Mercado Pago Checkout Bricks — pagamento dentro da loja
+  checkoutData.pagamento = 'mercado_pago';
 
   const valores = (function() {
     const sub  = cartTotal();
@@ -3999,7 +4018,7 @@ function showStepPagamento() {
 
   document.getElementById('payment-content').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px;">
-      <div style="font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Pagamento pelo PicPay</div>
+      <div style="font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Pagamento seguro</div>
 
       <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:14px;">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
@@ -4013,37 +4032,255 @@ function showStepPagamento() {
         </div>
       </div>
 
-      <div class="pix-area">
-        <div id="pix-status-text" style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px;">
-          Você será direcionado para o checkout seguro do PicPay para pagar com cartão de crédito, Pix ou Carteira PicPay.
+      <div class="mp-checkout-box">
+        <div id="mp-status-text" class="mp-status">
+          Finalize seu pagamento com cartão ou Pix sem sair da Benedictus Camisaria.
         </div>
-
-        <button id="btn-gerar-pix" onclick="gerarPixPicPay()" style="margin-top:10px;width:100%;background:var(--gold);border:none;color:#0f1526;padding:14px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:6px;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <span class="mat" style="font-size:16px;">payments</span>Pagar com PicPay
-        </button>
-
-        <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6;">
-          Ao clicar, uma nova cobrança será criada e o checkout será aberto em uma nova aba do PicPay.
+        <div id="paymentBrick_container" class="mp-brick-wrap">
+          <div style="display:flex;align-items:center;justify-content:center;min-height:160px;color:#555;font-size:13px;">
+            Carregando checkout do Mercado Pago…
+          </div>
         </div>
-
-        <button id="btn-confirmar-pagamento-manual" onclick="confirmarPedidoManualPicPay()" style="margin-top:14px;width:100%;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:13px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:6px;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <span class="mat" style="font-size:16px;">check_circle</span>Já paguei / confirmar pedido
+        <button class="mp-retry-btn" onclick="abrirCheckoutMercadoPago()">
+          <span class="mat" style="font-size:16px;vertical-align:middle;">refresh</span>
+          Recarregar pagamento
         </button>
-
-        <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6;">
-          Use este botão somente depois de concluir o pagamento no PicPay. O pedido ficará aguardando conferência da loja.
+        <div class="mp-alert">
+          O pedido será salvo como <b>aguardando pagamento</b> antes do processamento. Após a aprovação, o Mercado Pago enviará a confirmação pelo webhook e o pedido será atualizado para <b>pago</b>.
         </div>
       </div>
     </div>`;
 
-  // O botão de finalizar fica oculto — o pagamento é iniciado pelo botão do PicPay
   const btn = document.getElementById('checkout-btn');
   if (btn) btn.style.display = 'none';
+
+  setTimeout(() => abrirCheckoutMercadoPago(), 80);
 }
 
 // Mantém compatibilidade caso algum código antigo chame selPag
 function selPag(el, tipo) {
   checkoutData.pagamento = 'pix';
+}
+
+
+// ════════════════════════════════════════════════════════════
+// MERCADO PAGO — Checkout Bricks dentro da loja
+// ════════════════════════════════════════════════════════════
+
+function montarItensPedidoAtual() {
+  return cart.map(x => ({
+    id: x.produto.id,
+    nome: x.produto.nome,
+    qty: x.qty,
+    preco: x.produto.preco,
+    tamanho: x.tamanho || null,
+    cor: x.cor || null
+  }));
+}
+
+function getNomeSobrenome(nomeCompleto) {
+  const partes = String(nomeCompleto || '').trim().split(/\s+/).filter(Boolean);
+  return {
+    first_name: partes[0] || 'Cliente',
+    last_name: partes.slice(1).join(' ') || partes[0] || 'Benedictus'
+  };
+}
+
+async function salvarPedidoMercadoPagoPendente(externalReference) {
+  if (!db) throw new Error('Banco não conectado');
+  if (!window.usuarioLogado) throw new Error('Usuário não logado');
+  if (!cart || !cart.length) throw new Error('Carrinho vazio');
+
+  const u = window.usuarioLogado;
+  const sub = cartTotal();
+  const fVal = freteSelecionado?.valor || 0;
+  const tot = sub + fVal;
+
+  const pedido = {
+    external_reference: externalReference,
+    user_id:        u.id,
+    user_email:     u.email || null,
+    cliente_nome:   checkoutData.nome,
+    cliente_email:  checkoutData.email || u.email || null,
+    cliente_cpf:    (checkoutData.cpf || '').replace(/\D/g,'') || null,
+    cliente_celular: checkoutData.celular,
+    endereco:       checkoutData.endereco,
+    numero:         checkoutData.numero,
+    bairro:         checkoutData.bairro,
+    complemento:    checkoutData.complemento || null,
+    cidade:         checkoutData.cidade || null,
+    uf:             checkoutData.uf || null,
+    cep:            checkoutData.cep || null,
+    itens:          montarItensPedidoAtual(),
+    subtotal:       Number(sub.toFixed(2)),
+    frete_nome:     freteSelecionado?.nome || 'A combinar',
+    frete_valor:    Number(fVal.toFixed(2)),
+    total:          Number(tot.toFixed(2)),
+    pagamento:      'mercado_pago',
+    status:         'aguardando_pagamento',
+    observacao:     'Pedido criado via Mercado Pago Checkout Bricks.',
+    created_at:     new Date().toISOString()
+  };
+
+  const { error } = await db.from('pedidos').insert([pedido]);
+  if (error) {
+    console.error('Erro ao salvar pedido Mercado Pago pendente:', error);
+    throw error;
+  }
+}
+
+async function abrirCheckoutMercadoPago() {
+  const container = document.getElementById('paymentBrick_container');
+  const statusEl = document.getElementById('mp-status-text');
+
+  if (!container) return;
+
+  if (!window.MercadoPago) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#444;">SDK do Mercado Pago não carregou. Recarregue a página.</div>';
+    return;
+  }
+
+  if (!MERCADOPAGO_PUBLIC_KEY || MERCADOPAGO_PUBLIC_KEY === 'TEST-4821515513999909-051412-14b786003fc8eb6c2097737b3e6b9776-269107173') {
+    container.innerHTML = `
+      <div style="padding:20px;text-align:center;color:#333;line-height:1.7;">
+        <b>Falta configurar a Public Key do Mercado Pago.</b><br>
+        No arquivo <code>index.html</code>, troque <code>TEST-4821515513999909-051412-14b786003fc8eb6c2097737b3e6b9776-269107173</code> pela Public Key da sua aplicação.
+      </div>`;
+    if (statusEl) statusEl.textContent = 'Public Key do Mercado Pago ainda não configurada.';
+    return;
+  }
+
+  if (!window.usuarioLogado) {
+    showToast('Faça login para continuar o pagamento', 'error');
+    abrirModalAuth?.();
+    return;
+  }
+
+  if (!checkoutData.nome || !checkoutData.email || !checkoutData.cpf) {
+    showToast('Preencha nome, e-mail e CPF antes', 'error');
+    return;
+  }
+
+  if (!cart || !cart.length) {
+    showToast('Carrinho vazio', 'error');
+    return;
+  }
+
+  const total = cartTotal() + (freteSelecionado?.valor || 0);
+  if (total <= 0) {
+    showToast('Valor inválido', 'error');
+    return;
+  }
+
+  try {
+    if (mercadoPagoBrickController) {
+      try { await mercadoPagoBrickController.unmount(); } catch(e) {}
+      mercadoPagoBrickController = null;
+    }
+
+    const mp = new MercadoPago(MERCADOPAGO_PUBLIC_KEY, { locale: 'pt-BR' });
+    const bricksBuilder = mp.bricks();
+    const nome = getNomeSobrenome(checkoutData.nome);
+
+    const settings = {
+      initialization: {
+        amount: Number(total.toFixed(2)),
+        payer: {
+          email: checkoutData.email || window.usuarioLogado?.email || '',
+          firstName: nome.first_name,
+          lastName: nome.last_name,
+          identification: {
+            type: 'CPF',
+            number: (checkoutData.cpf || '').replace(/\D/g, '')
+          }
+        }
+      },
+      customization: {
+        visual: {
+          style: { theme: 'default' }
+        },
+        paymentMethods: {
+          creditCard: 'all',
+          debitCard: 'all',
+          bankTransfer: 'all',
+          ticket: 'all',
+          maxInstallments: 12
+        }
+      },
+      callbacks: {
+        onReady: () => {
+          if (statusEl) statusEl.textContent = 'Escolha a forma de pagamento abaixo.';
+        },
+        onSubmit: async ({ selectedPaymentMethod, formData }) => {
+          const totalAtual = cartTotal() + (freteSelecionado?.valor || 0);
+          const externalReference = `bnd-${Date.now()}`;
+
+          if (statusEl) statusEl.textContent = 'Salvando pedido e processando pagamento…';
+
+          await salvarPedidoMercadoPagoPendente(externalReference);
+
+          const response = await fetch(MERCADOPAGO_API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              ...formData,
+              transaction_amount: Number(totalAtual.toFixed(2)),
+              description: 'Pedido Benedictus Camisaria',
+              pedido: { id: externalReference },
+              customer: {
+                name: checkoutData.nome,
+                email: checkoutData.email,
+                cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
+                phone: checkoutData.celular
+              }
+            })
+          });
+
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok || !data.success) {
+            console.error('Erro ao processar Mercado Pago:', data);
+            if (statusEl) statusEl.textContent = 'Não foi possível processar o pagamento.';
+            throw new Error(data.error || 'Erro ao processar pagamento');
+          }
+
+          if (data.status === 'approved') {
+            showToast('Pagamento aprovado!');
+            if (statusEl) statusEl.textContent = 'Pagamento aprovado. Seu pedido foi confirmado.';
+            cart = [];
+            saveCart();
+            updateCartBadge();
+            setTimeout(() => {
+              if (typeof showSuccessScreen === 'function') showSuccessScreen();
+              else if (typeof exibirModalPedidoConfirmadoManual === 'function') exibirModalPedidoConfirmadoManual();
+            }, 800);
+          } else if (data.status === 'pending' || data.status === 'in_process') {
+            showToast('Pagamento criado. Aguarde a confirmação.');
+            if (statusEl) statusEl.textContent = 'Pagamento pendente. Assim que aprovado, o pedido será atualizado automaticamente.';
+          } else {
+            showToast('Pagamento enviado. Status: ' + (data.status || 'em análise'));
+            if (statusEl) statusEl.textContent = 'Pagamento enviado. Status: ' + (data.status || 'em análise') + '.';
+          }
+
+          return data.payment || data;
+        },
+        onError: (error) => {
+          console.error('Erro Payment Brick:', error);
+          if (statusEl) statusEl.textContent = 'Erro no checkout. Tente novamente.';
+          showToast('Erro no checkout Mercado Pago.', 'error');
+        }
+      }
+    };
+
+    mercadoPagoBrickController = await bricksBuilder.create('payment', 'paymentBrick_container', settings);
+  } catch (err) {
+    console.error('Falha ao abrir Mercado Pago:', err);
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#444;line-height:1.7;">Não foi possível carregar o checkout do Mercado Pago. Clique em recarregar pagamento.</div>';
+    if (statusEl) statusEl.textContent = 'Falha ao carregar o checkout Mercado Pago.';
+  }
 }
 
 // ════════════════════════════════════════════════════════════
