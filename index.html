@@ -4143,14 +4143,16 @@ async function gerarPixPicPay() {
 
     clearTimeout(timeoutId);
 
-    const data = await res.json();
+const data = await res.json();
 
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || `HTTP ${res.status}`);
-    }
-    if (!data.paymentId || !data.qr_code) {
-      throw new Error('Resposta inválida do servidor');
-    }
+if (data.success && data.paymentUrl) {
+  window.location.href = data.paymentUrl;
+  return;
+}
+
+if (!res.ok || !data.success) {
+  throw new Error(data.error || 'Erro ao criar pagamento');
+}
 
     // Guarda no estado
     pixState.paymentId     = data.merchantChargeId || data.paymentId;

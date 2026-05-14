@@ -1,8 +1,7 @@
 // netlify/functions/criar-pix.js
-// Cria cobrança PIX via API PicPay e retorna QR Code para o front.
+// Cria um Link de Pagamento PicPay para cartão, Pix e Carteira PicPay.
 
-const PICPAY_BASE_AUTH   = 'https://checkout-api.picpay.com';
-const PICPAY_BASE_CHARGE = 'https://checkout-api.picpay.com/api/v1';
+const PICPAY_BASE = 'https://checkout-api.picpay.com';
 
 exports.handler = async (event) => {
   const headers = {
@@ -12,118 +11,176 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json'
   };
 
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers, body: '' };
+  }
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ success: false, error: 'Method not allowed' }) };
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ success: false, error: 'Method not allowed' })
+    };
   }
 
   try {
-    const CLIENT_ID     = process.env.PICPAY_CLIENT_ID;
+    const CLIENT_ID = process.env.PICPAY_CLIENT_ID;
     const CLIENT_SECRET = process.env.PICPAY_CLIENT_SECRET;
 
     if (!CLIENT_ID || !CLIENT_SECRET) {
-      return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Credenciais PicPay não configuradas' }) };
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'Credenciais PicPay não configuradas'
+        })
+      };
     }
 
     const dados = JSON.parse(event.body || '{}');
-    const { amount, customer, pedidoId } = dados;
+    const { amount, customer, pedidoId, items } = dados;
 
-    if (!amount || amount < 1) {
-      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'amount inválido' }) };
+    if (!amount || Number(amount) < 1) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ success: false, error: 'amount inválido' })
+      };
     }
+
     if (!customer?.name || !customer?.email || !customer?.document) {
-      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Dados do cliente incompletos' }) };
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'Dados do cliente incompletos'
+        })
+      };
     }
 
-    // ── 1. Token ────────────────────────────────────────────
-    const tokenRes = await fetch(`${PICPAY_BASE_AUTH}/oauth2/token`, {
+    // 1. Gerar token
+    const tokenRes = await fetch(`${PICPAY_BASE}/oauth2/token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
-        grant_type:    'client_credentials',
-        client_id:     CLIENT_ID,
+        grant_type: 'client_credentials',
+        client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET
       })
     });
 
+    const tokenText = await tokenRes.text();
+
     if (!tokenRes.ok) {
-      const erro = await tokenRes.text();
-      console.error('Auth PicPay falhou:', erro);
-      return { statusCode: 502, headers, body: JSON.stringify({ success: false, error: 'Falha autenticação PicPay' }) };
+      console.error('Auth PicPay falhou:', tokenText);
+      return {
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'Falha autenticação PicPay'
+        })
+      };
     }
 
-    const { access_token } = await tokenRes.json();
+    const tokenData = JSON.parse(tokenText);
+    const accessToken = tokenData.access_token;
 
-    // ── 2. Cobrança PIX ────────────────────────────────────
-    // merchantChargeId: mínimo 6 chars, máximo 36, só letras/números/hífen
-    let merchantChargeId = `bnd-${Date.now()}`;
-    if (pedidoId) {
-      const sanitized = String(pedidoId).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 36);
-      if (sanitized.length >= 6) merchantChargeId = sanitized;
-    }
-
-    // amount vem em centavos do front (ex: 15100 = R$151,00)
+    // 2. Criar link de pagamento
     const amountCentavos = Math.round(Number(amount));
 
+    const merchantChargeId = String(
+      pedidoId || `bnd-${Date.now()}`
+    )
+      .replace(/[^a-zA-Z0-9-]/g, '')
+      .slice(0, 36);
+
     const payload = {
-      paymentSource: 'GATEWAY',
       merchantChargeId,
+      amount: amountCentavos,
       customer: {
-        name:         customer.name,
-        email:        customer.email,
+        name: customer.name,
+        email: customer.email,
         documentType: 'CPF',
-        document:     customer.document.replace(/\D/g, '')
+        document: String(customer.document).replace(/\D/g, '')
       },
-      transactions: [{
-        amount: amountCentavos, // centavos (ex: 15100)
-        pix: { expiration: 900 } // 15 min
-      }]
+      items: Array.isArray(items) && items.length > 0
+        ? items
+        : [
+            {
+              name: 'Pedido no site',
+              quantity: 1,
+              amount: amountCentavos
+            }
+          ],
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString()
     };
 
-    console.log('Payload enviado ao PicPay:', JSON.stringify(payload));
+    console.log('Payload Link de Pagamento PicPay:', JSON.stringify(payload));
 
-    const chargeRes = await fetch(`${PICPAY_BASE_CHARGE}/charge/pix`, {
+    const paymentRes = await fetch(`${PICPAY_BASE}/paymentlink/create`, {
       method: 'POST',
       headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${access_token}`
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
       },
       body: JSON.stringify(payload)
     });
 
-    const chargeText = await chargeRes.text();
-let chargeData = {};
+    const paymentText = await paymentRes.text();
 
-try {
-  chargeData = chargeText ? JSON.parse(chargeText) : {};
-} catch {
-  chargeData = { message: chargeText };
-}
+    let paymentData = {};
+    try {
+      paymentData = paymentText ? JSON.parse(paymentText) : {};
+    } catch {
+      paymentData = { message: paymentText };
+    }
 
-    if (!chargeRes.ok) {
-      console.error('Charge PicPay erro:', JSON.stringify(chargeData));
+    if (!paymentRes.ok) {
+      console.error('Erro ao criar Link de Pagamento PicPay:', JSON.stringify(paymentData));
+
       return {
-        statusCode: 502, headers,
-        body: JSON.stringify({ success: false, error: chargeData.message || JSON.stringify(chargeData) })
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: paymentData.message || paymentData.error || JSON.stringify(paymentData)
+        })
       };
     }
 
-    const pix = chargeData.transactions?.[0]?.pix || {};
-
     return {
-      statusCode: 200, headers,
+      statusCode: 200,
+      headers,
       body: JSON.stringify({
-        success:          true,
-        paymentId:        chargeData.id,
-        merchantChargeId: chargeData.merchantChargeId,
-        qr_code:          pix.qrCode,
-        qr_code_base64:   pix.qrCodeBase64
+        success: true,
+        paymentLinkId: paymentData.id || paymentData.paymentLinkId || paymentData.payment_link_id,
+        paymentUrl:
+          paymentData.url ||
+          paymentData.paymentUrl ||
+          paymentData.payment_url ||
+          paymentData.checkoutUrl ||
+          paymentData.checkout_url,
+        raw: paymentData
       })
     };
 
   } catch (err) {
     console.error('Erro inesperado:', err);
-    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Erro interno' }) };
+
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: 'Erro interno'
+      })
+    };
   }
 };
