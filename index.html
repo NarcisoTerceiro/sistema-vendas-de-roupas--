@@ -1933,12 +1933,12 @@ const SUPABASE_URL  = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
 const WHATSAPP_NUM  = '5583998015544';
 
-// ── PIX / PicPay ─────────────────────────────────────────
+// ── PicPay / Link de Pagamento ─────────────────────────
 const PIX_API_URL          = '/.netlify/functions/criar-pix';
 const PIX_STATUS_URL       = '/.netlify/functions/pedido-status';
 const PIX_VERIFY_INTERVAL  = 2500;   // intervalo entre verificações (ms)
 const PIX_MAX_TENTATIVAS   = 240;    // 240 × 2.5s = 10 min (PIX expira em 15min)
-const PIX_TIMEOUT_GERAR    = 20000;  // timeout pra gerar QR Code
+const PIX_TIMEOUT_GERAR    = 20000;  // timeout para criar o link de pagamento
 
 // Estado da cobrança PIX
 const pixState = {
@@ -3996,8 +3996,8 @@ function showStepPagamento() {
   document.getElementById('cart-content').style.display    = 'none';
   document.getElementById('payment-content').style.display = 'flex';
 
-  // PIX como única forma de pagamento — selecionado automaticamente
-  checkoutData.pagamento = 'pix';
+  // Checkout PicPay como forma de pagamento — selecionado automaticamente
+  checkoutData.pagamento = 'picpay';
 
   const valores = (function() {
     const sub  = cartTotal();
@@ -4007,9 +4007,8 @@ function showStepPagamento() {
 
   document.getElementById('payment-content').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px;">
-      <div style="font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Pagamento via PIX</div>
+      <div style="font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Pagamento pelo PicPay</div>
 
-      <!-- Card resumo -->
       <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:14px;">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
           <span>Subtotal</span><span>R$ ${formatPrice(valores.sub)}</span>
@@ -4022,30 +4021,22 @@ function showStepPagamento() {
         </div>
       </div>
 
-      <!-- Área PIX -->
       <div class="pix-area">
-        <div class="pix-qr" id="pix-qr-box">
-          <span class="mat" style="font-size:48px;color:var(--muted2);">qr_code_2</span>
+        <div id="pix-status-text" style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px;">
+          Você será direcionado para o checkout seguro do PicPay para pagar com cartão de crédito, Pix ou Carteira PicPay.
         </div>
-        <div id="pix-status-text" style="font-size:11px;color:var(--muted);margin-bottom:8px;">Clique abaixo para gerar o QR Code</div>
-        <textarea class="pix-copy-input" id="pix-copy-text" readonly rows="2" placeholder="O código copia-e-cola aparecerá aqui após gerar"></textarea>
 
-        <button id="btn-gerar-pix" onclick="gerarPixPicPay()" style="margin-top:10px;width:100%;background:var(--gold);border:none;color:#0f1526;padding:13px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:6px;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <span class="mat" style="font-size:16px;">qr_code_scanner</span>Gerar QR Code PIX
+        <button id="btn-gerar-pix" onclick="gerarPixPicPay()" style="margin-top:10px;width:100%;background:var(--gold);border:none;color:#0f1526;padding:14px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:6px;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span class="mat" style="font-size:16px;">payments</span>Pagar com PicPay
         </button>
 
-        <button id="btn-copiar-pix" onclick="copiarPix()" style="display:none;margin-top:8px;width:100%;background:rgba(184,150,90,.12);border:1px solid var(--border);color:var(--gold);padding:10px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:6px;transition:all .25s;align-items:center;justify-content:center;gap:6px;">
-          <span class="mat" style="font-size:15px;">content_copy</span>Copiar código PIX
-        </button>
-
-        <div id="pix-aguardando" style="display:none;margin-top:10px;padding:10px;background:rgba(184,150,90,.08);border:1px solid var(--border);border-radius:6px;text-align:center;">
-          <span class="mat spin" style="font-size:18px;color:var(--gold);vertical-align:middle;">autorenew</span>
-          <span style="font-size:10px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-left:6px;">Aguardando pagamento...</span>
+        <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6;">
+          Ao clicar, uma nova cobrança será criada e a página será aberta no ambiente do PicPay.
         </div>
       </div>
     </div>`;
 
-  // O botão de finalizar fica oculto — o fluxo é todo automático após pagamento
+  // O botão de finalizar fica oculto — o pagamento é iniciado pelo botão do PicPay
   const btn = document.getElementById('checkout-btn');
   if (btn) btn.style.display = 'none';
 }
@@ -4085,7 +4076,7 @@ function _copiarFallback() {
 async function gerarPixPicPay() {
   // Validações
   if (!window.usuarioLogado) {
-    showToast('Faça login para gerar o PIX', 'error');
+    showToast('Faça login para continuar o pagamento', 'error');
     abrirModalAuth?.();
     return;
   }
@@ -4097,34 +4088,43 @@ async function gerarPixPicPay() {
     showToast('Carrinho vazio', 'error');
     return;
   }
-  if (pixState.isVerificando || pixState.isPago) {
-    showToast('Aguarde — PIX em processamento');
-    return;
-  }
 
   const sub        = cartTotal();
   const fVal       = freteSelecionado?.valor || 0;
   const totalReais = sub + fVal;
   const amount     = Math.round(totalReais * 100);
 
-  if (amount < 1) { showToast('Valor inválido', 'error'); return; }
+  if (amount < 1) {
+    showToast('Valor inválido', 'error');
+    return;
+  }
 
-  const btnGerar  = document.getElementById('btn-gerar-pix');
-  const statusEl  = document.getElementById('pix-status-text');
-  const qrBox     = document.getElementById('pix-qr-box');
-  const copyText  = document.getElementById('pix-copy-text');
-  const btnCopy   = document.getElementById('btn-copiar-pix');
-  const aguardEl  = document.getElementById('pix-aguardando');
+  const btnGerar = document.getElementById('btn-gerar-pix');
+  const statusEl = document.getElementById('pix-status-text');
 
   if (btnGerar) {
-    btnGerar.disabled  = true;
-    btnGerar.innerHTML = '<span class="mat spin" style="font-size:16px;">autorenew</span>Gerando QR Code…';
+    btnGerar.disabled = true;
+    btnGerar.innerHTML = '<span class="mat spin" style="font-size:16px;">autorenew</span>Abrindo checkout…';
   }
   if (statusEl) statusEl.textContent = 'Conectando com o PicPay...';
 
   try {
     const controller = new AbortController();
     const timeoutId  = setTimeout(() => controller.abort(), PIX_TIMEOUT_GERAR);
+
+    const itensPagamento = cart.map(x => ({
+      name: String(x.produto?.nome || 'Produto').slice(0, 80),
+      quantity: Number(x.qty || 1),
+      amount: Math.round(Number(x.produto?.preco || 0) * 100)
+    }));
+
+    if (fVal > 0) {
+      itensPagamento.push({
+        name: 'Frete',
+        quantity: 1,
+        amount: Math.round(fVal * 100)
+      });
+    }
 
     const res = await fetch(PIX_API_URL, {
       method: 'POST',
@@ -4136,62 +4136,48 @@ async function gerarPixPicPay() {
           email:    checkoutData.email,
           document: checkoutData.cpf.replace(/\D/g, '')
         },
-        pedidoId: `bnd${Date.now()}`
+        pedidoId: `bnd${Date.now()}`,
+        items: itensPagamento
       }),
       signal: controller.signal
     });
 
     clearTimeout(timeoutId);
 
-const data = await res.json();
+    const responseText = await res.text();
+    let data = {};
 
-if (data.success && data.paymentUrl) {
-  window.location.href = data.paymentUrl;
-  return;
-}
-
-if (!res.ok || !data.success) {
-  throw new Error(data.error || 'Erro ao criar pagamento');
-}
-
-    // Guarda no estado
-    pixState.paymentId     = data.merchantChargeId || data.paymentId;
-    pixState.qrCode        = data.qr_code;
-    pixState.qrCodeBase64  = data.qr_code_base64;
-    pixState.isVerificando = false;
-    pixState.isPago        = false;
-    pixState.tentativas    = 0;
-
-    // Renderiza QR Code
-    if (qrBox) {
-      // O qr_code_base64 do PicPay já vem com prefixo data:image/png;base64,
-      const src = data.qr_code_base64.startsWith('data:')
-        ? data.qr_code_base64
-        : `data:image/png;base64,${data.qr_code_base64}`;
-      qrBox.innerHTML = `<img src="${src}" alt="QR Code PIX" style="width:100%;height:100%;object-fit:contain;border-radius:6px;padding:6px;background:#fff;">`;
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (err) {
+      data = { error: responseText };
     }
-    if (copyText) copyText.value = data.qr_code;
-    if (statusEl) statusEl.textContent = 'Aponte a câmera do app do seu banco';
-    if (btnGerar) btnGerar.style.display = 'none';
-    if (btnCopy)  btnCopy.style.display  = 'flex';
-    if (aguardEl) aguardEl.style.display = 'block';
 
-    // ⚠️ Pedido NÃO é salvo aqui — só será salvo após pagamento aprovado
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || data.message || 'Erro ao criar pagamento');
+    }
 
-    showToast('PIX gerado! Aguardando pagamento...');
+    if (data.paymentUrl) {
+      if (statusEl) statusEl.textContent = 'Redirecionando para o checkout do PicPay...';
+      window.location.href = data.paymentUrl;
+      return;
+    }
 
-    // Começa polling
-    iniciarVerificacaoPix();
+    throw new Error('O PicPay não retornou o link de pagamento');
 
   } catch (e) {
-    console.error('Erro gerar PIX:', e);
-    let msg = e.message;
+    console.error('Erro ao abrir checkout PicPay:', e);
+    let msg = e.message || 'Erro ao criar pagamento';
     if (e.name === 'AbortError') msg = 'Tempo limite — tente novamente';
+
     showToast('Erro: ' + msg, 'error');
-    if (statusEl) statusEl.textContent = 'Falha. Tente novamente.';
+
+    if (statusEl) {
+      statusEl.textContent = 'Não foi possível abrir o checkout. Tente novamente.';
+    }
     if (btnGerar) {
-      btnGerar.disabled  = false;
-      btnGerar.innerHTML = '<span class="mat" style="font-size:16px;">qr_code_scanner</span>Tentar novamente';
+      btnGerar.disabled = false;
+      btnGerar.innerHTML = '<span class="mat" style="font-size:16px;">payments</span>Tentar novamente';
     }
   }
 }
@@ -4330,11 +4316,11 @@ function resetarTelaPix() {
 
   if (qrBox)    qrBox.innerHTML    = '<span class="mat" style="font-size:48px;color:var(--muted2);">qr_code_2</span>';
   if (copyText) copyText.value     = '';
-  if (statusEl) statusEl.textContent = 'Clique abaixo para gerar o QR Code';
+  if (statusEl) statusEl.textContent = 'Clique abaixo para abrir o checkout PicPay';
   if (btnGerar) {
     btnGerar.style.display = 'flex';
     btnGerar.disabled  = false;
-    btnGerar.innerHTML = '<span class="mat" style="font-size:16px;">qr_code_scanner</span>Gerar QR Code PIX';
+    btnGerar.innerHTML = '<span class="mat" style="font-size:16px;">payments</span>Pagar com PicPay';
   }
   if (btnCopy)  btnCopy.style.display  = 'none';
   if (aguardEl) aguardEl.style.display = 'none';
