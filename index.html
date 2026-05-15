@@ -4315,23 +4315,28 @@ async function abrirCheckoutMercadoPago() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
               },
-              body: JSON.stringify({
-                ...formData,
+body: JSON.stringify({
+  ...formData,
 
-                transaction_amount: Number(totalAtual.toFixed(2)),
-                description: 'Pedido Benedictus Camisaria',
+  transaction_amount: Number(totalAtual.toFixed(2)),
+  description: 'Pedido Benedictus Camisaria',
 
-                pedido: {
-                  id: externalReference
-                },
+  installments:
+    formData.payment_type_id === 'credit_card'
+      ? Math.min(Number(formData.installments || 1), 3)
+      : Number(formData.installments || 1),
 
-                customer: {
-                  name: checkoutData.nome,
-                  email: checkoutData.email || window.usuarioLogado?.email || '',
-                  cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
-                  phone: checkoutData.celular || ''
-                }
-              })
+  pedido: {
+    id: externalReference
+  },
+
+  customer: {
+    name: checkoutData.nome,
+    email: checkoutData.email || window.usuarioLogado?.email || '',
+    cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
+    phone: checkoutData.celular || ''
+  }
+})
             });
 
             const data = await response.json().catch(() => ({}));
