@@ -1398,6 +1398,74 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       .ivory-fabric__btn{font-size:8.5px;letter-spacing:.1em;}
     }
 
+    /* ═══ Ajustes do ivory-card pro MODO CLARO ═══ */
+    [data-theme="light"] .ivory-card{
+      border:1.5px solid var(--gold);
+      box-shadow:
+        0 0 0 1px rgba(184,150,90,.18),
+        0 0 18px rgba(184,150,90,.12),
+        0 16px 40px rgba(34,34,34,.10);
+    }
+    [data-theme="light"] .ivory-card:hover{
+      border-color:var(--gold2);
+      box-shadow:
+        0 0 0 1px rgba(184,150,90,.30),
+        0 0 28px rgba(184,150,90,.22),
+        0 24px 56px rgba(34,34,34,.16);
+    }
+    [data-theme="light"] .ivory-card__img-wrap{background:#F5F1EA;}
+    [data-theme="light"] .ivory-card__img-ph{color:rgba(34,34,34,.20);}
+    [data-theme="light"] .ivory-card__name{color:var(--ink);}
+    [data-theme="light"] .ivory-card__price-now{color:var(--ink);}
+    [data-theme="light"] .ivory-card__price-was{color:var(--muted);}
+    [data-theme="light"] .ivory-card__sublabel{color:var(--muted);}
+    [data-theme="light"] .ivory-color-dot{border:1.5px solid rgba(34,34,34,.18);}
+    [data-theme="light"] .ivory-color-dot.active{box-shadow:0 0 0 2px #ffffff,0 0 0 3.5px var(--gold);}
+    [data-theme="light"] .ivory-sz-btn{
+      border:1px solid rgba(34,34,34,.15);
+      background:rgba(245,241,234,.8);
+      color:rgba(60,50,30,.65);
+    }
+    [data-theme="light"] .ivory-sz-btn:hover,
+    [data-theme="light"] .ivory-sz-btn.active{
+      border-color:var(--gold);color:var(--gold2);
+      background:rgba(184,150,90,.10);
+    }
+    [data-theme="light"] .ivory-tp-btn{
+      border:1px solid rgba(34,34,34,.15);
+      background:rgba(245,241,234,.8);
+      color:rgba(60,50,30,.65);
+    }
+    [data-theme="light"] .ivory-tp-btn:hover,
+    [data-theme="light"] .ivory-tp-btn.active{
+      border-color:var(--gold);color:var(--gold2);
+      background:rgba(184,150,90,.10);
+    }
+
+    /* ═══ Ajustes do seletor pro MODO CLARO ═══ */
+    [data-theme="light"] .ivory-fabric-label{
+      color:var(--gold2);
+    }
+    [data-theme="light"] .ivory-fabric{
+      background:rgba(180,160,120,.12);
+      border:1px solid rgba(180,160,120,.30);
+      box-shadow:inset 0 1px 2px rgba(34,34,34,.06);
+    }
+    [data-theme="light"] .ivory-fabric__pill{
+      background:linear-gradient(135deg,#c8a76a 0%,#b8965a 50%,#9a7a45 100%);
+      box-shadow:0 2px 8px rgba(184,150,90,.35),0 0 0 1px rgba(200,169,110,.5) inset;
+    }
+    [data-theme="light"] .ivory-fabric__btn{
+      color:rgba(60,50,30,.55);
+    }
+    [data-theme="light"] .ivory-fabric__btn:hover:not(.active){
+      color:rgba(34,34,34,.9);
+    }
+    [data-theme="light"] .ivory-fabric__btn.active{
+      color:#ffffff;
+      text-shadow:0 1px 0 rgba(0,0,0,.15);
+    }
+
     /* ── BOTÃO COR DOURADA — animação fiel ao original ── */
     .ivory-card__cta{
       --bg-scale:1;
@@ -2946,7 +3014,7 @@ function ivoryCardHTML(p, tipo) {
     ${semEstoque ? '' : `
     <div class="ivory-card__pagamento">
       <span class="mat">credit_card</span>
-      <span>PIX ou <strong>12x de R$ ${formatPrice(parseFloat(p.preco)/3)}</strong> sem juros</span>
+      <span>PIX ou <strong>Cartão</strong></span>
     </div>`}
   </div>
 </article>`;
