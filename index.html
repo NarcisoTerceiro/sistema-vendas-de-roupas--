@@ -1140,7 +1140,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div class="hero-overlay"></div>
     <div class="hero-content">
   
-      <h1 class="hero-title"> Unindo  <br/><em> fé conceito </em><br/> e qualidade </h1>
+      <h1 class="hero-title"> Unindo  <br/><em> fé, conceito </em><br/> e qualidade </h1>
       <p class="hero-sub">Peças construídas com precisão e intenção. Cada silhueta projetada para expressar.</p>
       <div class="hero-cta">
         <button class="btn-primary" onclick="sc('colecao')"> Nosso diferencial </button>
@@ -1149,7 +1149,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     </div>
   </div>
   <div class="hero-slide">
-    <img src="https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=1600&q=80&fit=crop" alt=""/>
+    <img src="cancoes.jpg" alt=""/>
     <div class="hero-overlay"></div>
     <div class="hero-content">
 
@@ -1161,7 +1161,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     </div>
   </div>
   <div class="hero-slide">
-    <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=80&fit=crop" alt=""/>
+    <img src="IMG_5909.png" alt=""/>
     <div class="hero-overlay"></div>
     <div class="hero-content">
       <span class="hero-eyebrow">Linha Premium</span>
@@ -1185,11 +1185,11 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 <div class="features-bar">
   <div class="feature-item">
     <div class="feature-icon"><span class="mat">local_shipping</span></div>
-    <div><div class="feature-title">Entrega Expressa</div><div class="feature-sub">25 a 40 minutos</div></div>
+    <div><div class="feature-title">Entregas para todo o Brasil</div><div class="feature-sub"></div></div>
   </div>
   <div class="feature-item">
     <div class="feature-icon"><span class="mat">qr_code_2</span></div>
-    <div><div class="feature-title">PIX & Dinheiro</div><div class="feature-sub">Pague como preferir</div></div>
+    <div><div class="feature-title">PIX & Cartão</div><div class="feature-sub">Pague como preferir</div></div>
   </div>
   <div class="feature-item">
     <div class="feature-icon"><span class="mat">verified</span></div>
@@ -1674,7 +1674,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <div class="destaque-desc">Entrega rápida na sua porta e pagamento facilitado — escolha como prefere pagar.</div>
       <div class="destaque-tags">
         <span class="destaque-tag"><span class="mat">qr_code_2</span>PIX</span>
-        <span class="destaque-tag"><span class="mat">credit_card</span>12x sem juros</span>
+        <span class="destaque-tag"><span class="mat">credit_card</span>3x em todos os cartões</span>
       </div>
     </div>
   </div>
@@ -2796,7 +2796,7 @@ function ivoryCardHTML(p, tipo) {
     ${semEstoque ? '' : `
     <div class="ivory-card__pagamento">
       <span class="mat">credit_card</span>
-      <span>PIX ou <strong>12x de R$ ${formatPrice(parseFloat(p.preco)/12)}</strong> sem juros</span>
+      <span>PIX ou <strong>12x de R$ ${formatPrice(parseFloat(p.preco)/3)}</strong> sem juros</span>
     </div>`}
   </div>
 </article>`;
@@ -4269,7 +4269,7 @@ async function abrirCheckoutMercadoPago() {
 
     const settings = {
       initialization: {
-        amount: Number(total.toFixed(2)),
+        amount: Number(total.toFixed(3)),
         payer: {
           email: checkoutData.email || window.usuarioLogado?.email || '',
           firstName: nome.first_name,
@@ -5177,7 +5177,7 @@ function showSuccessScreen() {
       </div>
       <div style="background:rgba(184,150,90,.08);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.8;width:100%;animation:fadeUp .5s .5s both;">
         <span class="mat" style="color:var(--gold);font-size:15px;vertical-align:middle;margin-right:4px;">schedule</span>
-        Entrega prevista: <strong style="color:var(--ink);">25–40 minutos</strong>
+        <strong style="color:var(--ink);"></strong>
       </div>
       <button onclick="toggleCarrinho()" style="margin-top:12px;background:var(--gold);color:#0f1526;padding:13px 36px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border-radius:8px;transition:all .3s;animation:fadeUp .5s .65s both;" onmouseover="this.style.background='#e8d5a3'" onmouseout="this.style.background='var(--gold)'">
         Continuar Comprando
