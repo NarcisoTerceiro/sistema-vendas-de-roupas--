@@ -4130,6 +4130,90 @@ async function salvarPedidoMercadoPagoPendente(externalReference) {
   }
 }
 
+function renderizarPixMercadoPago(data, externalReference) {
+  const container = document.getElementById('paymentBrick_container');
+  const statusEl = document.getElementById('mp-status-text');
+
+  const qrCode = data.qr_code || data.payment?.point_of_interaction?.transaction_data?.qr_code;
+  const qrCodeBase64 = data.qr_code_base64 || data.payment?.point_of_interaction?.transaction_data?.qr_code_base64;
+  const ticketUrl = data.ticket_url || data.payment?.point_of_interaction?.transaction_data?.ticket_url;
+
+  if (!container) return;
+
+  if (!qrCode && !qrCodeBase64 && !ticketUrl) {
+    container.innerHTML = `
+      <div style="padding:20px;text-align:center;color:#333;line-height:1.7;">
+        <b>Pagamento criado.</b><br>
+        Status: ${data.status || 'pendente'}<br>
+        Aguarde a confirmação.
+      </div>
+    `;
+    if (statusEl) statusEl.textContent = 'Pagamento criado. Aguarde a confirmação.';
+    return;
+  }
+
+  const imgSrc = qrCodeBase64
+    ? (String(qrCodeBase64).startsWith('data:')
+        ? qrCodeBase64
+        : `data:image/png;base64,${qrCodeBase64}`)
+    : '';
+
+  container.innerHTML = `
+    <div style="padding:18px;color:#222;text-align:center;line-height:1.6;">
+      <h3 style="font-family:Arial,sans-serif;font-size:20px;margin-bottom:8px;color:#222;">
+        Pix gerado com sucesso
+      </h3>
+
+      <p style="font-size:14px;color:#555;margin-bottom:16px;">
+        Escaneie o QR Code ou copie o código Pix abaixo para concluir o pagamento.
+      </p>
+
+      ${imgSrc ? `
+        <div style="display:flex;justify-content:center;margin-bottom:16px;">
+          <img src="${imgSrc}" alt="QR Code Pix" style="width:220px;height:220px;object-fit:contain;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px;">
+        </div>
+      ` : ''}
+
+      ${qrCode ? `
+        <textarea id="mp-pix-copia-cola" readonly style="width:100%;min-height:90px;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:12px;color:#333;resize:none;">${qrCode}</textarea>
+
+        <button onclick="copiarPixMercadoPago()" style="width:100%;margin-top:12px;background:#3483fa;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;">
+          Copiar código Pix
+        </button>
+      ` : ''}
+
+      ${ticketUrl ? `
+        <a href="${ticketUrl}" target="_blank" style="display:block;margin-top:12px;color:#3483fa;font-weight:700;">
+          Abrir instruções de pagamento
+        </a>
+      ` : ''}
+
+      <p style="font-size:12px;color:#777;margin-top:16px;">
+        Pedido: ${externalReference || data.external_reference || ''}
+      </p>
+    </div>
+  `;
+
+  if (statusEl) {
+    statusEl.textContent = 'Pix gerado. Conclua o pagamento pelo app do seu banco.';
+  }
+}
+
+function copiarPixMercadoPago() {
+  const el = document.getElementById('mp-pix-copia-cola');
+  if (!el) return;
+
+  el.select();
+  el.setSelectionRange(0, 999999);
+
+  try {
+    document.execCommand('copy');
+    showToast('Código Pix copiado!');
+  } catch (e) {
+    showToast('Não foi possível copiar o Pix.', 'error');
+  }
+}
+
 async function abrirCheckoutMercadoPago() {
   const container = document.getElementById('paymentBrick_container');
   const statusEl = document.getElementById('mp-status-text');
@@ -4216,57 +4300,134 @@ async function abrirCheckoutMercadoPago() {
           const totalAtual = cartTotal() + (freteSelecionado?.valor || 0);
           const externalReference = `bnd-${Date.now()}`;
 
-          if (statusEl) statusEl.textContent = 'Salvando pedido e processando pagamento…';
+          try {
+            if (statusEl) {
+              statusEl.textContent = 'Salvando pedido e processando pagamento…';
+            }
 
-          await salvarPedidoMercadoPagoPendente(externalReference);
+            // 1. Salva o pedido no Supabase como aguardando pagamento
+            await salvarPedidoMercadoPagoPendente(externalReference);
 
-          const response = await fetch(MERCADOPAGO_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-              ...formData,
-              transaction_amount: Number(totalAtual.toFixed(2)),
-              description: 'Pedido Benedictus Camisaria',
-              pedido: { id: externalReference },
-              customer: {
-                name: checkoutData.nome,
-                email: checkoutData.email,
-                cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
-                phone: checkoutData.celular
+            // 2. Envia os dados do Payment Brick para a função Netlify
+            const response = await fetch(MERCADOPAGO_API_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                ...formData,
+
+                transaction_amount: Number(totalAtual.toFixed(2)),
+                description: 'Pedido Benedictus Camisaria',
+
+                pedido: {
+                  id: externalReference
+                },
+
+                customer: {
+                  name: checkoutData.nome,
+                  email: checkoutData.email || window.usuarioLogado?.email || '',
+                  cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
+                  phone: checkoutData.celular || ''
+                }
+              })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.success) {
+              console.error('Erro ao processar Mercado Pago:', data);
+
+              if (statusEl) {
+                statusEl.textContent = 'Não foi possível processar o pagamento.';
               }
-            })
-          });
 
-          const data = await response.json().catch(() => ({}));
+              showToast(data.error || 'Erro ao processar pagamento.', 'error');
+              throw new Error(data.error || 'Erro ao processar pagamento');
+            }
 
-          if (!response.ok || !data.success) {
-            console.error('Erro ao processar Mercado Pago:', data);
-            if (statusEl) statusEl.textContent = 'Não foi possível processar o pagamento.';
-            throw new Error(data.error || 'Erro ao processar pagamento');
-          }
+            console.log('Pagamento Mercado Pago criado:', data);
 
-          if (data.status === 'approved') {
-            showToast('Pagamento aprovado!');
-            if (statusEl) statusEl.textContent = 'Pagamento aprovado. Seu pedido foi confirmado.';
-            cart = [];
-            saveCart();
-            updateCartBadge();
-            setTimeout(() => {
-              if (typeof showSuccessScreen === 'function') showSuccessScreen();
-              else if (typeof exibirModalPedidoConfirmadoManual === 'function') exibirModalPedidoConfirmadoManual();
-            }, 800);
-          } else if (data.status === 'pending' || data.status === 'in_process') {
-            showToast('Pagamento criado. Aguarde a confirmação.');
-            if (statusEl) statusEl.textContent = 'Pagamento pendente. Assim que aprovado, o pedido será atualizado automaticamente.';
-          } else {
+            // 3. Se for Pix, exibe QR Code e código copia e cola dentro da loja
+            const qrCode =
+              data.qr_code ||
+              data.payment?.point_of_interaction?.transaction_data?.qr_code;
+
+            const qrCodeBase64 =
+              data.qr_code_base64 ||
+              data.payment?.point_of_interaction?.transaction_data?.qr_code_base64;
+
+            const ticketUrl =
+              data.ticket_url ||
+              data.payment?.point_of_interaction?.transaction_data?.ticket_url;
+
+            if (qrCode || qrCodeBase64 || ticketUrl) {
+              renderizarPixMercadoPago(data, externalReference);
+              showToast('Pix gerado com sucesso!');
+
+              if (statusEl) {
+                statusEl.textContent = 'Pix gerado. Conclua o pagamento pelo app do seu banco.';
+              }
+
+              return data.payment || data;
+            }
+
+            // 4. Cartão aprovado na hora
+            if (data.status === 'approved') {
+              showToast('Pagamento aprovado!');
+
+              if (statusEl) {
+                statusEl.textContent = 'Pagamento aprovado. Seu pedido foi confirmado.';
+              }
+
+              cart = [];
+              saveCart();
+              updateCartBadge();
+
+              setTimeout(() => {
+                if (typeof showSuccessScreen === 'function') {
+                  showSuccessScreen();
+                } else if (typeof exibirModalPedidoConfirmadoManual === 'function') {
+                  exibirModalPedidoConfirmadoManual();
+                }
+              }, 800);
+
+              return data.payment || data;
+            }
+
+            // 5. Pagamento pendente ou em análise
+            if (data.status === 'pending' || data.status === 'in_process') {
+              showToast('Pagamento criado. Aguarde a confirmação.');
+
+              if (statusEl) {
+                statusEl.textContent = 'Pagamento pendente. Assim que aprovado, o pedido será atualizado automaticamente.';
+              }
+
+              // Se o Mercado Pago retornar dados Pix mesmo com status pendente, mostra na tela.
+              renderizarPixMercadoPago(data, externalReference);
+              return data.payment || data;
+            }
+
+            // 6. Outros status
             showToast('Pagamento enviado. Status: ' + (data.status || 'em análise'));
-            if (statusEl) statusEl.textContent = 'Pagamento enviado. Status: ' + (data.status || 'em análise') + '.';
-          }
 
-          return data.payment || data;
+            if (statusEl) {
+              statusEl.textContent = 'Pagamento enviado. Status: ' + (data.status || 'em análise') + '.';
+            }
+
+            return data.payment || data;
+
+          } catch (error) {
+            console.error('Erro no onSubmit Mercado Pago:', error);
+
+            if (statusEl) {
+              statusEl.textContent = 'Erro ao processar pagamento. Tente novamente.';
+            }
+
+            showToast(error.message || 'Erro ao processar pagamento.', 'error');
+            throw error;
+          }
         },
         onError: (error) => {
           console.error('Erro Payment Brick:', error);
