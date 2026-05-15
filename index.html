@@ -3756,6 +3756,10 @@ function showStepDados() {
 
   document.getElementById('payment-content').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:13px;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:linear-gradient(90deg, rgba(212,175,55,0.12), rgba(212,175,55,0.04));border:1px solid rgba(212,175,55,0.35);border-radius:8px;margin-bottom:2px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18H3V6h13v12h-3"/><path d="M14 18H9"/><path d="M16 8h4l3 4v6h-2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+        <span style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;">Frete grátis acima de R$ 250</span>
+      </div>
       <div style="font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Dados de Entrega</div>
       <div class="form-group">
         <label class="form-label">Seu nome completo *</label>
@@ -3940,21 +3944,26 @@ async function buscarCEP() {
     const taxaFixa = TAXAS_FIXAS.find(t => t.cep === cepRaw);
 
     if (taxaFixa) {
+      // Frete grátis para compras acima de R$ 250
+      const subtotalCarrinho = cartTotal();
+      const freteGratis = subtotalCarrinho >= 250;
+      const valorFrete = freteGratis ? 0 : taxaFixa.valor;
+
       freteOpcoes = [{
         codigo:  'local_' + taxaFixa.cidade.toLowerCase().replace(' ','_'),
         nome:    `Entrega local — ${taxaFixa.cidade}`,
         prazo:   taxaFixa.prazo,
-        valor:   taxaFixa.valor,
+        valor:   valorFrete,
       }];
       freteSelecionado = freteOpcoes[0];
       resEl.innerHTML = `
         <div style="background:rgba(184,150,90,.08);border:1px solid rgba(184,150,90,.35);border-radius:8px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:6px;">
           <span class="mat" style="font-size:20px;color:var(--gold);flex-shrink:0;">local_shipping</span>
           <div style="flex:1;">
-            <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:2px;">Entrega local — ${taxaFixa.cidade}</div>
-            <div style="font-size:11px;color:var(--muted);">Taxa fixa de entrega na cidade</div>
+            <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:2px;">Entrega local — ${taxaFixa.cidade}${freteGratis ? ' <span style=\"color:#2ecc71;font-weight:700;\">· FRETE GRÁTIS</span>' : ''}</div>
+            <div style="font-size:11px;color:var(--muted);">${freteGratis ? 'Sua compra ultrapassou R$ 250 — entrega por nossa conta!' : 'Taxa fixa de entrega na cidade'}</div>
           </div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);font-weight:600;white-space:nowrap;">R$ ${formatPrice(taxaFixa.valor)}</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:${freteGratis ? '#2ecc71' : 'var(--gold)'};font-weight:600;white-space:nowrap;">${freteGratis ? 'GRÁTIS' : 'R$ ' + formatPrice(valorFrete)}</div>
         </div>`;
       atualizarTotaisComFrete();
       return; // Não consulta Frenet para essas cidades
@@ -3988,7 +3997,10 @@ async function buscarCEP() {
       if (freteResp.ok) {
         const dadosFrete = await freteResp.json();
         if (dadosFrete.opcoes && Array.isArray(dadosFrete.opcoes) && dadosFrete.opcoes.length) {
-          freteOpcoes = dadosFrete.opcoes;
+          // Frete grátis para compras acima de R$ 250 (em todo o Brasil)
+          const subtotalCarrinho = cartTotal();
+          const freteGratis = subtotalCarrinho >= 250;
+          freteOpcoes = dadosFrete.opcoes.map(op => freteGratis ? { ...op, valor: 0, freteGratis: true } : op);
           freteSelecionado = freteOpcoes[0];
           renderFreteOpcoes();
           atualizarTotaisComFrete();
@@ -4050,15 +4062,16 @@ function renderFreteOpcoes() {
 
   const opcoes = freteOpcoes.map(op => {
     const sel = freteSelecionado?.codigo === op.codigo;
+    const isGratis = op.freteGratis || op.valor === 0;
     return `<div onclick="selecionarFrete('${op.codigo}')"
       style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid ${sel ? 'var(--gold)' : 'var(--border)'};border-radius:8px;cursor:pointer;background:${sel ? 'rgba(200,169,110,.08)' : 'transparent'};transition:all .2s;margin-bottom:6px;">
       <span class="mat" style="font-size:22px;color:${sel ? 'var(--gold)' : 'var(--muted2)'};">local_shipping</span>
       <div style="flex:1;">
-        <div style="font-size:12px;font-weight:500;color:var(--ink);">${esc(op.nome)}</div>
+        <div style="font-size:12px;font-weight:500;color:var(--ink);">${esc(op.nome)}${isGratis ? ' <span style=\"color:#2ecc71;font-weight:700;font-size:10px;letter-spacing:.1em;\">· FRETE GRÁTIS</span>' : ''}</div>
         <div style="font-size:10px;color:var(--muted);">Prazo: até ${op.prazo} dias úteis</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);font-weight:600;">R$ ${formatPrice(op.valor)}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:${isGratis ? '#2ecc71' : 'var(--gold)'};font-weight:600;">${isGratis ? 'GRÁTIS' : 'R$ ' + formatPrice(op.valor)}</div>
       </div>
       <div style="width:16px;height:16px;border-radius:50%;border:2px solid ${sel ? 'var(--gold)' : 'var(--border)'};background:${sel ? 'var(--gold)' : 'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
         ${sel ? '<span style="width:6px;height:6px;border-radius:50%;background:#0f1526;display:block;"></span>' : ''}
