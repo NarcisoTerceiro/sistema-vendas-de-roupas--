@@ -1336,6 +1336,68 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     .ivory-tp-btn{min-width:60px;height:34px;padding:0 12px;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:rgba(255,255,255,.6);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:border-color .18s,color .18s,background .18s;display:flex;align-items:center;justify-content:center;letter-spacing:.05em;}
     .ivory-tp-btn:hover,.ivory-tp-btn.active{border-color:#c4a97d;color:#c4a97d;background:rgba(196,169,125,.15);}
 
+    /* ═══ SELETOR DE TECIDO DENTRO DO CARD (Premium / 100% Algodão) ═══ */
+    .ivory-fabric-label{
+      display:flex;align-items:center;gap:5px;
+      color:rgba(200,169,110,.85);
+      margin-bottom:7px;
+    }
+    .ivory-fabric-label .mat{font-size:13px;color:var(--gold);}
+    .ivory-fabric{
+      display:flex;position:relative;
+      background:rgba(0,0,0,.32);
+      border:1px solid rgba(196,169,125,.22);
+      border-radius:999px;
+      padding:3px;margin-bottom:14px;
+      overflow:hidden;
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.35);
+    }
+    .ivory-fabric__pill{
+      position:absolute;top:3px;bottom:3px;left:3px;
+      width:calc(50% - 3px);
+      border-radius:999px;
+      background:linear-gradient(135deg,#d4b87a 0%,#c8a96e 50%,#a88847 100%);
+      box-shadow:0 2px 8px rgba(200,169,110,.45),0 0 0 1px rgba(212,184,122,.6) inset;
+      transition:transform .42s cubic-bezier(.34,1.4,.4,1);
+      pointer-events:none;z-index:1;
+    }
+    .ivory-fabric[data-active="premium"] .ivory-fabric__pill{transform:translateX(100%);}
+    .ivory-fabric__btn{
+      flex:1;position:relative;z-index:2;
+      background:transparent;border:none;cursor:pointer;
+      padding:8px 6px;
+      font-family:'DM Sans',sans-serif;font-size:9.5px;font-weight:600;
+      letter-spacing:.16em;text-transform:uppercase;
+      color:rgba(255,255,255,.55);
+      display:flex;align-items:center;justify-content:center;gap:5px;
+      transition:color .32s ease, transform .25s ease;
+      -webkit-tap-highlight-color:transparent;
+      white-space:nowrap;min-width:0;
+    }
+    .ivory-fabric__btn .mat{font-size:13px;transition:transform .35s cubic-bezier(.34,1.4,.4,1);}
+    .ivory-fabric__btn:hover:not(.active){color:rgba(255,255,255,.85);}
+    .ivory-fabric__btn:hover:not(.active) .mat{transform:rotate(-8deg) scale(1.08);}
+    .ivory-fabric__btn.active{color:#1a1714;text-shadow:0 1px 0 rgba(255,255,255,.18);}
+    .ivory-fabric__btn.active .mat{transform:scale(1.1);}
+    @keyframes ivoryFabricGlow{
+      0%,100%{box-shadow:0 2px 8px rgba(200,169,110,.45),0 0 0 1px rgba(212,184,122,.6) inset;}
+      50%{box-shadow:0 4px 18px rgba(200,169,110,.7),0 0 0 1px rgba(244,220,160,.85) inset,0 0 22px rgba(200,169,110,.5);}
+    }
+    .ivory-fabric.switching .ivory-fabric__pill{animation:ivoryFabricGlow .6s ease;}
+    .ivory-card.fabric-swapping .ivory-card__img-wrap img,
+    .ivory-card.fabric-swapping .ivory-card__price-now,
+    .ivory-card.fabric-swapping .ivory-card__price-was{opacity:.35;transition:opacity .22s ease;}
+    .ivory-card__img-wrap img,
+    .ivory-card__price-now,
+    .ivory-card__price-was{transition:opacity .35s ease;}
+    @media(max-width:480px){
+      .ivory-fabric__btn{font-size:9px;letter-spacing:.12em;padding:7px 4px;gap:4px;}
+      .ivory-fabric__btn .mat{font-size:12px;}
+    }
+    @media(max-width:360px){
+      .ivory-fabric__btn{font-size:8.5px;letter-spacing:.1em;}
+    }
+
     /* ── BOTÃO COR DOURADA — animação fiel ao original ── */
     .ivory-card__cta{
       --bg-scale:1;
@@ -2247,7 +2309,6 @@ function renderColecoes() {
 function buildColecaoSection(id, titulo, icon) {
   const trackId = `track-${id}`;
   const dotsId  = `dots-${id}`;
-  const state   = COLECAO_STATE[id] || 'algodao';
   return `
     <div style="margin-bottom:60px;">
       <!-- Cabeçalho: tudo à esquerda -->
@@ -2257,22 +2318,8 @@ function buildColecaoSection(id, titulo, icon) {
         </span>
         <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,2.8vw,34px);font-weight:300;color:var(--ink);margin-bottom:14px;">${titulo}</div>
 
-        <!-- Label do toggle -->
-        <div style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-          <span class="mat" style="font-size:14px;color:var(--gold);">checkroom</span>
-          Escolha o tipo de tecido:
-        </div>
-
-        <!-- Toggle + Setas em linha, à esquerda -->
+        <!-- Setas de navegação -->
         <div style="display:flex;align-items:center;gap:12px;">
-          <div class="col-toggle">
-            <button class="col-toggle-btn ${state==='algodao'?'active':''}" onclick="setColecaoTipo('${id}','algodao')">
-              <span class="mat">eco</span>100% Algodão
-            </button>
-            <button class="col-toggle-btn ${state==='premium'?'active':''}" onclick="setColecaoTipo('${id}','premium')">
-              <span class="mat">workspace_premium</span>Premium
-            </button>
-          </div>
           <button class="promo-car-arrow" onclick="scrollColecao('${id}',-1)"><span class="mat">arrow_back</span></button>
           <button class="promo-car-arrow" onclick="scrollColecao('${id}',1)"><span class="mat">arrow_forward</span></button>
         </div>
@@ -2301,36 +2348,38 @@ function filtrarProdutosColecao(id, tipoTecido) {
   // Normaliza valores vindos do Supabase
   const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 
-  // Match genérico: compara o slug da coleção com o campo `categoria` do produto.
-  // Mantém aliases das duas coleções históricas para compatibilidade com produtos antigos.
   const targetSlug = norm(id);
   const matchColecao = (p) => {
     const c = norm(p.categoria);
     if (c === targetSlug) return true;
-    // Aliases legados (caso o produto tenha sido cadastrado com variação)
     if (id === 'cancoes')      return c === 'cancao'        || c === 'colecao cancoes';
     if (id === 'preto_branco') return c === 'preto no branco' || c === 'pretonobranco';
     return false;
   };
 
-  const matchTipo = (p) => {
+  // Pega TODOS os produtos da coleção (Premium + Algodão juntos)
+  const todos = allProducts.filter(matchColecao);
+
+  // Deduplica por NOME — mostra apenas UM card por produto.
+  // Prefere a versão Algodão como padrão (o seletor no card permite trocar pra Premium).
+  const isAlgodao = (p) => {
     const t = norm(p.tipo_tecido);
-    if (tipoTecido === 'premium') return t === 'premium';
-    if (tipoTecido === 'algodao') return t === 'algodao' || t === '100% algodao' || t === '100algodao' || t === 'algodão';
-    return false;
+    return t === 'algodao' || t === '100% algodao' || t === '100algodao' || t === 'algodão';
   };
+  const isPremium = (p) => norm(p.tipo_tecido) === 'premium';
 
-  // Filtra só os que batem com a coleção E o tipo
-  let lista = allProducts.filter(p => matchColecao(p) && matchTipo(p));
+  const porNome = new Map();
+  todos.forEach(p => {
+    const chave = norm(p.nome);
+    if (!porNome.has(chave)) {
+      porNome.set(chave, p);
+    } else if (isAlgodao(p) && isPremium(porNome.get(chave))) {
+      // Se já tem premium salvo e chegou um algodão com mesmo nome, troca pelo algodão
+      porNome.set(chave, p);
+    }
+  });
 
-  // Fallback: enquanto o admin não preencheu o tipo_tecido,
-  // mostra todos os produtos da categoria pra coleção/tipo não ficar vazia
-  if (!lista.length) {
-    const semTipoCadastrado = !allProducts.some(p => p.tipo_tecido);
-    if (semTipoCadastrado) lista = allProducts.filter(matchColecao);
-  }
-
-  return lista;
+  return Array.from(porNome.values());
 }
 
 function renderColecaoTrack(id) {
@@ -2340,15 +2389,13 @@ function renderColecaoTrack(id) {
   const dots     = document.getElementById(dotsId);
   if (!track) return;
 
-  const tipoTecido = COLECAO_STATE[id];
-  const lista = filtrarProdutosColecao(id, tipoTecido);
+  const lista = filtrarProdutosColecao(id);
 
   if (!lista.length) {
     track.innerHTML = `
       <div style="width:100%;text-align:center;padding:60px 20px;color:var(--muted);">
         <span class="mat" style="font-size:48px;display:block;margin-bottom:12px;color:var(--muted2);">checkroom</span>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;">Nenhuma peça nesta opção</div>
-        <div style="font-size:12px;margin-top:6px;">Tente a outra opção (Premium ou 100% Algodão)</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;">Nenhuma peça nesta coleção</div>
       </div>`;
     if (dots) dots.innerHTML = '';
     return;
@@ -2615,7 +2662,10 @@ function scrollBest(dir) {
 //  Bind das interações dos ivory-cards (extraído pra reuso)
 // ════════════════════════════════════════════════════════════
 function bindIvoryCards(grid) {
-  grid.querySelectorAll('.ivory-card').forEach(card => {
+  // Coleta os cards: descendentes do grid + o próprio grid se ele for um card
+  const cards = Array.from(grid.querySelectorAll('.ivory-card'));
+  if (grid.classList && grid.classList.contains('ivory-card')) cards.push(grid);
+  cards.forEach(card => {
     const pid = card.dataset.pid;
 
     card.addEventListener('click', () => {
@@ -2660,6 +2710,70 @@ function bindIvoryCards(grid) {
       });
     });
 
+    // ── SELETOR DE TECIDO: ao clicar, troca o card pela versão correspondente (busca por NOME)
+    const fabricWrap = card.querySelector('.ivory-fabric');
+    if (fabricWrap) {
+      fabricWrap.querySelectorAll('.ivory-fabric__btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const novoTecido  = btn.dataset.tecido;
+          const tecidoAtivo = fabricWrap.dataset.active;
+          if (novoTecido === tecidoAtivo) return;
+
+          const siblingPid = fabricWrap.dataset.siblingPid;
+          if (!siblingPid) {
+            fabricWrap.classList.add('switching');
+            setTimeout(() => fabricWrap.classList.remove('switching'), 600);
+            if (typeof toast === 'function') {
+              toast(novoTecido === 'premium'
+                ? 'Esta peça ainda não está disponível na linha Premium'
+                : 'Esta peça ainda não está disponível em 100% Algodão');
+            }
+            return;
+          }
+
+          const sibling = allProducts.find(x => String(x.id) === String(siblingPid));
+          if (!sibling) return;
+
+          // Animação de saída + glow da pílula
+          card.classList.add('fabric-swapping');
+          fabricWrap.classList.add('switching');
+
+          // A pílula desliza IMEDIATAMENTE (mesmo enquanto o card faz fade)
+          fabricWrap.dataset.active = novoTecido;
+          fabricWrap.querySelectorAll('.ivory-fabric__btn').forEach(b => {
+            const ativa = b.dataset.tecido === novoTecido;
+            b.classList.toggle('active', ativa);
+            b.setAttribute('aria-selected', ativa ? 'true' : 'false');
+          });
+
+          // Pré-carrega a imagem da próxima versão pra evitar flash
+          const proxImg = getFirstImage(sibling);
+          if (proxImg) { const pre = new Image(); pre.src = proxImg; }
+
+          setTimeout(() => {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = ivoryCardHTML(sibling, 'colecao').trim();
+            const novoCard = tmp.firstElementChild;
+            if (!novoCard) {
+              card.classList.remove('fabric-swapping');
+              fabricWrap.classList.remove('switching');
+              return;
+            }
+            novoCard.style.opacity = '0';
+            novoCard.style.transform = 'translateY(4px)';
+            novoCard.style.transition = 'opacity .32s ease, transform .32s ease';
+            card.replaceWith(novoCard);
+            bindIvoryCards(novoCard);
+            requestAnimationFrame(() => {
+              novoCard.style.opacity = '';
+              novoCard.style.transform = '';
+            });
+          }, 220);
+        });
+      });
+    }
+
     card.querySelector('.ivory-card__cta')?.addEventListener('click', e => {
       e.stopPropagation();
       const cta = card.querySelector('.ivory-card__cta');
@@ -2675,6 +2789,26 @@ function ivoryCardHTML(p, tipo) {
   tipo = tipo || 'promo'; // 'promo' | 'best' | 'colecao'
   const cores    = Array.isArray(p.cores)    ? p.cores    : [];
   const tamanhos = Array.isArray(p.tamanhos) ? p.tamanhos : [];
+
+  // ── SELETOR DE TECIDO: detecta o tecido atual e procura a versão "irmã" pelo NOME
+  const _normTxt = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const _isAlgodao = x => {
+    const t = _normTxt(x.tipo_tecido);
+    return t === 'algodao' || t === '100% algodao' || t === '100algodao' || t === 'algodão';
+  };
+  const _isPremium = x => _normTxt(x.tipo_tecido) === 'premium';
+  const tecidoAtual = _isPremium(p) ? 'premium' : (_isAlgodao(p) ? 'algodao' : null);
+  let _siblingPid = null;
+  if (tecidoAtual && Array.isArray(allProducts)) {
+    const nomeKey = _normTxt(p.nome);
+    const sibling = allProducts.find(x =>
+      String(x.id) !== String(p.id) &&
+      _normTxt(x.nome) === nomeKey &&
+      (tecidoAtual === 'algodao' ? _isPremium(x) : _isAlgodao(x))
+    );
+    if (sibling) _siblingPid = sibling.id;
+  }
+  const mostrarSeletorTecido = (tipo === 'colecao') && tecidoAtual;
 
   // Tipo de modelagem vem do produto cadastrado no admin (Normal / Baby / Ambos).
   // Vale para todos os carrosséis (best, colecao, promo).
@@ -2738,6 +2872,21 @@ function ivoryCardHTML(p, tipo) {
   const precoOrigHTML = p.preco_original && parseFloat(p.preco_original) > parseFloat(p.preco)
     ? `<span class="ivory-card__price-was">R$ ${formatPrice(p.preco_original)}</span>` : '';
 
+  // ── Seletor de tecido dentro do card (só em coleção, quando o produto tem tipo_tecido)
+  const fabricHTML = mostrarSeletorTecido ? `
+    <div class="ivory-card__sublabel ivory-fabric-label">
+      <span class="mat">checkroom</span>Escolha o tipo de tecido
+    </div>
+    <div class="ivory-fabric" data-active="${tecidoAtual}"${_siblingPid ? ` data-sibling-pid="${esc(_siblingPid)}"` : ''} role="tablist" aria-label="Tipo de tecido">
+      <div class="ivory-fabric__pill" aria-hidden="true"></div>
+      <button type="button" class="ivory-fabric__btn ${tecidoAtual==='algodao'?'active':''}" data-tecido="algodao" role="tab" aria-selected="${tecidoAtual==='algodao'}">
+        <span class="mat">eco</span>100% Algodão
+      </button>
+      <button type="button" class="ivory-fabric__btn ${tecidoAtual==='premium'?'active':''}" data-tecido="premium" role="tab" aria-selected="${tecidoAtual==='premium'}">
+        <span class="mat">workspace_premium</span>Premium
+      </button>
+    </div>` : '';
+
   // ── Estado de estoque
   const semEstoque = (typeof p.estoque === 'number' && p.estoque <= 0);
   const badgeLabel = tipo === 'best' ? 'Premium' : (tipo === 'colecao' ? 'Coleção' : 'Promoção');
@@ -2791,6 +2940,7 @@ function ivoryCardHTML(p, tipo) {
         </div>
       </div>
     </div>
+    ${fabricHTML}
     ${coresHTML}
     ${ctaHTML}
     ${semEstoque ? '' : `
