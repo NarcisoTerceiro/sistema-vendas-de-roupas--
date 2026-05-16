@@ -1,6 +1,13 @@
 // netlify/functions/criar-pagamento-mp.js
 // Cria pagamentos no Mercado Pago usando Payment Brick.
 // Versão reforçada com dados antifraude: comprador, CPF, telefone, endereço, itens, external_reference e notification_url.
+// Correções aplicadas:
+//  - X-Idempotency-Key única por TENTATIVA (não por pedido) → permite retry de cartão.
+//  - additional_info.shipments.receiver_address sem campos inválidos.
+//  - Detecção robusta de cartão (não depende só de payment_type_id vindo do Brick).
+//  - binary_mode dinâmico: true em cartão (aprovar/rejeitar na hora), false em PIX.
+
+const crypto = require('crypto');
 
 const MP_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
 const SITE_URL = (process.env.SITE_URL || process.env.URL || 'https://benedictuscamisaria.netlify.app').replace(/\/$/, '');
@@ -71,18 +78,32 @@ function formatarTelefone(phoneRaw) {
   };
 }
 
+/**
+ * Detecta se a requisição é de cartão de crédito de forma robusta.
+ * O Payment Brick nem sempre envia payment_type_id, então também olhamos:
+ *  - presença de token (cartão sempre tem; PIX não)
+ *  - payment_method_id diferente de 'pix'
+ */
+function ehCartaoCredito(body) {
+  if (body.payment_type_id === 'credit_card') return true;
+  if (body.payment_method_id === 'pix') return false;
+  if (body.payment_type_id === 'bank_transfer') return false;
+  if (body.payment_type_id === 'debit_card') return false;
+  // Fallback: tem token e não é pix → é cartão.
+  return !!body.token && body.payment_method_id !== 'pix';
+}
+
 function normalizarParcelas(body, valor) {
-  const paymentType = body.payment_type_id || body.selectedPaymentMethod;
-  const isCreditCard = paymentType === 'credit_card';
+  // Não é cartão → não envia installments (PIX/débito não usam).
+  if (!ehCartaoCredito(body)) return undefined;
 
-  if (!isCreditCard) return undefined;
-
-  const parcelas = Number(body.installments || 1);
-
-  if (!Number.isFinite(parcelas) || parcelas < 1) return 1;
+  // Cartão de crédito SEMPRE precisa de installments >= 1.
+  // Se vier ausente, inválido ou 0, força 1 (à vista). Nunca retornar undefined em cartão.
+  let parcelas = Number(body.installments);
+  if (!Number.isFinite(parcelas) || parcelas < 1) parcelas = 1;
 
   // Regra da loja: cartão em até 3x.
-  // Para reduzir risco em valores muito baixos, evita parcela menor que cerca de R$ 10.
+  // Em valores baixos (< R$ 30), só à vista para reduzir risco e taxa proporcional.
   const maxPorValor = valor < 30 ? 1 : 3;
 
   return Math.min(parcelas, maxPorValor, 3);
@@ -130,6 +151,8 @@ function montarAdditionalInfo(body, transactionAmount, nome, telefone) {
   const shipping = body.shipping || {};
   const items = normalizarItens(body, transactionAmount);
 
+  // IMPORTANTE: receiver_address aceita SOMENTE os campos abaixo no MP.
+  // Colocar 'apartment', 'city_name', 'state_name' aqui pode causar rejeição em análise antifraude.
   return limparIndefinidos({
     items,
     payer: {
@@ -142,18 +165,16 @@ function montarAdditionalInfo(body, transactionAmount, nome, telefone) {
       address: {
         zip_code: somenteNumeros(shipping.cep || customer.cep),
         street_name: shipping.endereco || customer.endereco,
-        street_number: shipping.numero || customer.numero
+        street_number: String(shipping.numero || customer.numero || '')
       }
     },
     shipments: {
       receiver_address: {
         zip_code: somenteNumeros(shipping.cep || customer.cep),
         street_name: shipping.endereco || customer.endereco,
-        street_number: shipping.numero || customer.numero,
+        street_number: String(shipping.numero || customer.numero || ''),
         floor: shipping.complemento || customer.complemento,
-        apartment: shipping.bairro || customer.bairro,
-        city_name: shipping.cidade || customer.cidade,
-        state_name: shipping.uf || customer.uf
+        apartment: shipping.complemento || customer.complemento
       }
     }
   });
@@ -228,22 +249,52 @@ exports.handler = async (event) => {
       };
     }
 
+    const isCartaoCredito = ehCartaoCredito(body);
     const isPix = body.payment_method_id === 'pix' || body.payment_type_id === 'bank_transfer';
+
+    // Cartão sem token = inválido. Falha cedo, com mensagem clara.
+    if (isCartaoCredito && !body.token) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'Token do cartão ausente. Recarregue a página e preencha o cartão novamente.'
+        })
+      };
+    }
+
+    // Cartão sem CPF tende a ser rejeitado pelo antifraude do MP.
+    if (isCartaoCredito && !somenteNumeros(payerCpf)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'CPF do titular é obrigatório para pagamento com cartão.'
+        })
+      };
+    }
+
     const installments = normalizarParcelas(body, transaction_amount);
     const additional_info = montarAdditionalInfo(body, transaction_amount, nome, telefone);
+
+    // payment_type_id: garante que vai 'credit_card' mesmo se o Brick não enviar.
+    const payment_type_id = body.payment_type_id || (isCartaoCredito ? 'credit_card' : (isPix ? 'bank_transfer' : undefined));
 
     const payload = limparIndefinidos({
       transaction_amount,
       description: limitarTexto(body.description || 'Pedido Benedictus Camisaria', 255),
       payment_method_id: body.payment_method_id,
-      payment_type_id: body.payment_type_id,
+      payment_type_id,
       token: isPix ? undefined : body.token,
       installments,
       issuer_id: isPix ? undefined : body.issuer_id,
       capture: true,
 
-      // Permite pending/in_process quando o Mercado Pago precisar analisar.
-      binary_mode: false,
+      // Cartão: binary_mode true → aprova ou rejeita na hora (sem limbo "in_process").
+      // PIX: false (PIX é assíncrono por natureza).
+      binary_mode: isCartaoCredito,
 
       payer: {
         email: payerEmail,
@@ -260,7 +311,7 @@ exports.handler = async (event) => {
         address: {
           zip_code: somenteNumeros(shipping.cep || customer.cep),
           street_name: shipping.endereco || customer.endereco,
-          street_number: shipping.numero || customer.numero,
+          street_number: String(shipping.numero || customer.numero || ''),
           neighborhood: shipping.bairro || customer.bairro,
           city: shipping.cidade || customer.cidade,
           federal_unit: shipping.uf || customer.uf
@@ -290,12 +341,24 @@ exports.handler = async (event) => {
       }
     }));
 
+    // ÚLTIMA TRAVA: cartão SEM installments = MP retorna 4033 "Parcelas inválidas".
+    // Se por qualquer caminho o campo não ficou no payload, força 1 aqui.
+    if (isCartaoCredito && (payload.installments == null)) {
+      payload.installments = 1;
+      console.warn('installments ausente em cartão — forçado para 1.');
+    }
+
+    // CHAVE DE IDEMPOTÊNCIA ÚNICA POR TENTATIVA.
+    // Antes era o external_reference (mesmo do pedido) → causava cache da 1ª resposta
+    // e travava o cartão em "recusado" para sempre nos retries.
+    const idempotencyKey = crypto.randomUUID();
+
     const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
-        'X-Idempotency-Key': external_reference
+        'X-Idempotency-Key': idempotencyKey
       },
       body: JSON.stringify(payload)
     });
@@ -319,6 +382,7 @@ exports.handler = async (event) => {
           error: mpData.message || mpData.error || 'Erro no Mercado Pago',
           status: mpData.status,
           status_detail: mpData.status_detail,
+          cause: mpData.cause,
           debug: mpData
         })
       };
