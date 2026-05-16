@@ -4313,7 +4313,11 @@ function montarItensPedidoAtual() {
     qty: x.qty,
     preco: x.produto.preco,
     tamanho: x.tamanho || null,
-    cor: x.cor || null
+    cor: x.cor || null,
+    categoria:   x.produto.categoria   || null,
+    tipo_tecido: x.produto.tipo_tecido || null,
+    tipo_peca:   x.produto.tipo_peca   || null,
+    genero:      x.produto.genero      || null
   }));
 }
 
@@ -4435,6 +4439,149 @@ function renderizarPixMercadoPago(data, externalReference) {
   if (statusEl) {
     statusEl.textContent = 'Pix gerado. Conclua o pagamento pelo app do seu banco.';
   }
+
+  // 🔔 INICIA O LISTENER REALTIME — escuta atualização do status pelo webhook do Mercado Pago
+  iniciarListenerPixMercadoPago(externalReference || data.external_reference);
+}
+
+// Canal Realtime ativo (pra não duplicar)
+let mpRealtimeChannel = null;
+
+function iniciarListenerPixMercadoPago(externalReference) {
+  if (!externalReference || !db) {
+    console.warn('[Realtime MP] Sem externalReference ou db');
+    return;
+  }
+
+  // Limpa canal anterior se existir
+  if (mpRealtimeChannel) {
+    try { db.removeChannel(mpRealtimeChannel); } catch(e) {}
+    mpRealtimeChannel = null;
+  }
+
+  console.log('[Realtime MP] Escutando pedido:', externalReference);
+
+  // Valores considerados "pago" — aceita várias variações pra ser à prova de surpresa
+  const STATUS_PAGOS = ['pago', 'aprovado', 'approved', 'paid', 'confirmado'];
+
+  mpRealtimeChannel = db
+    .channel(`pedido-mp-${externalReference}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'pedidos',
+        filter: `external_reference=eq.${externalReference}`
+      },
+      (payload) => {
+        console.log('[Realtime MP] Update recebido:', payload);
+        const novoStatus = String(payload.new?.status || '').toLowerCase().trim();
+
+        if (STATUS_PAGOS.includes(novoStatus)) {
+          // 🔒 Já disparou? ignora
+          if (pixState.isPago || window._modalAprovadoExibido) {
+            console.log('[Realtime MP] Pagamento já processado, ignorando update.');
+            try { db.removeChannel(mpRealtimeChannel); } catch(e) {}
+            mpRealtimeChannel = null;
+            return;
+          }
+
+          console.log('🎉 Pix confirmado pelo webhook! Status:', novoStatus);
+
+          // Preenche pixState pro modal e função do WhatsApp funcionarem
+          pixState.paymentId       = externalReference;
+          pixState.pedidoIdBanco   = payload.new?.id || null;
+          pixState.isPago          = true;
+          pixState.isWhatsAppSent  = false;
+
+          // Fecha o canal — já recebemos o que precisava
+          try { db.removeChannel(mpRealtimeChannel); } catch(e) {}
+          mpRealtimeChannel = null;
+
+          // Toast + modal de aprovado (mesma função usada pelo PicPay antigo)
+          if (typeof showToast === 'function') {
+            showToast('Pagamento aprovado!', 'success');
+          }
+
+          if (typeof exibirModalPagamentoAprovado === 'function') {
+            exibirModalPagamentoAprovado();
+          }
+        }
+      }
+    )
+    .subscribe((status) => {
+      console.log('[Realtime MP] Status do canal:', status);
+    });
+
+  // Fallback de segurança: se Realtime falhar, polling a cada 6s por até 15 min
+  iniciarPollingPixMercadoPago(externalReference);
+}
+
+// Polling como fallback caso o Realtime não esteja habilitado na tabela
+let mpPollingInterval = null;
+function iniciarPollingPixMercadoPago(externalReference) {
+  if (mpPollingInterval) clearInterval(mpPollingInterval);
+
+  const STATUS_PAGOS = ['pago', 'aprovado', 'approved', 'paid', 'confirmado'];
+  let tentativas = 0;
+  const MAX_TENTATIVAS = 150; // 150 × 6s = 15 minutos
+
+  mpPollingInterval = setInterval(async () => {
+    tentativas++;
+    if (tentativas > MAX_TENTATIVAS || pixState.isPago) {
+      clearInterval(mpPollingInterval);
+      mpPollingInterval = null;
+      return;
+    }
+
+    try {
+      const { data: pedido, error } = await db
+        .from('pedidos')
+        .select('id, status')
+        .eq('external_reference', externalReference)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('[Polling MP] Erro:', error.message);
+        return;
+      }
+      if (!pedido) return;
+
+      const s = String(pedido.status || '').toLowerCase().trim();
+      if (STATUS_PAGOS.includes(s)) {
+        // 🔒 Já disparou? para tudo e sai
+        if (pixState.isPago || window._modalAprovadoExibido) {
+          clearInterval(mpPollingInterval);
+          mpPollingInterval = null;
+          return;
+        }
+
+        console.log('🎉 Pix confirmado via polling! Status:', s);
+
+        clearInterval(mpPollingInterval);
+        mpPollingInterval = null;
+        if (mpRealtimeChannel) {
+          try { db.removeChannel(mpRealtimeChannel); } catch(e) {}
+          mpRealtimeChannel = null;
+        }
+
+        pixState.paymentId      = externalReference;
+        pixState.pedidoIdBanco  = pedido.id;
+        pixState.isPago         = true;
+        pixState.isWhatsAppSent = false;
+
+        if (typeof showToast === 'function') {
+          showToast('Pagamento aprovado!', 'success');
+        }
+        if (typeof exibirModalPagamentoAprovado === 'function') {
+          exibirModalPagamentoAprovado();
+        }
+      }
+    } catch (e) {
+      console.warn('[Polling MP] Exceção:', e);
+    }
+  }, 6000);
 }
 
 function copiarPixMercadoPago() {
@@ -5232,15 +5379,25 @@ async function pagamentoAprovado() {
 
 // ── 5. MODAL "PAGAMENTO APROVADO" ───────────────────────
 function exibirModalPagamentoAprovado() {
-  // Remove modal anterior
-  const ex = document.getElementById('pix-aprovado-modal');
-  if (ex) ex.remove();
+  // 🔒 TRAVA: se já tá aberto, não abre de novo (evita loop)
+  if (document.getElementById('pix-aprovado-modal')) {
+    console.log('[Modal] Já está aberto, ignorando nova chamada.');
+    return;
+  }
+  if (window._modalAprovadoExibido) {
+    console.log('[Modal] Já foi exibido nesta sessão, ignorando.');
+    return;
+  }
+  window._modalAprovadoExibido = true;
 
   const sub  = cartTotal();
   const fVal = freteSelecionado?.valor || 0;
   const tot  = sub + fVal;
 
-  const linhasItens = cart.map(x => {
+  // Snapshot do carrinho ANTES de qualquer coisa (vamos esvaziar lá embaixo)
+  const cartSnapshot = cart.slice();
+
+  const linhasItens = cartSnapshot.map(x => {
     const vars = [x.tamanho, x.cor].filter(Boolean).join(' · ');
     return `
       <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;">
@@ -5254,7 +5411,8 @@ function exibirModalPagamentoAprovado() {
   modal.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);';
 
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:18px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:slideUp .35s ease;">
+    <div style="background:#fff;border-radius:18px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:slideUp .35s ease;position:relative;">
+      <button onclick="fecharModalPagamentoEContinuar()" aria-label="Fechar" style="position:absolute;top:10px;right:10px;z-index:2;background:rgba(255,255,255,.25);border:none;width:32px;height:32px;border-radius:50%;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;backdrop-filter:blur(4px);">×</button>
       <div style="background:linear-gradient(135deg,#22c55e,#15803d);padding:28px 20px;text-align:center;">
         <div style="display:inline-flex;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.22);align-items:center;justify-content:center;margin-bottom:12px;animation:pulse 1.6s infinite;">
           <span class="mat" style="font-size:42px;color:#fff;">check_circle</span>
@@ -5309,6 +5467,33 @@ function exibirModalPagamentoAprovado() {
 
   document.body.appendChild(modal);
   document.body.style.overflow = 'hidden';
+
+  // 🔥 FINALIZAÇÃO AUTOMÁTICA — não depende do clique no WhatsApp
+  //    O pedido JÁ está salvo no Supabase (foi inserido em salvarPedidoMercadoPagoPendente)
+  //    e o webhook do MP já atualizou o status pra "pago".
+  //    Aqui só precisamos: decrementar estoque, esvaziar carrinho local, marcar como pago.
+  try {
+    if (typeof decrementarEstoque === 'function' && !window._estoqueDecrementado) {
+      const itens = cart.map(x => ({ id: x.produto.id, qty: x.qty }));
+      decrementarEstoque(itens);
+      window._estoqueDecrementado = true;
+    }
+  } catch (e) {
+    console.warn('Erro ao decrementar estoque:', e);
+  }
+
+  // Guarda uma cópia do carrinho pra mensagem do WhatsApp continuar funcionando
+  // mesmo depois de esvaziar o carrinho.
+  window._cartSnapshotParaWpp = cartSnapshot;
+  window._totalSnapshotParaWpp = tot;
+  window._freteSnapshotParaWpp = freteSelecionado;
+
+  // Esvazia carrinho (cliente já pagou, não faz sentido manter)
+  try {
+    cart = [];
+    if (typeof saveCart === 'function') saveCart();
+    if (typeof updateCartBadge === 'function') updateCartBadge();
+  } catch(e) {}
 }
 
 // ── 6. ENVIAR PEDIDO VIA WHATSAPP ──────────────────────
@@ -5323,15 +5508,43 @@ function enviarPedidoWhatsApp(reenvio = false) {
   }
 
   try {
-    const sub  = cartTotal();
-    const fVal = freteSelecionado?.valor || 0;
-    const tot  = sub + fVal;
-    const freteNome  = freteSelecionado?.nome  || 'A combinar';
-    const fretePrazo = freteSelecionado?.prazo || '—';
+    // Usa o snapshot salvo ao abrir o modal (o carrinho real já foi esvaziado)
+    const cartFonte = (window._cartSnapshotParaWpp && window._cartSnapshotParaWpp.length)
+      ? window._cartSnapshotParaWpp
+      : cart;
+    const freteFonte = window._freteSnapshotParaWpp || freteSelecionado;
 
-    const linhas = cart.map(x => {
+    const sub  = cartFonte.reduce((s, x) => s + (Number(x.produto?.preco || 0) * Number(x.qty || 1)), 0);
+    const fVal = freteFonte?.valor || 0;
+    const tot  = window._totalSnapshotParaWpp || (sub + fVal);
+    const freteNome  = freteFonte?.nome  || 'A combinar';
+    const fretePrazo = freteFonte?.prazo || '—';
+
+    const linhas = cartFonte.map(x => {
+      const p = x.produto || {};
       const vars = [x.tamanho && `Tam: ${x.tamanho}`, x.cor && `Cor: ${x.cor}`].filter(Boolean).join(' | ');
-      return `• ${x.produto.nome}${vars ? ` (${vars})` : ''} × ${x.qty} = R$ ${formatPrice(x.produto.preco * x.qty)}`;
+
+      // Formata "Premium" / "Algodão" bonito
+      const tipoTecidoFmt = p.tipo_tecido
+        ? (String(p.tipo_tecido).toLowerCase() === 'premium' ? '✨ Premium' : `🧵 ${String(p.tipo_tecido).charAt(0).toUpperCase() + String(p.tipo_tecido).slice(1).toLowerCase()}`)
+        : '';
+
+      // Formata gênero com símbolo
+      const g = String(p.genero || '').toLowerCase();
+      const generoFmt = g === 'feminino' ? '♀ Feminino'
+                      : g === 'masculino' ? '♂ Masculino'
+                      : g === 'unissex'   ? '⚥ Unissex'
+                      : '';
+
+      // Detalhes em linha separadas pra ficar bonito
+      const detalhes = [];
+      if (p.categoria)   detalhes.push(`     📂 Coleção: ${p.categoria}`);
+      if (tipoTecidoFmt) detalhes.push(`     ${tipoTecidoFmt}`);
+      if (p.tipo_peca)   detalhes.push(`     👕 Tipo: ${p.tipo_peca}`);
+      if (generoFmt)     detalhes.push(`     ${generoFmt}`);
+
+      const cabecalho = `• ${p.nome}${vars ? ` (${vars})` : ''} × ${x.qty} = R$ ${formatPrice(p.preco * x.qty)}`;
+      return detalhes.length ? `${cabecalho}\n${detalhes.join('\n')}` : cabecalho;
     });
 
     let msg  = `🛍️ *Novo Pedido — Benedictus Camisaria*\n\n`;
@@ -5377,12 +5590,10 @@ function enviarPedidoWhatsApp(reenvio = false) {
       if (btnReenv)   btnReenv.style.display = 'flex';
       if (statusText) statusText.innerHTML = '<span style="color:#16a34a;font-weight:600;">✓ Pedido enviado!</span>';
 
-      // Fecha modal e limpa carrinho após delay
+      // Fecha modal após delay. O carrinho já foi esvaziado e o estoque já foi
+      // decrementado quando o modal abriu, não precisa repetir aqui.
       setTimeout(() => {
         fecharModalPixAprovado();
-        cart = [];
-        saveCart();
-        updateCartBadge();
         if (typeof showSuccessScreen === 'function') showSuccessScreen();
         // Reseta estado PIX
         Object.assign(pixState, {
@@ -5390,6 +5601,7 @@ function enviarPedidoWhatsApp(reenvio = false) {
           pedidoIdBanco: null, isVerificando: false, isPago: false,
           isWhatsAppSent: false, tentativas: 0
         });
+        window._estoqueDecrementado = false;
       }, 2200);
     }, 1200);
 
@@ -5404,6 +5616,29 @@ function fecharModalPixAprovado() {
   const m = document.getElementById('pix-aprovado-modal');
   if (m) m.remove();
   document.body.style.overflow = '';
+  // Libera a flag pra um próximo pedido poder abrir o modal de novo
+  window._modalAprovadoExibido = false;
+}
+
+// 🚪 Fecha o modal mesmo se o cliente NÃO quis enviar pelo WhatsApp.
+// O pedido já está salvo e pago no banco (via webhook do MP),
+// já aparece em "Meus Pedidos", o estoque já foi baixado e o carrinho esvaziado.
+function fecharModalPagamentoEContinuar() {
+  fecharModalPixAprovado();
+
+  // Reseta estado do Pix
+  Object.assign(pixState, {
+    paymentId: null, qrCode: null, qrCodeBase64: null,
+    pedidoIdBanco: null, isVerificando: false, isPago: false,
+    isWhatsAppSent: false, tentativas: 0
+  });
+  // Libera flag de estoque pro próximo pedido
+  window._estoqueDecrementado = false;
+
+  // Mostra tela final de sucesso
+  if (typeof showSuccessScreen === 'function') {
+    showSuccessScreen();
+  }
 }
 
 // ── COMPATIBILIDADE — função antiga ainda chamada em algum lugar
