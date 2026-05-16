@@ -151,12 +151,11 @@ nav.scrolled{box-shadow:0 4px 32px var(--sh2);}
 .hero-slide.active{opacity:1;z-index:1;}
 .hero-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 6s ease;}
 .hero-slide.active img{transform:scale(1.04);}
-/* Slide 1 only: show ~85-90% of the image while keeping slider pattern */
-.hero-slide.slide-fit{background:linear-gradient(135deg,#0a0f1f 0%,#1a1430 100%);}
-.hero-slide.slide-fit img{object-fit:contain !important;object-position:center center;transform:scale(0.95) !important;}
-.hero-slide.slide-fit.active img{transform:scale(0.95) !important;}
+/* Slide 1 only: fill entire slide, focus on people, gentle zoom */
+.hero-slide.slide-fit img{object-fit:cover !important;object-position:75% 35% !important;transform:scale(1) !important;}
+.hero-slide.slide-fit.active img{transform:scale(1) !important;}
 @media (max-width:768px){
-  .hero-slide.slide-fit img{transform:scale(1) !important;}
+  .hero-slide.slide-fit img{object-position:80% 40% !important;transform:scale(1) !important;}
   .hero-slide.slide-fit.active img{transform:scale(1) !important;}
 }
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(105deg,var(--overlay) 35%,rgba(0,0,0,0.08) 100%);}
