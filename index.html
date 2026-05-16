@@ -151,6 +151,14 @@ nav.scrolled{box-shadow:0 4px 32px var(--sh2);}
 .hero-slide.active{opacity:1;z-index:1;}
 .hero-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 6s ease;}
 .hero-slide.active img{transform:scale(1.04);}
+/* Slide 1 only: show ~85-90% of the image while keeping slider pattern */
+.hero-slide.slide-fit{background:linear-gradient(135deg,#0a0f1f 0%,#1a1430 100%);}
+.hero-slide.slide-fit img{object-fit:contain !important;object-position:center center;transform:scale(0.95) !important;}
+.hero-slide.slide-fit.active img{transform:scale(0.95) !important;}
+@media (max-width:768px){
+  .hero-slide.slide-fit img{transform:scale(1) !important;}
+  .hero-slide.slide-fit.active img{transform:scale(1) !important;}
+}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(105deg,var(--overlay) 35%,rgba(0,0,0,0.08) 100%);}
 .hero-content{position:relative;z-index:2;padding:0 80px;max-width:680px;}
 .hero-eyebrow{font-size:10px;letter-spacing:0.6em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
@@ -1135,8 +1143,8 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 
 <!-- HERO SLIDER -->
 <div class="hero-slider" id="hero-slider">
-  <div class="hero-slide active">
-    <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1600&q=80&fit=crop" alt=""/>
+  <div class="hero-slide slide-fit active">
+    <img src="WhatsApp Image 2026-05-16 at 08.06.02.jpeg" alt=""/>
     <div class="hero-overlay"></div>
     <div class="hero-content">
   
