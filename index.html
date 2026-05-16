@@ -159,6 +159,9 @@ nav.scrolled{box-shadow:0 4px 32px var(--sh2);}
   .hero-slide.slide-fit.active img{transform:scale(1) !important;}
 }
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(105deg,var(--overlay) 35%,rgba(0,0,0,0.08) 100%);}
+/* Slide 1: overlay mais suave para deixar o "FRETE GRÁTIS" da imagem visível */
+.hero-slide.slide-fit .hero-overlay{background:linear-gradient(100deg,rgba(10,14,26,0.78) 0%,rgba(10,14,26,0.55) 28%,rgba(10,14,26,0.18) 55%,rgba(0,0,0,0.05) 100%);}
+[data-theme="light"] .hero-slide.slide-fit .hero-overlay{background:linear-gradient(100deg,rgba(245,241,234,0.82) 0%,rgba(245,241,234,0.55) 28%,rgba(245,241,234,0.15) 55%,rgba(0,0,0,0) 100%);}
 .hero-content{position:relative;z-index:2;padding:0 80px;max-width:680px;}
 .hero-eyebrow{font-size:10px;letter-spacing:0.6em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
 .hero-eyebrow::before{content:'';display:block;width:32px;height:1px;background:var(--gold);}
@@ -571,6 +574,9 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   .hero-slider{height:85vh;min-height:440px;}
   .hero-content{padding:0 20px;max-width:100%;}
   .hero-overlay{background:linear-gradient(to bottom,var(--overlay) 55%,rgba(0,0,0,0.1) 100%);}
+  /* No mobile, o slide 1 volta a usar o overlay padrão (efeito reduzido só no desktop) */
+  .hero-slide.slide-fit .hero-overlay{background:linear-gradient(to bottom,var(--overlay) 55%,rgba(0,0,0,0.1) 100%);}
+  [data-theme="light"] .hero-slide.slide-fit .hero-overlay{background:linear-gradient(to bottom,var(--overlay) 55%,rgba(0,0,0,0.1) 100%);}
   .hero-title{font-size:clamp(36px,10vw,56px);}
   .hero-sub{font-size:13px;}
   .hero-cta{flex-direction:column;gap:8px;}
