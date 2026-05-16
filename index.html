@@ -1054,7 +1054,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div class="mobile-nav-link active" data-cat="" onclick="catFilter('');closeMobile();sc('colecao')">
       <span class="mat">grid_view</span>Coleções
     </div>
-    <div class="mobile-nav-link" onclick="sc('secao-best-sellers');closeMobile()">
+    <div class="mobile-nav-link" onclick="sc('colecao-best_seller');closeMobile()">
       <span class="mat">workspace_premium</span>Best Seller
     </div>
     <div class="mobile-nav-link" onclick="sc('quem-somos');closeMobile()">
@@ -1141,7 +1141,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   <div class="nav-bottom">
     <button class="nav-link" onclick="window.scrollTo({top:0,behavior:'smooth'})">Início</button>
     <button class="nav-link active cat-btn" data-cat="" onclick="catFilter('')">Coleções</button>
-    <button class="nav-link" onclick="sc('secao-best-sellers')">Best Seller</button>
+    <button class="nav-link" onclick="sc('colecao-best_seller')">Best Seller</button>
     <button class="nav-link" onclick="sc('quem-somos')">Quem Somos</button>
   </div>
 </nav>
@@ -1169,7 +1169,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <h1 class="hero-title"> Canções que <br/><em> se materializarem em </em><br/> Arte </h1>
       <p class="hero-sub">Descubra peças exclusivas para todos os momentos da sua vida.</p>
       <div class="hero-cta">
-        <button class="btn-primary" onclick="sc('secao-best-sellers')">Best Seller</button>
+        <button class="btn-primary" onclick="sc('colecao-cancoes')">Coleção Canções</button>
       </div>
     </div>
   </div>
@@ -1181,7 +1181,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <h1 class="hero-title"> No Preto ou <br/><em> No branco</em><br/> A fé em cada canto </h1>
       <p class="hero-sub">Aproveite as peças mais procuradas da nossa coleção.</p>
       <div class="hero-cta">
-        <button class="btn-primary" onclick="sc('secao-best-sellers')">Best Seller</button>
+        <button class="btn-primary" onclick="sc('colecao-preto_branco')">Preto no Branco</button>
         <button class="btn-outline" onclick="sc('quem-somos')">Nossa História</button>
       </div>
     </div>
@@ -1214,8 +1214,8 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   </div>
 </div>
 
-<!-- ════ BEST-SELLERS LINHA PREMIUM (antes do carrossel de promoções) ════ -->
-<div id="secao-best-sellers">
+<!-- ════ BEST-SELLERS LINHA PREMIUM — agora exibido como Coleção no final, abaixo ════ -->
+<div id="secao-best-sellers" style="display:none;">
   <div class="section reveal" style="padding-bottom:24px;">
     <span class="section-eyebrow">Linha Exclusiva</span>
     <h2 class="section-title">Best Seller <em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">Linha Premium</em></h2>
@@ -1964,7 +1964,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div>
       <span class="footer-col-title">Navegação</span>
       <span class="footer-link" onclick="catFilter('');sc('colecao')">Coleções</span>
-      <span class="footer-link" onclick="sc('secao-best-sellers')">Best Seller</span>
+      <span class="footer-link" onclick="sc('colecao-best_seller')">Best Seller</span>
       <span class="footer-link" onclick="sc('quem-somos')">Quem Somos</span>
     </div>
     <div>
@@ -2285,8 +2285,9 @@ function renderSearchResults() {
 // ── COLEÇÕES DINÂMICAS — carregadas do Supabase (com fallback localStorage) ──
 const COLECOES_STORAGE_KEY = 'bened_colecoes';
 const COLECOES_DEFAULT = [
-  { slug: 'cancoes',      nome: 'Coleção Canções', icone: 'music_note',     ordem: 0 },
-  { slug: 'preto_branco', nome: 'Preto no Branco', icone: 'invert_colors',  ordem: 1 },
+  { slug: 'cancoes',      nome: 'Coleção Canções', icone: 'music_note',         ordem: 0 },
+  { slug: 'preto_branco', nome: 'Preto no Branco', icone: 'invert_colors',      ordem: 1 },
+  { slug: 'best_seller',  nome: 'Best Seller Linha Premium', icone: 'workspace_premium',  ordem: 99 },
 ];
 
 let allColecoes = [];
@@ -2333,6 +2334,22 @@ async function loadColecoes() {
 }
 
 function inicializarEstadoColecoes() {
+  // Garante que a coleção "Best Seller" esteja sempre presente como última,
+  // mesmo que venha do Supabase / cache sem ela.
+  const temBest = allColecoes.some(c => c.slug === 'best_seller');
+  if (!temBest) {
+    allColecoes.push({ slug: 'best_seller', nome: 'Best Seller Linha Premium', icone: 'workspace_premium', ordem: 99 });
+  } else {
+    // Força ordem alta e nome padrão pra sempre ficar por último com o título correto
+    allColecoes.forEach(c => {
+      if (c.slug === 'best_seller') {
+        c.ordem = 99;
+        c.nome  = 'Best Seller Linha Premium';
+        c.icone = c.icone || 'workspace_premium';
+      }
+    });
+  }
+
   // Garante que cada coleção tenha um estado de toggle (padrão: algodao)
   allColecoes.forEach(c => {
     if (!COLECAO_STATE[c.slug]) COLECAO_STATE[c.slug] = 'algodao';
@@ -2391,7 +2408,7 @@ function buildColecaoSection(id, titulo, icon) {
   const trackId = `track-${id}`;
   const dotsId  = `dots-${id}`;
   return `
-    <div style="margin-bottom:60px;">
+    <div id="colecao-${id}" style="margin-bottom:60px;">
       <!-- Cabeçalho: tudo à esquerda -->
       <div style="padding:0 48px;margin-bottom:20px;">
         <span class="section-eyebrow" style="margin-bottom:6px;">
@@ -2435,6 +2452,7 @@ function filtrarProdutosColecao(id, tipoTecido) {
     if (c === targetSlug) return true;
     if (id === 'cancoes')      return c === 'cancao'        || c === 'colecao cancoes';
     if (id === 'preto_branco') return c === 'preto no branco' || c === 'pretonobranco';
+    if (id === 'best_seller')  return c === 'best_seller_premium' || c === 'best seller premium' || c === 'best seller';
     return false;
   };
 
@@ -2688,48 +2706,13 @@ function scrollPromo(dir) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  BEST-SELLERS LINHA PREMIUM (mesmos cards do carrossel de promo)
+//  BEST-SELLERS LINHA PREMIUM — DESATIVADO
+//  Best Seller agora é exibido como uma Coleção no final
+//  (ver allColecoes + filtrarProdutosColecao com id='best_seller')
 // ════════════════════════════════════════════════════════════
 function renderBestSellers() {
-  const sec  = document.getElementById('secao-best-sellers');
-  const grid = document.getElementById('best-ivory-grid');
-  const dots = document.getElementById('best-ivory-dots');
-  if (!sec || !grid) return;
-
-  // Pega APENAS os produtos da categoria "Best Seller Premium" (cadastrada no admin).
-  // Prioriza os com estoque; se não houver com estoque, mostra os esgotados também.
-  const todosBest = allProducts.filter(p => p.categoria === 'best_seller_premium');
-  let lista = todosBest.filter(p => (p.estoque || 0) > 0);
-  if (!lista.length) lista = [...todosBest];
-  lista = lista.slice(0, 12);
-
-  if (!lista.length) { sec.style.display = 'none'; return; }
-  sec.style.display = '';
-
-  grid.innerHTML = lista.map(p => ivoryCardHTML(p, 'best')).join('');
-
-  // Dots
-  if (dots) {
-    const total = lista.length;
-    dots.innerHTML = Array.from({length: total}, (_,i) =>
-      `<button class="promo-car-dot${i===0?' active':''}" data-i="${i}"></button>`
-    ).join('');
-    dots.querySelectorAll('.promo-car-dot').forEach(d => {
-      d.addEventListener('click', () => {
-        const cardW = (grid.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
-        grid.scrollTo({left: parseInt(d.dataset.i) * cardW, behavior:'smooth'});
-      });
-    });
-    grid.addEventListener('scroll', () => {
-      const cardW = (grid.querySelector('.ivory-card')?.offsetWidth || 300) + 20;
-      const idx   = Math.round(grid.scrollLeft / cardW);
-      dots.querySelectorAll('.promo-car-dot').forEach((d,i) =>
-        d.classList.toggle('active', i === idx));
-    }, {passive:true});
-  }
-
-  // Reaproveita as MESMAS interações do carrossel de promoções
-  bindIvoryCards(grid);
+  const sec = document.getElementById('secao-best-sellers');
+  if (sec) sec.style.display = 'none';
 }
 
 function scrollBest(dir) {
