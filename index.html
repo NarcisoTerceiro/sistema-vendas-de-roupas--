@@ -1054,7 +1054,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div class="mobile-nav-link active" data-cat="" onclick="catFilter('');closeMobile();sc('colecao')">
       <span class="mat">grid_view</span>Coleções
     </div>
-    <div class="mobile-nav-link" onclick="sc('colecao-best_seller');closeMobile()">
+    <div class="mobile-nav-link" onclick="scColecao('best_seller');closeMobile()">
       <span class="mat">workspace_premium</span>Best Seller
     </div>
     <div class="mobile-nav-link" onclick="sc('quem-somos');closeMobile()">
@@ -1141,7 +1141,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   <div class="nav-bottom">
     <button class="nav-link" onclick="window.scrollTo({top:0,behavior:'smooth'})">Início</button>
     <button class="nav-link active cat-btn" data-cat="" onclick="catFilter('')">Coleções</button>
-    <button class="nav-link" onclick="sc('colecao-best_seller')">Best Seller</button>
+    <button class="nav-link" onclick="scColecao('best_seller')">Best Seller</button>
     <button class="nav-link" onclick="sc('quem-somos')">Quem Somos</button>
   </div>
 </nav>
@@ -1169,7 +1169,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <h1 class="hero-title"> Canções que <br/><em> se materializarem em </em><br/> Arte </h1>
       <p class="hero-sub">Descubra peças exclusivas para todos os momentos da sua vida.</p>
       <div class="hero-cta">
-        <button class="btn-primary" onclick="sc('colecao-cancoes')">Coleção Canções</button>
+        <button class="btn-primary" onclick="scColecao('cancoes')">Coleção Canções</button>
       </div>
     </div>
   </div>
@@ -1181,7 +1181,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <h1 class="hero-title"> No Preto ou <br/><em> No branco</em><br/> A fé em cada canto </h1>
       <p class="hero-sub">Aproveite as peças mais procuradas da nossa coleção.</p>
       <div class="hero-cta">
-        <button class="btn-primary" onclick="sc('colecao-preto_branco')">Preto no Branco</button>
+        <button class="btn-primary" onclick="scColecao('preto_branco')">Preto no Branco</button>
         <button class="btn-outline" onclick="sc('quem-somos')">Nossa História</button>
       </div>
     </div>
@@ -1964,7 +1964,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div>
       <span class="footer-col-title">Navegação</span>
       <span class="footer-link" onclick="catFilter('');sc('colecao')">Coleções</span>
-      <span class="footer-link" onclick="sc('colecao-best_seller')">Best Seller</span>
+      <span class="footer-link" onclick="scColecao('best_seller')">Best Seller</span>
       <span class="footer-link" onclick="sc('quem-somos')">Quem Somos</span>
     </div>
     <div>
@@ -5863,6 +5863,38 @@ function sc(id) {
   const el = document.getElementById(id);
   if (!el) return;
   window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 88, behavior: 'smooth' });
+}
+
+// Navega até a coleção fazendo match flexível por slug.
+// Aceita variações ('preto_branco', 'preto-no-branco', 'pretobranco' etc).
+function scColecao(slugAlvo) {
+  const norm = s => (s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '');
+  const alvo = norm(slugAlvo);
+
+  // 1) Tenta achar a coleção real (Supabase/cache/default) por slug normalizado
+  let slugReal = null;
+  if (typeof allColecoes !== 'undefined' && Array.isArray(allColecoes)) {
+    const found = allColecoes.find(c => norm(c.slug) === alvo);
+    if (found) slugReal = found.slug;
+  }
+
+  // 2) Tenta o ID com o slug encontrado, depois com o slug pedido
+  const tentativas = [slugReal, slugAlvo].filter(Boolean);
+  for (const s of tentativas) {
+    const el = document.getElementById('colecao-' + s);
+    if (el) {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 88, behavior: 'smooth' });
+      return;
+    }
+  }
+
+  // 3) Fallback: rola até a seção geral de coleções
+  const fallback = document.getElementById('colecao');
+  if (fallback) {
+    window.scrollTo({ top: fallback.getBoundingClientRect().top + window.scrollY - 88, behavior: 'smooth' });
+  }
 }
 
 // ════════════════════════════════════════════════════════════
