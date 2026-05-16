@@ -3702,7 +3702,12 @@ function resetCartSteps() {
   document.getElementById('cart-footer').style.display          = '';
   setStepUI(1);
   const btn = document.getElementById('checkout-btn');
-  if (btn) { btn.textContent = 'Prosseguir'; btn.onclick = nextStep; }
+  if (btn) {
+    btn.textContent = 'Prosseguir';
+    btn.onclick = nextStep;
+    btn.style.display = '';        // ← restaura visibilidade (estava 'none' no step 3)
+    btn.disabled = !cart.length;   // ← desabilita se sacola vazia
+  }
 }
 
 // ════════════════════════════════════════════════════════════
