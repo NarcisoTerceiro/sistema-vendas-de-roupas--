@@ -4782,7 +4782,24 @@ async function abrirCheckoutMercadoPago() {
                   name: checkoutData.nome,
                   email: checkoutData.email || window.usuarioLogado?.email || '',
                   cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
-                  phone: checkoutData.celular || ''
+                  phone: checkoutData.celular || '',
+                  cep: (checkoutData.cep || '').replace(/\D/g, ''),
+                  endereco: checkoutData.endereco || '',
+                  numero: checkoutData.numero || '',
+                  bairro: checkoutData.bairro || '',
+                  complemento: checkoutData.complemento || '',
+                  cidade: checkoutData.cidade || '',
+                  uf: checkoutData.uf || ''
+                },
+
+                payer: {
+                  email: checkoutData.email || window.usuarioLogado?.email || '',
+                  first_name: nome.first_name,
+                  last_name: nome.last_name,
+                  identification: {
+                    type: 'CPF',
+                    number: (checkoutData.cpf || '').replace(/\D/g, '')
+                  }
                 },
 
                 shipping: {
@@ -4790,16 +4807,26 @@ async function abrirCheckoutMercadoPago() {
                   endereco: checkoutData.endereco || '',
                   numero: checkoutData.numero || '',
                   bairro: checkoutData.bairro || '',
+                  complemento: checkoutData.complemento || '',
                   cidade: checkoutData.cidade || '',
                   uf: checkoutData.uf || ''
                 },
 
-                items: itensPedido.map((item) => ({
-                  id: String(item.id || ''),
+                items: itensPedido.map((item, index) => ({
+                  id: String(item.id || `produto-${index + 1}`),
                   title: item.nome || 'Produto Benedictus',
-                  description: [item.tamanho && `Tam: ${item.tamanho}`, item.cor && `Cor: ${item.cor}`].filter(Boolean).join(' · '),
+                  description: [
+                    'Camiseta cristã Benedictus Camisaria',
+                    item.tamanho && `Tamanho: ${item.tamanho}`,
+                    item.cor && `Cor: ${item.cor}`,
+                    item.tipo_tecido && `Tecido: ${item.tipo_tecido}`
+                  ].filter(Boolean).join(' · '),
+                  category_id: 'fashion',
                   quantity: Number(item.qty || 1),
-                  unit_price: Number(item.preco || 0)
+                  unit_price: Number(Number(item.preco || 0).toFixed(2)),
+                  tamanho: item.tamanho || null,
+                  cor: item.cor || null,
+                  tipo_tecido: item.tipo_tecido || null
                 }))
               })
             });
