@@ -4500,7 +4500,7 @@ async function abrirCheckoutMercadoPago() {
 
     const settings = {
       initialization: {
-        amount: Number(total.toFixed(3)),
+        amount: Number(total.toFixed(2)),
         payer: {
           email: checkoutData.email || window.usuarioLogado?.email || '',
           firstName: nome.first_name,
@@ -4519,8 +4519,12 @@ async function abrirCheckoutMercadoPago() {
           creditCard: 'all',
           debitCard: 'all',
           bankTransfer: 'all',
-          ticket: 'all',
-          maxInstallments: 12
+          mercadoPago: 'all',
+
+          // Cartão liberado em até 3x.
+          // Não configuramos parcelamento sem juros pago pelo vendedor aqui.
+          minInstallments: 1,
+          maxInstallments: 3
         }
       },
       callbacks: {
@@ -4553,8 +4557,8 @@ body: JSON.stringify({
   description: 'Pedido Benedictus Camisaria',
 
   installments:
-    formData.payment_type_id === 'credit_card'
-      ? Math.min(Number(formData.installments || 1), 3)
+    formData.payment_type_id === 'credit_card' || selectedPaymentMethod === 'credit_card'
+      ? Math.min(Math.max(Number(formData.installments || 1), 1), 3)
       : Number(formData.installments || 1),
 
   pedido: {

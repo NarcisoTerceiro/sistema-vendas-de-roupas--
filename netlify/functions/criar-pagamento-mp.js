@@ -1,5 +1,6 @@
 // netlify/functions/criar-pagamento-mp.js
 // Cria pagamentos no Mercado Pago usando Payment Brick.
+// Cartão limitado a até 3x; sem configurar parcelamento sem juros pago pelo vendedor no back-end.
 
 const MP_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
@@ -48,7 +49,9 @@ exports.handler = async (event) => {
       description: body.description || 'Pedido Benedictus Camisaria',
       payment_method_id: body.payment_method_id,
       token: body.token,
-      installments: body.installments ? Number(body.installments) : undefined,
+      installments: body.installments
+        ? Math.min(Math.max(Number(body.installments), 1), 3)
+        : undefined,
       issuer_id: body.issuer_id,
       payer: {
         email: payer.email || body.customer?.email,
