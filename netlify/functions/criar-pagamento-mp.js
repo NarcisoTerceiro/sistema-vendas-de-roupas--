@@ -25,6 +25,18 @@ function limitarTexto(value, limite, fallback = '') {
   return texto.length > limite ? texto.slice(0, limite) : texto;
 }
 
+const DDD_BR_VALIDOS = new Set([
+  '11','12','13','14','15','16','17','18','19',
+  '21','22','24','27','28',
+  '31','32','33','34','35','37','38',
+  '41','42','43','44','45','46','47','48','49',
+  '51','53','54','55',
+  '61','62','63','64','65','66','67',
+  '68','69','71','73','74','75','77','79',
+  '81','82','83','84','85','86','87','88','89',
+  '91','92','93','94','95','96','97','98','99'
+]);
+
 
 function extrairCodigoCausa(mpData) {
   const causas = Array.isArray(mpData?.cause) ? mpData.cause : (Array.isArray(mpData?.causa) ? mpData.causa : []);
@@ -97,24 +109,39 @@ function separarNome(nomeCompleto) {
 }
 
 function formatarTelefone(phoneRaw) {
-  const phone = somenteNumeros(phoneRaw);
+  let phone = somenteNumeros(phoneRaw);
 
   if (!phone) {
     return { area_code: undefined, number: undefined };
   }
 
-  // Brasil: DDD + número. Ex.: 83999999999.
-  if (phone.length >= 10) {
+  // Evita enviar o código do Brasil (55) como se fosse DDD.
+  // Ex.: +55 (83) 99999-9999 -> 83999999999.
+  if (
+    phone.startsWith('55') &&
+    (phone.length > 11 || (phone.length === 11 && phone[2] !== '9' && DDD_BR_VALIDOS.has(phone.slice(2, 4))))
+  ) {
+    phone = phone.slice(2);
+  }
+
+  // Se vier com algum prefixo a mais, preserva os últimos 11 dígitos
+  // no padrão brasileiro: DDD + número.
+  if (phone.length > 11) {
+    phone = phone.slice(-11);
+  }
+
+  // Brasil: DDD + número com 8 ou 9 dígitos.
+  // Exemplos: 83999999999 ou 8333334444.
+  if (phone.length === 10 || phone.length === 11) {
     return {
       area_code: phone.slice(0, 2),
-      number: phone.slice(2, 11)
+      number: phone.slice(2)
     };
   }
 
-  return {
-    area_code: undefined,
-    number: phone
-  };
+  // Telefone incompleto: melhor não enviar do que enviar DDD errado
+  // e prejudicar a análise antifraude.
+  return { area_code: undefined, number: undefined };
 }
 
 /**
@@ -158,12 +185,12 @@ function normalizarItens(body, transactionAmount) {
       description: 'Produto Benedictus Camisaria',
       category_id: 'fashion',
       quantity: 1,
-      unit_price: Number(transactionAmount)
+      unit_price: Number(Number(transactionAmount).toFixed(2))
     }];
   }
 
-  return itemsOrigem.map((item, index) => {
-    const quantidade = Number(item.quantity || item.qty || 1) || 1;
+  const normalizados = itemsOrigem.map((item, index) => {
+    const quantidade = Math.max(1, Number(item.quantity || item.qty || 1) || 1);
     const preco = Number(item.unit_price || item.preco || item.price || item.amount || 0) || 0;
 
     const detalhes = [
@@ -183,6 +210,28 @@ function normalizarItens(body, transactionAmount) {
       unit_price: Number(preco.toFixed(2))
     };
   });
+
+  // Antifraude: deixa o additional_info.items bater com o valor total.
+  // Quando o total tem frete/taxa e os itens só trazem produtos, acrescenta
+  // uma linha separada de entrega para evitar divergência do tipo:
+  // transaction_amount 23.99 vs item 22.99.
+  const somaItens = normalizados.reduce((total, item) => {
+    return total + (Number(item.quantity || 1) * Number(item.unit_price || 0));
+  }, 0);
+
+  const diferenca = Number((Number(transactionAmount) - somaItens).toFixed(2));
+  if (diferenca > 0) {
+    normalizados.push({
+      id: 'frete-entrega',
+      title: 'Frete / entrega',
+      description: 'Valor de entrega do pedido',
+      category_id: 'shipping',
+      quantity: 1,
+      unit_price: diferenca
+    });
+  }
+
+  return normalizados;
 }
 
 function montarAdditionalInfo(body, transactionAmount, nome, telefone) {
