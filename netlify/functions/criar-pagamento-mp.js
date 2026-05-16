@@ -5,12 +5,16 @@
 //  - X-Idempotency-Key única por TENTATIVA (não por pedido) → permite retry de cartão.
 //  - additional_info.shipments.receiver_address sem campos inválidos.
 //  - Detecção robusta de cartão (não depende só de payment_type_id vindo do Brick).
-//  - binary_mode dinâmico: true em cartão (aprovar/rejeitar na hora), false em PIX.
+//  - 3DS 2.0 opcional em cartão para reduzir recusas por alto risco.
+//  - binary_mode desativado em cartão, conforme recomendação do MP para permitir Challenge 3DS.
 
 const crypto = require('crypto');
 
 const MP_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
-const SITE_URL = (process.env.SITE_URL || process.env.URL || 'https://benedictuscamisaria.netlify.app').replace(/\/$/, '');
+const SITE_URL = (process.env.SITE_URL || process.env.URL || 'https://benedictuscamisaria.com.br').replace(/\/$/, '');
+const MP_CREDENTIAL_ENV = String(MP_ACCESS_TOKEN || '').startsWith('TEST-')
+  ? 'test'
+  : (String(MP_ACCESS_TOKEN || '').startsWith('APP_USR-') ? 'production' : 'unknown');
 
 function somenteNumeros(value) {
   return String(value || '').replace(/\D/g, '');
@@ -19,6 +23,41 @@ function somenteNumeros(value) {
 function limitarTexto(value, limite, fallback = '') {
   const texto = String(value || fallback || '').trim();
   return texto.length > limite ? texto.slice(0, limite) : texto;
+}
+
+
+function extrairCodigoCausa(mpData) {
+  const causas = Array.isArray(mpData?.cause) ? mpData.cause : (Array.isArray(mpData?.causa) ? mpData.causa : []);
+  const primeira = causas[0] || {};
+  return primeira.code || primeira.codigo || null;
+}
+
+function mensagemAmigavelMercadoPago(mpData) {
+  const codigo = Number(extrairCodigoCausa(mpData));
+  const statusDetail = String(mpData?.status_detail || '').trim();
+  const message = String(mpData?.message || mpData?.error || '').trim();
+
+  if ([2006, 2062, 3003, 3006, 3008, 4000].includes(codigo) || /token/i.test(message)) {
+    return 'Token do cartão inválido ou não encontrado. Confira se a Public Key do front e o Access Token da Netlify são da mesma aplicação e do mesmo ambiente no Mercado Pago (TEST com TEST ou produção com produção). Depois recarregue a página e gere um novo token do cartão.';
+  }
+
+  if (codigo === 2034) {
+    return 'Credenciais ou usuários de ambientes diferentes. Em teste, use contas/cartões de teste. Em produção, use credenciais de produção.';
+  }
+
+  if (codigo === 2198) {
+    return 'E-mail de comprador inválido para o ambiente de teste. Use um comprador de teste ou um e-mail permitido pelo Mercado Pago para testes.';
+  }
+
+  if (codigo === 4033) {
+    return 'Parcelamento inválido para este cartão/valor. Tente à vista ou escolha uma quantidade de parcelas disponível.';
+  }
+
+  if (statusDetail === 'cc_rejected_high_risk') {
+    return 'Pagamento recusado por análise de segurança do Mercado Pago. Em teste, use cartão de teste e titular APRO. Em produção, peça para o cliente tentar outro cartão ou autenticar quando solicitado.';
+  }
+
+  return message || 'Erro ao processar pagamento no Mercado Pago.';
 }
 
 function limparIndefinidos(obj) {
@@ -172,9 +211,7 @@ function montarAdditionalInfo(body, transactionAmount, nome, telefone) {
       receiver_address: {
         zip_code: somenteNumeros(shipping.cep || customer.cep),
         street_name: shipping.endereco || customer.endereco,
-        street_number: String(shipping.numero || customer.numero || ''),
-        floor: shipping.complemento || customer.complemento,
-        apartment: shipping.complemento || customer.complemento
+        street_number: String(shipping.numero || customer.numero || '')
       }
     }
   });
@@ -292,9 +329,10 @@ exports.handler = async (event) => {
       issuer_id: isPix ? undefined : body.issuer_id,
       capture: true,
 
-      // Cartão: binary_mode true → aprova ou rejeita na hora (sem limbo "in_process").
-      // PIX: false (PIX é assíncrono por natureza).
-      binary_mode: isCartaoCredito,
+      // IMPORTANTE para aprovação: com 3DS opcional, o binary_mode precisa ficar false.
+      // Assim o Mercado Pago pode pedir autenticação do banco em vez de recusar direto por risco.
+      binary_mode: false,
+      three_d_secure_mode: isCartaoCredito ? 'optional' : undefined,
 
       payer: {
         email: payerEmail,
@@ -334,6 +372,7 @@ exports.handler = async (event) => {
 
     console.log('Payload Mercado Pago:', JSON.stringify({
       ...payload,
+      ambiente_credencial_backend: MP_CREDENTIAL_ENV,
       token: payload.token ? '[TOKEN_PRESENTE]' : undefined,
       payer: {
         ...payload.payer,
@@ -373,16 +412,28 @@ exports.handler = async (event) => {
     }
 
     if (!mpRes.ok) {
-      console.error('Erro Mercado Pago:', JSON.stringify(mpData));
+      const codigoCausa = extrairCodigoCausa(mpData);
+      const mensagemAmigavel = mensagemAmigavelMercadoPago(mpData);
+      console.error('Erro Mercado Pago:', JSON.stringify({
+        statusCode: mpRes.status,
+        message: mpData.message,
+        status: mpData.status,
+        status_detail: mpData.status_detail,
+        cause: mpData.cause,
+        codigoCausa
+      }));
       return {
         statusCode: 502,
         headers,
         body: JSON.stringify({
           success: false,
-          error: mpData.message || mpData.error || 'Erro no Mercado Pago',
+          error: mensagemAmigavel,
+          mercado_pago_message: mpData.message || mpData.error || 'Erro no Mercado Pago',
           status: mpData.status,
           status_detail: mpData.status_detail,
           cause: mpData.cause,
+          codigo_causa: codigoCausa,
+          ambiente_credencial_backend: MP_CREDENTIAL_ENV,
           debug: mpData
         })
       };

@@ -2082,8 +2082,9 @@ const WHATSAPP_NUM  = '5583998015544';
 // ── Mercado Pago / Checkout Bricks ────────────────────────
 // Troque pelo Public Key da sua aplicação no Mercado Pago Developers.
 // IMPORTANTE: a Public Key pode ficar no front-end. O Access Token fica apenas na Netlify.
-const MERCADOPAGO_PUBLIC_KEY = 'APP_USR-f160b005-837c-436e-a3f7-8bfde90c82b7';
+const MERCADOPAGO_PUBLIC_KEY = 'TEST-59474a20-4658-4e6e-9d99-82e78f9ea9f0';
 const MERCADOPAGO_API_URL    = '/.netlify/functions/criar-pagamento-mp';
+const MERCADOPAGO_IS_TEST    = String(MERCADOPAGO_PUBLIC_KEY || '').startsWith('TEST-');
 let mercadoPagoBrickController = null;
 
 
@@ -4273,6 +4274,10 @@ function showStepPagamento() {
           <span class="mat" style="font-size:16px;vertical-align:middle;">refresh</span>
           Recarregar pagamento
         </button>
+        ${MERCADOPAGO_IS_TEST ? `
+        <div class="mp-alert" style="border-color:rgba(52,131,250,.35);background:rgba(52,131,250,.08);">
+          <b>Modo teste ativo:</b> use somente cartões de teste do Mercado Pago. Para simular aprovado, use titular <b>APRO</b>, CPF <b>12345678909</b>, validade <b>11/30</b> e CVV <b>123</b>.
+        </div>` : ''}
         <div class="mp-alert">
           O pedido será salvo como <b>aguardando pagamento</b> antes do processamento. Após a aprovação, o Mercado Pago enviará a confirmação pelo webhook e o pedido será atualizado para <b>pago</b>.
         </div>
@@ -4436,6 +4441,64 @@ function renderizarPixMercadoPago(data, externalReference) {
 // Canal Realtime ativo (pra não duplicar)
 let mpRealtimeChannel = null;
 
+
+function renderizarDesafio3DSMercadoPago(payment, externalReference) {
+  const container = document.getElementById('paymentBrick_container');
+  const statusEl = document.getElementById('mp-status-text');
+  const info = payment?.three_ds_info || {};
+  const creq = info.creq;
+  const actionUrl = info.external_resource_url;
+
+  if (!container || !creq || !actionUrl) {
+    renderizarErroPagamentoMercadoPago({ status: 'pending', status_detail: 'pending_challenge' }, externalReference);
+    return;
+  }
+
+  if (statusEl) {
+    statusEl.textContent = 'Seu banco solicitou uma validação de segurança. Conclua a etapa abaixo para finalizar o pagamento.';
+  }
+
+  container.innerHTML = `
+    <div style="padding:16px;color:#333;line-height:1.6;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="font-size:28px;">🔐</span>
+        <div>
+          <h3 style="font-size:17px;margin:0;color:#222;">Validação de segurança do cartão</h3>
+          <p style="font-size:12px;margin:2px 0 0;color:#666;">Não feche esta janela. Após concluir, a confirmação será atualizada automaticamente.</p>
+        </div>
+      </div>
+      <iframe
+        id="mp-3ds-frame"
+        name="mp-3ds-frame"
+        style="width:100%;min-height:520px;border:1px solid #ddd;border-radius:10px;background:#fff;"
+        title="Validação 3DS Mercado Pago"
+      ></iframe>
+      <button
+        onclick="iniciarListenerPixMercadoPago('${externalReference || payment.external_reference || ''}')"
+        style="width:100%;margin-top:12px;background:#3483fa;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;"
+      >Já concluí a validação</button>
+    </div>
+  `;
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = actionUrl;
+  form.target = 'mp-3ds-frame';
+  form.style.display = 'none';
+
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'creq';
+  input.value = creq;
+  form.appendChild(input);
+
+  document.body.appendChild(form);
+  form.submit();
+  setTimeout(() => form.remove(), 1000);
+
+  iniciarListenerPixMercadoPago(externalReference || payment.external_reference);
+}
+
 function iniciarListenerPixMercadoPago(externalReference) {
   if (!externalReference || !db) {
     console.warn('[Realtime MP] Sem externalReference ou db');
@@ -4594,6 +4657,8 @@ function renderizarErroPagamentoMercadoPago(data, externalReference) {
 
   const status = data?.status || data?.payment?.status || 'rejected';
   const detalhe = data?.status_detail || data?.payment?.status_detail || 'cc_rejected_other_reason';
+  const causa = Array.isArray(data?.cause) ? data.cause[0] : null;
+  const codigoCausa = Number(causa?.code || causa?.codigo || data?.codigo_causa || 0);
 
   const mensagens = {
     cc_rejected_bad_filled_card_number: 'Confira o número do cartão.',
@@ -4602,12 +4667,16 @@ function renderizarErroPagamentoMercadoPago(data, externalReference) {
     cc_rejected_bad_filled_other: 'Confira os dados informados do cartão.',
     cc_rejected_insufficient_amount: 'O cartão não possui limite suficiente.',
     cc_rejected_call_for_authorize: 'O banco pediu autorização prévia para esta compra.',
-    cc_rejected_high_risk: 'O Mercado Pago recusou a transação por segurança.',
-    pending_review_manual: 'O Mercado Pago colocou o pagamento em análise.',
+    cc_rejected_high_risk: 'O Mercado Pago recusou a transação por segurança. Em teste, use cartão de teste e titular APRO. Em produção, tente outro cartão ou aguarde a autenticação do banco, quando aparecer.',
+    pending_review_manual: 'O Mercado Pago colocou o pagamento em análise. Isso não é falha do site; é análise de segurança do Mercado Pago.',
+    pending_challenge: 'Seu banco solicitou validação de segurança do cartão. Conclua a etapa de autenticação para finalizar.',
     cc_rejected_other_reason: 'O cartão foi recusado pelo Mercado Pago ou pelo banco emissor.'
   };
 
-  const msg = mensagens[detalhe] || 'Não foi possível aprovar este pagamento.';
+  let msg = mensagens[detalhe] || data?.error || 'Não foi possível aprovar este pagamento.';
+  if ([2006, 2062, 3003, 3006, 3008, 4000].includes(codigoCausa)) {
+    msg = 'Token do cartão inválido/não encontrado. Confira se a Public Key e o Access Token são da mesma aplicação e do mesmo ambiente, recarregue a página e preencha o cartão novamente.';
+  }
 
   if (container) {
     container.innerHTML = `
@@ -4616,7 +4685,7 @@ function renderizarErroPagamentoMercadoPago(data, externalReference) {
         <h3 style="font-size:20px;margin-bottom:8px;color:#222;">Pagamento não aprovado</h3>
         <p style="font-size:14px;color:#555;margin-bottom:10px;">${msg}</p>
         <p style="font-size:12px;color:#777;margin-bottom:18px;">
-          Status: ${status}${detalhe ? ' · ' + detalhe : ''}<br>
+          Status: ${status}${detalhe ? ' · ' + detalhe : ''}${codigoCausa ? ' · código ' + codigoCausa : ''}<br>
           Pedido: ${externalReference || data?.external_reference || data?.payment?.external_reference || ''}
         </p>
         <button
@@ -4735,7 +4804,11 @@ async function abrirCheckoutMercadoPago() {
             await salvarPedidoMercadoPagoPendente(externalReference);
 
             const paymentType = formData.payment_type_id || selectedPaymentMethod;
-            const isCreditCard = paymentType === 'credit_card';
+            const isCreditCard = paymentType === 'credit_card' || (!!formData.token && formData.payment_method_id !== 'pix');
+
+            if (isCreditCard && !formData.token) {
+              throw new Error('Token do cartão não foi gerado. Recarregue o pagamento e preencha o cartão novamente.');
+            }
 
             const itensPedido = montarItensPedidoAtual();
             const parcelas = isCreditCard
@@ -4750,6 +4823,8 @@ async function abrirCheckoutMercadoPago() {
               },
               body: JSON.stringify({
                 ...formData,
+                payment_type_id: formData.payment_type_id || (isCreditCard ? 'credit_card' : selectedPaymentMethod),
+                token: isCreditCard ? formData.token : undefined,
 
                 transaction_amount: Number(totalAtual.toFixed(2)),
                 description: 'Pedido Benedictus Camisaria',
@@ -4829,6 +4904,18 @@ async function abrirCheckoutMercadoPago() {
             }
 
             console.log('Pagamento Mercado Pago criado:', data);
+
+            const paymentObj = data.payment || data;
+            if (
+              paymentObj.status === 'pending' &&
+              paymentObj.status_detail === 'pending_challenge' &&
+              paymentObj.three_ds_info?.external_resource_url &&
+              paymentObj.three_ds_info?.creq
+            ) {
+              renderizarDesafio3DSMercadoPago(paymentObj, externalReference);
+              showToast('Validação de segurança solicitada pelo banco.');
+              return paymentObj;
+            }
 
             const qrCode =
               data.qr_code ||
