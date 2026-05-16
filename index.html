@@ -4445,6 +4445,59 @@ function copiarPixMercadoPago() {
   }
 }
 
+function renderizarErroPagamentoMercadoPago(data, externalReference) {
+  const container = document.getElementById('paymentBrick_container');
+  const statusEl = document.getElementById('mp-status-text');
+
+  const status = data?.status || data?.payment?.status || 'rejected';
+  const detalhe = data?.status_detail || data?.payment?.status_detail || 'cc_rejected_other_reason';
+
+  const mensagens = {
+    cc_rejected_bad_filled_card_number: 'Confira o número do cartão.',
+    cc_rejected_bad_filled_date: 'Confira a validade do cartão.',
+    cc_rejected_bad_filled_security_code: 'Confira o código de segurança do cartão.',
+    cc_rejected_bad_filled_other: 'Confira os dados informados do cartão.',
+    cc_rejected_insufficient_amount: 'O cartão não possui limite suficiente.',
+    cc_rejected_call_for_authorize: 'O banco pediu autorização prévia para esta compra.',
+    cc_rejected_high_risk: 'O Mercado Pago recusou a transação por segurança.',
+    pending_review_manual: 'O Mercado Pago colocou o pagamento em análise.',
+    cc_rejected_other_reason: 'O cartão foi recusado pelo Mercado Pago ou pelo banco emissor.'
+  };
+
+  const msg = mensagens[detalhe] || 'Não foi possível aprovar este pagamento.';
+
+  if (container) {
+    container.innerHTML = `
+      <div style="padding:24px;text-align:center;color:#333;line-height:1.7;">
+        <div style="font-size:42px;margin-bottom:10px;">⚠️</div>
+        <h3 style="font-size:20px;margin-bottom:8px;color:#222;">Pagamento não aprovado</h3>
+        <p style="font-size:14px;color:#555;margin-bottom:10px;">${msg}</p>
+        <p style="font-size:12px;color:#777;margin-bottom:18px;">
+          Status: ${status}${detalhe ? ' · ' + detalhe : ''}<br>
+          Pedido: ${externalReference || data?.external_reference || data?.payment?.external_reference || ''}
+        </p>
+        <button
+          onclick="abrirCheckoutMercadoPago()"
+          style="width:100%;background:#3483fa;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;"
+        >
+          Tentar novamente
+        </button>
+        <button
+          onclick="abrirCheckoutMercadoPago()"
+          style="width:100%;margin-top:10px;background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;"
+        >
+          Escolher outra forma de pagamento
+        </button>
+      </div>
+    `;
+  }
+
+  if (statusEl) {
+    statusEl.textContent = 'Pagamento não aprovado. Tente outro cartão ou escolha Pix.';
+  }
+}
+
+
 async function abrirCheckoutMercadoPago() {
   const container = document.getElementById('paymentBrick_container');
   const statusEl = document.getElementById('mp-status-text');
@@ -4519,10 +4572,6 @@ async function abrirCheckoutMercadoPago() {
           creditCard: 'all',
           debitCard: 'all',
           bankTransfer: 'all',
-          mercadoPago: 'all',
-
-          // Cartão liberado em até 3x.
-          // Não configuramos parcelamento sem juros pago pelo vendedor aqui.
           minInstallments: 1,
           maxInstallments: 3
         }
@@ -4540,38 +4589,59 @@ async function abrirCheckoutMercadoPago() {
               statusEl.textContent = 'Salvando pedido e processando pagamento…';
             }
 
-            // 1. Salva o pedido no Supabase como aguardando pagamento
             await salvarPedidoMercadoPagoPendente(externalReference);
 
-            // 2. Envia os dados do Payment Brick para a função Netlify
+            const paymentType = formData.payment_type_id || selectedPaymentMethod;
+            const isCreditCard = paymentType === 'credit_card';
+
+            const itensPedido = montarItensPedidoAtual();
+            const parcelas = isCreditCard
+              ? Math.min(Math.max(Number(formData.installments || 1), 1), 3)
+              : undefined;
+
             const response = await fetch(MERCADOPAGO_API_URL, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
               },
-body: JSON.stringify({
-  ...formData,
+              body: JSON.stringify({
+                ...formData,
 
-  transaction_amount: Number(totalAtual.toFixed(2)),
-  description: 'Pedido Benedictus Camisaria',
+                transaction_amount: Number(totalAtual.toFixed(2)),
+                description: 'Pedido Benedictus Camisaria',
 
-  installments:
-    formData.payment_type_id === 'credit_card' || selectedPaymentMethod === 'credit_card'
-      ? Math.min(Math.max(Number(formData.installments || 1), 1), 3)
-      : Number(formData.installments || 1),
+                // Cartão fica limitado a 3x; Pix/débito não envia installments.
+                installments: parcelas,
 
-  pedido: {
-    id: externalReference
-  },
+                pedido: {
+                  id: externalReference
+                },
 
-  customer: {
-    name: checkoutData.nome,
-    email: checkoutData.email || window.usuarioLogado?.email || '',
-    cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
-    phone: checkoutData.celular || ''
-  }
-})
+                customer: {
+                  name: checkoutData.nome,
+                  email: checkoutData.email || window.usuarioLogado?.email || '',
+                  cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
+                  phone: checkoutData.celular || ''
+                },
+
+                shipping: {
+                  cep: (checkoutData.cep || '').replace(/\D/g, ''),
+                  endereco: checkoutData.endereco || '',
+                  numero: checkoutData.numero || '',
+                  bairro: checkoutData.bairro || '',
+                  cidade: checkoutData.cidade || '',
+                  uf: checkoutData.uf || ''
+                },
+
+                items: itensPedido.map((item) => ({
+                  id: String(item.id || ''),
+                  title: item.nome || 'Produto Benedictus',
+                  description: [item.tamanho && `Tam: ${item.tamanho}`, item.cor && `Cor: ${item.cor}`].filter(Boolean).join(' · '),
+                  quantity: Number(item.qty || 1),
+                  unit_price: Number(item.preco || 0)
+                }))
+              })
             });
 
             const data = await response.json().catch(() => ({}));
@@ -4583,13 +4653,13 @@ body: JSON.stringify({
                 statusEl.textContent = 'Não foi possível processar o pagamento.';
               }
 
+              renderizarErroPagamentoMercadoPago(data, externalReference);
               showToast(data.error || 'Erro ao processar pagamento.', 'error');
-              throw new Error(data.error || 'Erro ao processar pagamento');
+              return data;
             }
 
             console.log('Pagamento Mercado Pago criado:', data);
 
-            // 3. Se for Pix, exibe QR Code e código copia e cola dentro da loja
             const qrCode =
               data.qr_code ||
               data.payment?.point_of_interaction?.transaction_data?.qr_code;
@@ -4613,7 +4683,6 @@ body: JSON.stringify({
               return data.payment || data;
             }
 
-            // 4. Cartão aprovado na hora
             if (data.status === 'approved') {
               showToast('Pagamento aprovado!');
 
@@ -4636,20 +4705,28 @@ body: JSON.stringify({
               return data.payment || data;
             }
 
-            // 5. Pagamento pendente ou em análise
             if (data.status === 'pending' || data.status === 'in_process') {
+              if (data.status_detail === 'pending_review_manual') {
+                renderizarErroPagamentoMercadoPago(data, externalReference);
+                showToast('Pagamento em análise pelo Mercado Pago.', 'error');
+                return data.payment || data;
+              }
+
               showToast('Pagamento criado. Aguarde a confirmação.');
 
               if (statusEl) {
                 statusEl.textContent = 'Pagamento pendente. Assim que aprovado, o pedido será atualizado automaticamente.';
               }
 
-              // Se o Mercado Pago retornar dados Pix mesmo com status pendente, mostra na tela.
-              renderizarPixMercadoPago(data, externalReference);
               return data.payment || data;
             }
 
-            // 6. Outros status
+            if (data.status === 'rejected' || data.status === 'cancelled') {
+              renderizarErroPagamentoMercadoPago(data, externalReference);
+              showToast('Pagamento não aprovado pelo Mercado Pago.', 'error');
+              return data.payment || data;
+            }
+
             showToast('Pagamento enviado. Status: ' + (data.status || 'em análise'));
 
             if (statusEl) {
@@ -4665,8 +4742,10 @@ body: JSON.stringify({
               statusEl.textContent = 'Erro ao processar pagamento. Tente novamente.';
             }
 
+            renderizarErroPagamentoMercadoPago({ status: 'error', status_detail: error.message }, externalReference);
             showToast(error.message || 'Erro ao processar pagamento.', 'error');
-            throw error;
+
+            return { error: true, message: error.message || 'Erro ao processar pagamento' };
           }
         },
         onError: (error) => {
