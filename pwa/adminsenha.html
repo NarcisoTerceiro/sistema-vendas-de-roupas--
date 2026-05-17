@@ -74,7 +74,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
 .logo-wrap img { height: var(--logo-h);width: auto;display: block;object-fit: contain; }
 
 /* LOGIN */
-#login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);transition:background .4s;}
+#login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));background:var(--bg);transition:background .4s;}
 .login-wrap{width:100%;max-width:420px;animation:fadeUp .7s ease both;position:relative;z-index:1;}
 .login-logo-area{text-align:center;margin-bottom:32px;display:flex;flex-direction:column;align-items:center;gap:16px;}
 .login-logo-area .logo-wrap{--logo-h:120px;}
