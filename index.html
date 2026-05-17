@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://sdk.mercadopago.com/js/v2"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════
      AUTH SOFT — Detecta se há sessão ativa, mas NÃO bloqueia o site
@@ -2079,21 +2078,19 @@ const SUPABASE_URL  = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
 const WHATSAPP_NUM  = '5583998015544';
 
-// ── Mercado Pago / Checkout Bricks ────────────────────────
-// Troque pelo Public Key da sua aplicação no Mercado Pago Developers.
-// IMPORTANTE: a Public Key pode ficar no front-end. O Access Token fica apenas na Netlify.
-const MERCADOPAGO_PUBLIC_KEY = 'APP_USR-f160b005-837c-436e-a3f7-8bfde90c82b7';
-const MERCADOPAGO_API_URL    = '/.netlify/functions/criar-pagamento-mp';
-const MERCADOPAGO_IS_TEST    = String(MERCADOPAGO_PUBLIC_KEY || '').startsWith('TEST-');
-let mercadoPagoBrickController = null;
-
-
-// ── PicPay / Link de Pagamento ─────────────────────────
-const PIX_API_URL          = '/.netlify/functions/criar-pix';
-const PIX_STATUS_URL       = '/.netlify/functions/pedido-status';
-const PIX_VERIFY_INTERVAL  = 2500;   // intervalo entre verificações (ms)
-const PIX_MAX_TENTATIVAS   = 240;    // 240 × 2.5s = 10 min (PIX expira em 15min)
-const PIX_TIMEOUT_GERAR    = 20000;  // timeout para criar o link de pagamento
+// ── Pagamentos ─────────────────────────────────────────
+// Mercado Pago fica em standby: as functions antigas foram mantidas, mas o checkout
+// exibido ao cliente agora usa PicPay Empresas. As credenciais do PicPay ficam
+// somente nas variáveis de ambiente da Netlify.
+const MERCADOPAGO_PUBLIC_KEY    = ''; // standby
+const MERCADOPAGO_IS_TEST       = false;
+const MERCADOPAGO_API_URL      = '/.netlify/functions/criar-pagamento-mp';
+const PICPAY_CHECKOUT_API_URL  = '/.netlify/functions/criar-picpay-checkout';
+const PIX_STATUS_URL           = '/.netlify/functions/pedido-status';
+const PIX_VERIFY_INTERVAL      = 2500;   // intervalo entre verificações (ms)
+const PIX_MAX_TENTATIVAS       = 240;    // 240 × 2.5s = 10 min
+const PIX_TIMEOUT_GERAR        = 20000;  // timeout para criar o checkout PicPay
+let mercadoPagoBrickController = null; // mantido apenas para compatibilidade/standby
 
 // Estado da cobrança PIX
 const pixState = {
@@ -4142,13 +4139,11 @@ function validarDados() {
     document.getElementById('f-cpf')?.focus();
     return false;
   }
-  const celularNormalizado = normalizarCelularBR(celular);
-  if (![10, 11].includes(celularNormalizado.length)) {
-    showToast('Celular inválido — informe DDD + número, sem código do país', 'error');
+  if (celular.replace(/\D/g,'').length < 10) {
+    showToast('Celular inválido — informe DDD + número', 'error');
     document.getElementById('f-celular')?.focus();
     return false;
   }
-  const celularFormatado = formatarCelularBR(celularNormalizado);
   if (uf.length !== 2) {
     showToast('UF deve ter 2 letras (ex: PB, SP)', 'error');
     document.getElementById('f-uf')?.focus();
@@ -4161,18 +4156,15 @@ function validarDados() {
   }
 
   checkoutData = {
-    nome, email, cpf, celular: celularFormatado,
+    nome, email, cpf, celular,
     endereco: end, numero, bairro, complemento: comp,
     cidade, uf, cep,
     pagamento: checkoutData.pagamento
   };
 
-  const celularInput = document.getElementById('f-celular');
-  if (celularInput) celularInput.value = celularFormatado;
-
   // Atualiza o profile do usuário no banco com todos os dados (nome/cpf/celular/email + endereço)
   atualizarProfileUsuario({
-    nome, telefone: celularFormatado, cpf, email,
+    nome, telefone: celular, cpf, email,
     cep, endereco: end, numero, bairro, complemento: comp, cidade, uf
   }).catch(()=>{});
 
@@ -4203,48 +4195,9 @@ function maskCPF(input) {
   input.value = v;
 }
 
-const DDD_BR_VALIDOS = new Set([
-  '11','12','13','14','15','16','17','18','19',
-  '21','22','24','27','28',
-  '31','32','33','34','35','37','38',
-  '41','42','43','44','45','46','47','48','49',
-  '51','53','54','55',
-  '61','62','63','64','65','66','67',
-  '68','69','71','73','74','75','77','79',
-  '81','82','83','84','85','86','87','88','89',
-  '91','92','93','94','95','96','97','98','99'
-]);
-
-// Normaliza telefone brasileiro para DDD + número, sem código do país.
-function normalizarCelularBR(valor) {
-  let v = String(valor || '').replace(/\D/g, '');
-
-  // Se o cliente colar +55 ou se ficou salvo com o 55 do país, remove antes da máscara.
-  // Ex.: +55 (83) 99999-9999 -> 83999999999.
-  if (
-    v.startsWith('55') &&
-    (v.length > 11 || (v.length === 11 && v[2] !== '9' && DDD_BR_VALIDOS.has(v.slice(2, 4))))
-  ) {
-    v = v.slice(2);
-  }
-
-  if (v.length > 11) {
-    v = v.slice(-11);
-  }
-
-  return v;
-}
-
-function formatarCelularBR(valor) {
-  const v = normalizarCelularBR(valor);
-  if (v.length === 11) return v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-  if (v.length === 10) return v.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-  return valor || '';
-}
-
 // Máscara Celular
 function maskCelular(input) {
-  let v = normalizarCelularBR(input.value);
+  let v = input.value.replace(/\D/g,'').slice(0,11);
   if (v.length > 10)     v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
   else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
   else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/,        '($1) $2');
@@ -4285,8 +4238,8 @@ function showStepPagamento() {
   document.getElementById('cart-content').style.display    = 'none';
   document.getElementById('payment-content').style.display = 'flex';
 
-  // Mercado Pago Checkout Bricks — pagamento dentro da loja
-  checkoutData.pagamento = 'mercado_pago';
+  // PicPay Empresas — checkout hospedado/seguro. Mercado Pago fica em standby.
+  checkoutData.pagamento = 'picpay';
 
   const valores = (function() {
     const sub  = cartTotal();
@@ -4312,36 +4265,33 @@ function showStepPagamento() {
 
       <div class="mp-checkout-box">
         <div id="mp-status-text" class="mp-status">
-          Finalize seu pagamento com cartão ou Pix sem sair da Benedictus Camisaria.
+          Você será direcionado para o checkout seguro do PicPay Empresas. Após a aprovação, a loja receberá a confirmação automaticamente.
         </div>
         <div id="paymentBrick_container" class="mp-brick-wrap">
-          <div style="display:flex;align-items:center;justify-content:center;min-height:160px;color:#555;font-size:13px;">
-            Carregando checkout do Mercado Pago…
+          <div style="padding:22px;text-align:center;color:#333;line-height:1.7;">
+            <div style="font-size:38px;margin-bottom:10px;">💚</div>
+            <h3 style="font-size:20px;margin-bottom:8px;color:#222;">Pagar com PicPay</h3>
+            <p style="font-size:13px;color:#555;margin-bottom:16px;">
+              O checkout do PicPay permite pagamento por cartão, Pix ou carteira PicPay, conforme as opções habilitadas na sua conta.
+            </p>
+            <button id="btn-abrir-picpay" onclick="abrirCheckoutPicPay()" style="width:100%;background:#11c76f;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <span class="mat" style="font-size:17px;">payments</span>Ir para pagamento seguro
+            </button>
           </div>
         </div>
-        <button class="mp-retry-btn" onclick="abrirCheckoutMercadoPago()">
-          <span class="mat" style="font-size:16px;vertical-align:middle;">refresh</span>
-          Recarregar pagamento
-        </button>
-        ${MERCADOPAGO_IS_TEST ? `
-        <div class="mp-alert" style="border-color:rgba(52,131,250,.35);background:rgba(52,131,250,.08);">
-          <b>Modo teste ativo:</b> use somente cartões de teste do Mercado Pago. Para simular aprovado, use titular <b>APRO</b>, CPF <b>12345678909</b>, validade <b>11/30</b> e CVV <b>123</b>.
-        </div>` : ''}
         <div class="mp-alert">
-          O pedido será salvo como <b>aguardando pagamento</b> antes do processamento. Após a aprovação, o Mercado Pago enviará a confirmação pelo webhook e o pedido será atualizado para <b>pago</b>.
+          O pedido ficará como <b>aguardando pagamento</b>. Quando o PicPay aprovar a transação, o webhook atualizará o pedido para <b>pago</b> e o cliente receberá a confirmação na tela.
         </div>
       </div>
     </div>`;
 
   const btn = document.getElementById('checkout-btn');
   if (btn) btn.style.display = 'none';
-
-  setTimeout(() => abrirCheckoutMercadoPago(), 80);
 }
 
 // Mantém compatibilidade caso algum código antigo chame selPag
 function selPag(el, tipo) {
-  checkoutData.pagamento = 'pix';
+  checkoutData.pagamento = 'picpay';
 }
 
 
@@ -4412,6 +4362,264 @@ async function salvarPedidoMercadoPagoPendente(externalReference) {
   if (error) {
     console.error('Erro ao salvar pedido Mercado Pago pendente:', error);
     throw error;
+  }
+}
+
+
+async function salvarPedidoPicPayPendente(externalReference, picpayData = {}) {
+  if (!db) throw new Error('Banco não conectado');
+  if (!window.usuarioLogado) throw new Error('Usuário não logado');
+  if (!cart || !cart.length) throw new Error('Carrinho vazio');
+
+  const u = window.usuarioLogado;
+  const sub = cartTotal();
+  const fVal = freteSelecionado?.valor || 0;
+  const tot = sub + fVal;
+
+  const pedido = {
+    external_reference: externalReference,
+    user_id:        u.id,
+    user_email:     u.email || null,
+    cliente_nome:   checkoutData.nome,
+    cliente_email:  checkoutData.email || u.email || null,
+    cliente_cpf:    (checkoutData.cpf || '').replace(/\D/g,'') || null,
+    cliente_celular: checkoutData.celular,
+    endereco:       checkoutData.endereco,
+    numero:         checkoutData.numero,
+    bairro:         checkoutData.bairro,
+    complemento:    checkoutData.complemento || null,
+    cidade:         checkoutData.cidade || null,
+    uf:             checkoutData.uf || null,
+    cep:            checkoutData.cep || null,
+    itens:          montarItensPedidoAtual(),
+    subtotal:       Number(sub.toFixed(2)),
+    frete_nome:     freteSelecionado?.nome || 'A combinar',
+    frete_valor:    Number(fVal.toFixed(2)),
+    total:          Number(tot.toFixed(2)),
+    pagamento:      'picpay',
+    pix_charge_id:  picpayData.paymentLinkId || picpayData.checkoutId || picpayData.paymentId || externalReference,
+    status:         'aguardando_pagamento',
+    observacao:     'Pedido criado via PicPay Empresas. Aguardando confirmação automática por webhook.',
+    created_at:     new Date().toISOString()
+  };
+
+  const { error } = await db.from('pedidos').insert([pedido]);
+  if (error) {
+    console.error('Erro ao salvar pedido PicPay pendente:', error);
+    throw error;
+  }
+}
+
+function renderizarAguardandoPicPay(data, externalReference) {
+  const container = document.getElementById('paymentBrick_container');
+  const statusEl = document.getElementById('mp-status-text');
+  const url = data.paymentUrl || data.checkoutUrl || data.checkoutLink || '';
+
+  if (statusEl) {
+    statusEl.textContent = 'Checkout PicPay aberto. Após o pagamento, volte para esta tela: a confirmação será feita automaticamente.';
+  }
+
+  if (!container) return;
+  container.innerHTML = `
+    <div style="padding:22px;text-align:center;color:#333;line-height:1.7;">
+      <div style="font-size:42px;margin-bottom:10px;">⏳</div>
+      <h3 style="font-size:20px;margin-bottom:8px;color:#222;">Aguardando pagamento</h3>
+      <p style="font-size:13px;color:#555;margin-bottom:14px;">
+        Conclua o pagamento no PicPay. Assim que o PicPay aprovar, este pedido será atualizado para pago automaticamente.
+      </p>
+      <p style="font-size:12px;color:#777;margin-bottom:18px;word-break:break-all;">Pedido: ${externalReference}</p>
+      ${url ? `
+      <a href="${url}" target="_blank" style="display:flex;width:100%;background:#11c76f;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:8px;text-decoration:none;margin-bottom:10px;">
+        <span class="mat" style="font-size:17px;">open_in_new</span>Abrir checkout PicPay novamente
+      </a>` : ''}
+      <button onclick="verificarPagamentoPicPayAgora('${externalReference}')" style="width:100%;background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">
+        Já paguei / verificar agora
+      </button>
+      <p style="font-size:11px;color:#777;margin-top:14px;">
+        Não é preciso enviar comprovante se o pagamento for aprovado pelo PicPay. O webhook faz a confirmação sozinho.
+      </p>
+    </div>
+  `;
+}
+
+async function verificarPagamentoPicPayAgora(externalReference) {
+  try {
+    const id = externalReference || pixState.paymentId;
+    if (!id) {
+      showToast('Nenhum pedido PicPay pendente encontrado.', 'error');
+      return;
+    }
+
+    const res = await fetch(`${PIX_STATUS_URL}?id=${encodeURIComponent(id)}&t=${Date.now()}`, { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+
+    if (data.status === 'approved') {
+      pixState.paymentId = id;
+      pixState.pedidoIdBanco = data.pedido_id || pixState.pedidoIdBanco;
+      pixState.isPago = true;
+      showToast('Pagamento aprovado!', 'success');
+      exibirModalPagamentoAprovado();
+      return;
+    }
+
+    if (['rejected', 'cancelled', 'expired'].includes(data.status)) {
+      showToast('Pagamento não aprovado ou cancelado.', 'error');
+      return;
+    }
+
+    showToast('Pagamento ainda aguardando confirmação do PicPay.');
+  } catch (e) {
+    console.warn('Erro ao verificar PicPay:', e);
+    showToast('Não foi possível verificar agora. Aguarde a confirmação automática.', 'error');
+  }
+}
+
+async function abrirCheckoutPicPay() {
+  const container = document.getElementById('paymentBrick_container');
+  const statusEl = document.getElementById('mp-status-text');
+  const btn = document.getElementById('btn-abrir-picpay');
+
+  if (!window.usuarioLogado) {
+    showToast('Faça login para continuar o pagamento', 'error');
+    abrirModalAuth?.();
+    return;
+  }
+  if (!checkoutData.nome || !checkoutData.email || !checkoutData.cpf) {
+    showToast('Preencha nome, e-mail e CPF antes', 'error');
+    return;
+  }
+  if (!checkoutData.celular || !checkoutData.endereco || !checkoutData.numero || !checkoutData.bairro || !checkoutData.cidade || !checkoutData.uf || !checkoutData.cep) {
+    showToast('Preencha o endereço e celular antes do pagamento.', 'error');
+    return;
+  }
+  if (!cart || !cart.length) {
+    showToast('Carrinho vazio', 'error');
+    return;
+  }
+
+  const sub = cartTotal();
+  const fVal = freteSelecionado?.valor || 0;
+  const totalReais = sub + fVal;
+  const amount = Math.round(totalReais * 100);
+  const externalReference = (window.crypto && window.crypto.randomUUID)
+    ? window.crypto.randomUUID()
+    : `00000000-0000-4000-8000-${String(Date.now()).slice(-12).padStart(12, '0')}`;
+
+  let checkoutWindow = null;
+  try { checkoutWindow = window.open('about:blank', '_blank'); } catch(e) { checkoutWindow = null; }
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="mat spin" style="font-size:16px;">autorenew</span>Criando checkout…';
+    }
+    if (statusEl) statusEl.textContent = 'Criando checkout seguro no PicPay…';
+
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), PIX_TIMEOUT_GERAR);
+
+    const itensPagamento = montarItensPedidoAtual().map(item => ({
+      id: String(item.id || ''),
+      name: String(item.nome || 'Produto Benedictus').slice(0, 80),
+      quantity: Number(item.qty || 1),
+      amount: Math.round(Number(item.preco || 0) * 100),
+      unit_price: Number(Number(item.preco || 0).toFixed(2)),
+      tamanho: item.tamanho || null,
+      cor: item.cor || null,
+      tipo_tecido: item.tipo_tecido || null
+    }));
+
+    const res = await fetch(PICPAY_CHECKOUT_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        merchantChargeId: externalReference,
+        external_reference: externalReference,
+        amount,
+        total: Number(totalReais.toFixed(2)),
+        description: 'Pedido Benedictus Camisaria',
+        maxInstallmentNumber: 3,
+        customer: {
+          name: checkoutData.nome,
+          email: checkoutData.email || window.usuarioLogado?.email || '',
+          document: (checkoutData.cpf || '').replace(/\D/g, ''),
+          phone: checkoutData.celular || ''
+        },
+        shipping: {
+          amount: Math.round(fVal * 100),
+          cep: (checkoutData.cep || '').replace(/\D/g, ''),
+          endereco: checkoutData.endereco || '',
+          numero: checkoutData.numero || '',
+          bairro: checkoutData.bairro || '',
+          complemento: checkoutData.complemento || '',
+          cidade: checkoutData.cidade || '',
+          uf: checkoutData.uf || ''
+        },
+        items: itensPagamento
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    const responseText = await res.text();
+    let data = {};
+    try { data = responseText ? JSON.parse(responseText) : {}; }
+    catch { data = { error: responseText }; }
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || data.message || 'Erro ao criar checkout PicPay');
+    }
+
+    const refFinal = data.merchantChargeId || externalReference;
+    await salvarPedidoPicPayPendente(refFinal, data);
+
+    pixState.paymentId        = refFinal;
+    pixState.pedidoIdBanco    = null;
+    pixState.isPago           = false;
+    pixState.isWhatsAppSent   = false;
+    pixState.qrCode           = null;
+    pixState.qrCodeBase64     = null;
+
+    try {
+      sessionStorage.setItem('benedictus_picpay_pendente', JSON.stringify({
+        externalReference: refFinal,
+        paymentId: data.paymentId || data.checkoutId || data.paymentLinkId || null,
+        paymentUrl: data.paymentUrl || data.checkoutUrl || data.checkoutLink || '',
+        criadoEm: new Date().toISOString(),
+        total: totalReais
+      }));
+    } catch(e) {}
+
+    renderizarAguardandoPicPay(data, refFinal);
+    iniciarListenerPixMercadoPago(refFinal);
+
+    const paymentUrl = data.paymentUrl || data.checkoutUrl || data.checkoutLink;
+    if (paymentUrl) {
+      if (checkoutWindow) checkoutWindow.location.href = paymentUrl;
+      else window.open(paymentUrl, '_blank');
+      showToast('Checkout PicPay aberto. Conclua o pagamento na nova aba.');
+    } else if (checkoutWindow && !checkoutWindow.closed) {
+      checkoutWindow.close();
+    }
+  } catch (e) {
+    if (checkoutWindow && !checkoutWindow.closed) checkoutWindow.close();
+    console.error('Erro ao abrir checkout PicPay:', e);
+    const msg = e.name === 'AbortError' ? 'Tempo limite ao criar checkout PicPay.' : (e.message || 'Erro ao criar checkout PicPay');
+    showToast(msg, 'error');
+
+    if (container) {
+      container.innerHTML = `
+        <div style="padding:22px;text-align:center;color:#333;line-height:1.7;">
+          <div style="font-size:38px;margin-bottom:10px;">⚠️</div>
+          <h3 style="font-size:20px;margin-bottom:8px;color:#222;">Não foi possível abrir o PicPay</h3>
+          <p style="font-size:13px;color:#555;margin-bottom:16px;">${msg}</p>
+          <button id="btn-abrir-picpay" onclick="abrirCheckoutPicPay()" style="width:100%;background:#11c76f;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span class="mat" style="font-size:17px;">refresh</span>Tentar novamente
+          </button>
+        </div>`;
+    }
+    if (statusEl) statusEl.textContent = 'Falha ao criar checkout PicPay.';
   }
 }
 
@@ -4624,9 +4832,8 @@ let mpPollingInterval = null;
 function iniciarPollingPixMercadoPago(externalReference) {
   if (mpPollingInterval) clearInterval(mpPollingInterval);
 
-  const STATUS_PAGOS = ['pago', 'aprovado', 'approved', 'paid', 'confirmado'];
   let tentativas = 0;
-  const MAX_TENTATIVAS = 150; // 150 × 6s = 15 minutos
+  const MAX_TENTATIVAS = 300; // 300 × 6s = 30 minutos
 
   mpPollingInterval = setInterval(async () => {
     tentativas++;
@@ -4637,28 +4844,19 @@ function iniciarPollingPixMercadoPago(externalReference) {
     }
 
     try {
-      const { data: pedido, error } = await db
-        .from('pedidos')
-        .select('id, status')
-        .eq('external_reference', externalReference)
-        .maybeSingle();
+      // Consulta a Netlify Function. Ela olha o Supabase e também consulta o PicPay,
+      // então funciona mesmo se o webhook atrasar ou não disparar.
+      const res = await fetch(`${PIX_STATUS_URL}?id=${encodeURIComponent(externalReference)}&t=${Date.now()}`, { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
 
-      if (error) {
-        console.warn('[Polling MP] Erro:', error.message);
-        return;
-      }
-      if (!pedido) return;
-
-      const s = String(pedido.status || '').toLowerCase().trim();
-      if (STATUS_PAGOS.includes(s)) {
-        // 🔒 Já disparou? para tudo e sai
+      if (data.status === 'approved') {
         if (pixState.isPago || window._modalAprovadoExibido) {
           clearInterval(mpPollingInterval);
           mpPollingInterval = null;
           return;
         }
 
-        console.log('🎉 Pix confirmado via polling! Status:', s);
+        console.log('🎉 PicPay confirmado via pedido-status:', data);
 
         clearInterval(mpPollingInterval);
         mpPollingInterval = null;
@@ -4668,7 +4866,7 @@ function iniciarPollingPixMercadoPago(externalReference) {
         }
 
         pixState.paymentId      = externalReference;
-        pixState.pedidoIdBanco  = pedido.id;
+        pixState.pedidoIdBanco  = data.pedido_id || null;
         pixState.isPago         = true;
         pixState.isWhatsAppSent = false;
 
@@ -4678,13 +4876,22 @@ function iniciarPollingPixMercadoPago(externalReference) {
         if (typeof exibirModalPagamentoAprovado === 'function') {
           exibirModalPagamentoAprovado();
         }
+        return;
+      }
+
+      if (['rejected', 'cancelled', 'expired'].includes(data.status)) {
+        clearInterval(mpPollingInterval);
+        mpPollingInterval = null;
+        const msg = data.status === 'rejected'
+          ? 'Pagamento recusado pelo PicPay.'
+          : 'Pagamento cancelado ou expirado.';
+        if (typeof showToast === 'function') showToast(msg, 'error');
       }
     } catch (e) {
-      console.warn('[Polling MP] Exceção:', e);
+      console.warn('[Polling PicPay] Exceção:', e);
     }
   }, 6000);
 }
-
 function copiarPixMercadoPago() {
   const el = document.getElementById('mp-pix-copia-cola');
   if (!el) return;
@@ -4708,7 +4915,6 @@ function renderizarErroPagamentoMercadoPago(data, externalReference) {
   const detalhe = data?.status_detail || data?.payment?.status_detail || 'cc_rejected_other_reason';
   const causa = Array.isArray(data?.cause) ? data.cause[0] : null;
   const codigoCausa = Number(causa?.code || causa?.codigo || data?.codigo_causa || 0);
-  const emAnalise = status === 'in_process' && detalhe === 'pending_review_manual';
 
   const mensagens = {
     cc_rejected_bad_filled_card_number: 'Confira o número do cartão.',
@@ -4717,8 +4923,8 @@ function renderizarErroPagamentoMercadoPago(data, externalReference) {
     cc_rejected_bad_filled_other: 'Confira os dados informados do cartão.',
     cc_rejected_insufficient_amount: 'O cartão não possui limite suficiente.',
     cc_rejected_call_for_authorize: 'O banco pediu autorização prévia para esta compra.',
-    cc_rejected_high_risk: 'O Mercado Pago recusou a transação por segurança. Tente outro cartão ou escolha Pix.',
-    pending_review_manual: 'O Mercado Pago colocou o pagamento em análise manual. O pedido ainda não está pago; aguarde a confirmação automática antes de tentar novamente.',
+    cc_rejected_high_risk: 'O Mercado Pago recusou a transação por segurança. Em teste, use cartão de teste e titular APRO. Em produção, tente outro cartão ou aguarde a autenticação do banco, quando aparecer.',
+    pending_review_manual: 'O Mercado Pago colocou o pagamento em análise. Isso não é falha do site; é análise de segurança do Mercado Pago.',
     pending_challenge: 'Seu banco solicitou validação de segurança do cartão. Conclua a etapa de autenticação para finalizar.',
     cc_rejected_other_reason: 'O cartão foi recusado pelo Mercado Pago ou pelo banco emissor.'
   };
@@ -4731,42 +4937,31 @@ function renderizarErroPagamentoMercadoPago(data, externalReference) {
   if (container) {
     container.innerHTML = `
       <div style="padding:24px;text-align:center;color:#333;line-height:1.7;">
-        <div style="font-size:42px;margin-bottom:10px;">${emAnalise ? '⏳' : '⚠️'}</div>
-        <h3 style="font-size:20px;margin-bottom:8px;color:#222;">${emAnalise ? 'Pagamento em análise' : 'Pagamento não aprovado'}</h3>
+        <div style="font-size:42px;margin-bottom:10px;">⚠️</div>
+        <h3 style="font-size:20px;margin-bottom:8px;color:#222;">Pagamento não aprovado</h3>
         <p style="font-size:14px;color:#555;margin-bottom:10px;">${msg}</p>
         <p style="font-size:12px;color:#777;margin-bottom:18px;">
           Status: ${status}${detalhe ? ' · ' + detalhe : ''}${codigoCausa ? ' · código ' + codigoCausa : ''}<br>
           Pedido: ${externalReference || data?.external_reference || data?.payment?.external_reference || ''}
         </p>
-        ${emAnalise ? `
-          <button
-            onclick="window.location.href='meus-pedidos.html'"
-            style="width:100%;background:#3483fa;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;"
-          >
-            Acompanhar pedido
-          </button>
-        ` : `
-          <button
-            onclick="abrirCheckoutMercadoPago()"
-            style="width:100%;background:#3483fa;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;"
-          >
-            Tentar novamente
-          </button>
-          <button
-            onclick="abrirCheckoutMercadoPago()"
-            style="width:100%;margin-top:10px;background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;"
-          >
-            Escolher outra forma de pagamento
-          </button>
-        `}
+        <button
+          onclick="abrirCheckoutMercadoPago()"
+          style="width:100%;background:#3483fa;color:#fff;border:none;border-radius:8px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;"
+        >
+          Tentar novamente
+        </button>
+        <button
+          onclick="abrirCheckoutMercadoPago()"
+          style="width:100%;margin-top:10px;background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;"
+        >
+          Escolher outra forma de pagamento
+        </button>
       </div>
     `;
   }
 
   if (statusEl) {
-    statusEl.textContent = emAnalise
-      ? 'Pagamento em análise. O pedido será atualizado automaticamente quando o Mercado Pago confirmar.'
-      : 'Pagamento não aprovado. Tente outro cartão ou escolha Pix.';
+    statusEl.textContent = 'Pagamento não aprovado. Tente outro cartão ou escolha Pix.';
   }
 }
 
@@ -4872,37 +5067,6 @@ async function abrirCheckoutMercadoPago() {
             }
 
             const itensPedido = montarItensPedidoAtual();
-            const freteValorPagamento = Number((freteSelecionado?.valor || 0).toFixed(2));
-            const itensMercadoPago = itensPedido.map((item, index) => ({
-              id: String(item.id || `produto-${index + 1}`),
-              title: item.nome || 'Produto Benedictus',
-              description: [
-                'Camiseta cristã Benedictus Camisaria',
-                item.tamanho && `Tamanho: ${item.tamanho}`,
-                item.cor && `Cor: ${item.cor}`,
-                item.tipo_tecido && `Tecido: ${item.tipo_tecido}`
-              ].filter(Boolean).join(' · '),
-              category_id: 'fashion',
-              quantity: Number(item.qty || 1),
-              unit_price: Number(Number(item.preco || 0).toFixed(2)),
-              tamanho: item.tamanho || null,
-              cor: item.cor || null,
-              tipo_tecido: item.tipo_tecido || null
-            }));
-
-            // Mantém o valor total coerente para o antifraude do Mercado Pago:
-            // se houver frete/taxa, ele entra como item separado no additional_info.
-            if (freteValorPagamento > 0) {
-              itensMercadoPago.push({
-                id: 'frete-entrega',
-                title: freteSelecionado?.nome || 'Frete / entrega',
-                description: 'Valor de entrega do pedido',
-                category_id: 'shipping',
-                quantity: 1,
-                unit_price: freteValorPagamento
-              });
-            }
-
             const parcelas = isCreditCard
               ? Math.min(Math.max(Number(formData.installments || 1), 1), 3)
               : undefined;
@@ -4932,7 +5096,7 @@ async function abrirCheckoutMercadoPago() {
                   name: checkoutData.nome,
                   email: checkoutData.email || window.usuarioLogado?.email || '',
                   cpf: (checkoutData.cpf || '').replace(/\D/g, ''),
-                  phone: normalizarCelularBR(checkoutData.celular || ''),
+                  phone: checkoutData.celular || '',
                   cep: (checkoutData.cep || '').replace(/\D/g, ''),
                   endereco: checkoutData.endereco || '',
                   numero: checkoutData.numero || '',
@@ -4949,9 +5113,6 @@ async function abrirCheckoutMercadoPago() {
                   identification: {
                     type: 'CPF',
                     number: (checkoutData.cpf || '').replace(/\D/g, '')
-                  },
-                  phone: {
-                    number: normalizarCelularBR(checkoutData.celular || '')
                   }
                 },
 
@@ -4965,7 +5126,22 @@ async function abrirCheckoutMercadoPago() {
                   uf: checkoutData.uf || ''
                 },
 
-                items: itensMercadoPago
+                items: itensPedido.map((item, index) => ({
+                  id: String(item.id || `produto-${index + 1}`),
+                  title: item.nome || 'Produto Benedictus',
+                  description: [
+                    'Camiseta cristã Benedictus Camisaria',
+                    item.tamanho && `Tamanho: ${item.tamanho}`,
+                    item.cor && `Cor: ${item.cor}`,
+                    item.tipo_tecido && `Tecido: ${item.tipo_tecido}`
+                  ].filter(Boolean).join(' · '),
+                  category_id: 'fashion',
+                  quantity: Number(item.qty || 1),
+                  unit_price: Number(Number(item.preco || 0).toFixed(2)),
+                  tamanho: item.tamanho || null,
+                  cor: item.cor || null,
+                  tipo_tecido: item.tipo_tecido || null
+                }))
               })
             });
 
@@ -5045,7 +5221,7 @@ async function abrirCheckoutMercadoPago() {
             if (data.status === 'pending' || data.status === 'in_process') {
               if (data.status_detail === 'pending_review_manual') {
                 renderizarErroPagamentoMercadoPago(data, externalReference);
-                showToast('Pagamento em análise pelo Mercado Pago. Aguarde a confirmação.');
+                showToast('Pagamento em análise pelo Mercado Pago.', 'error');
                 return data.payment || data;
               }
 
@@ -5405,7 +5581,7 @@ async function salvarPedidoPago() {
     frete_nome:     freteSelecionado?.nome || 'A combinar',
     frete_valor:    Number(fVal.toFixed(2)),
     total:          Number(tot.toFixed(2)),
-    pagamento:      'pix',
+    pagamento:      'picpay',
     pix_charge_id:  pixState.paymentId,
     status:         'pago',
     pago_em:        new Date().toISOString(),
@@ -5437,7 +5613,7 @@ function iniciarVerificacaoPix() {
 
     if (pixState.tentativas > PIX_MAX_TENTATIVAS) {
       pararVerificacaoPix();
-      showToast('PIX expirado. Gere um novo QR Code.', 'error');
+      showToast('Pagamento expirado. Gere um novo checkout.', 'error');
       resetarTelaPix();
       return;
     }
@@ -5454,7 +5630,7 @@ function iniciarVerificacaoPix() {
 
       if (res.ok) {
         const data = await res.json();
-        console.log('Status PIX:', data.status, '(tentativa', pixState.tentativas, ')');
+        console.log('Status PicPay:', data.status, '(tentativa', pixState.tentativas, ')');
 
         if (data.status === 'approved') {
           await pagamentoAprovado();
@@ -5731,7 +5907,7 @@ function enviarPedidoWhatsApp(reenvio = false) {
     });
 
     let msg  = `🛍️ *Novo Pedido — Benedictus Camisaria*\n\n`;
-    msg     += `✅ *STATUS:* PAGO VIA PIX\n`;
+    msg     += `✅ *STATUS:* PAGO VIA PICPAY\n`;
     msg     += `📅 *Data:* ${new Date().toLocaleString('pt-BR')}\n`;
     msg     += `🔖 *ID Cobrança:* ${pixState.paymentId}\n\n`;
     msg     += `👤 *Cliente:* ${checkoutData.nome}\n`;
