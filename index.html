@@ -2385,6 +2385,16 @@ async function loadColecoes() {
 }
 
 function inicializarEstadoColecoes() {
+  // Força a "Coleção Canções" a aparecer SEMPRE em primeiro lugar,
+  // mesmo que venha do Supabase com outra ordem.
+  allColecoes.forEach(c => {
+    if (c.slug === 'cancoes') {
+      c.ordem = -1;
+      c.nome  = c.nome  || 'Coleção Canções';
+      c.icone = c.icone || 'music_note';
+    }
+  });
+
   // Garante que a coleção "Best Seller" esteja sempre presente como última,
   // mesmo que venha do Supabase / cache sem ela.
   const temBest = allColecoes.some(c => c.slug === 'best_seller');
