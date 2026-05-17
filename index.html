@@ -6356,9 +6356,28 @@ function scColecao(slugAlvo) {
   const alvo = norm(slugAlvo);
 
   // 1) Tenta achar a coleção real (Supabase/cache/default) por slug normalizado
+  //    Também checa pelo nome, pra casos onde o slug no banco difere ("preto-no-branco" vs "preto_branco")
   let slugReal = null;
   if (typeof allColecoes !== 'undefined' && Array.isArray(allColecoes)) {
-    const found = allColecoes.find(c => norm(c.slug) === alvo);
+    let found = allColecoes.find(c => norm(c.slug) === alvo);
+
+    // Apelidos / variações conhecidas
+    if (!found) {
+      if (alvo === 'pretobranco' || alvo === 'pretonobranco') {
+        found = allColecoes.find(c => {
+          const s = norm(c.slug), n = norm(c.nome);
+          return s.includes('preto') || n.includes('preto');
+        });
+      } else if (alvo === 'cancoes' || alvo === 'cancao') {
+        found = allColecoes.find(c => {
+          const s = norm(c.slug), n = norm(c.nome);
+          return s.includes('canco') || n.includes('canco');
+        });
+      } else if (alvo === 'bestseller') {
+        found = allColecoes.find(c => norm(c.slug).includes('best'));
+      }
+    }
+
     if (found) slugReal = found.slug;
   }
 
@@ -6372,7 +6391,17 @@ function scColecao(slugAlvo) {
     }
   }
 
-  // 3) Fallback: rola até a seção geral de coleções
+  // 3) Último recurso: varre todos os elementos "colecao-*" e tenta casar pelo nome/slug normalizado
+  const todos = document.querySelectorAll('[id^="colecao-"]');
+  for (const el of todos) {
+    const idSlug = norm(el.id.replace('colecao-', ''));
+    if (idSlug === alvo || idSlug.includes(alvo) || alvo.includes(idSlug)) {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 88, behavior: 'smooth' });
+      return;
+    }
+  }
+
+  // 4) Fallback final: rola até a seção geral de coleções
   const fallback = document.getElementById('colecao');
   if (fallback) {
     window.scrollTo({ top: fallback.getBoundingClientRect().top + window.scrollY - 88, behavior: 'smooth' });
