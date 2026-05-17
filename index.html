@@ -1084,7 +1084,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 <!-- MOBILE SEARCH OVERLAY -->
 <div class="mobile-search-overlay" id="mobile-search-overlay">
   <span class="mat" style="color:var(--gold);font-size:22px;flex-shrink:0;">search</span>
-  <input id="mobile-search-input" type="text" placeholder="Buscar produtos..." onkeydown="if(event.key==='Enter'){searchHandler(this.value);if(this.value.trim())sc('colecao');}"/>
+  <input id="mobile-search-input" type="text" placeholder="Buscar produtos..." oninput="searchHandlerLive(this.value)" onkeydown="if(event.key==='Enter'){searchHandler(this.value);if(this.value.trim())sc('colecao');}"/>
   <button class="mobile-search-close" onclick="closeMobileSearch()"><span class="mat">close</span></button>
 </div>
 
@@ -1115,7 +1115,9 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;">
       <div class="nav-search">
         <span class="mat">search</span>
-        <input id="search-input" type="text" placeholder="O que você está buscando?" onkeydown="if(event.key==='Enter')searchHandler(this.value)"/>
+        <input id="search-input" type="text" placeholder="O que você está buscando?"
+               oninput="searchHandlerLive(this.value)"
+               onkeydown="if(event.key==='Enter'){searchHandler(this.value);if(this.value.trim())sc('colecao');this.blur();}"/>
       </div>
       <div class="nav-icons">
         <button class="nav-icon-btn search-mobile-btn" onclick="openMobileSearch()" title="Buscar">
@@ -1138,10 +1140,10 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 
   </div>
   <div class="nav-bottom">
-    <button class="nav-link" onclick="window.scrollTo({top:0,behavior:'smooth'})">Início</button>
-    <button class="nav-link active cat-btn" data-cat="" onclick="catFilter('')">Coleções</button>
-    <button class="nav-link" onclick="scColecao('best_seller')">Best Seller</button>
-    <button class="nav-link" onclick="sc('quem-somos')">Quem Somos</button>
+    <button class="nav-link" data-nav="inicio" onclick="window.scrollTo({top:0,behavior:'smooth'})">Início</button>
+    <button class="nav-link cat-btn" data-nav="colecao" data-cat="" onclick="catFilter('');sc('colecao')">Coleções</button>
+    <button class="nav-link" data-nav="best_seller" onclick="scColecao('best_seller')">Best Seller</button>
+    <button class="nav-link" data-nav="quem-somos" onclick="sc('quem-somos')">Quem Somos</button>
   </div>
 </nav>
 
@@ -1176,7 +1178,6 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <img src="IMG_5909.png" alt=""/>
     <div class="hero-overlay"></div>
     <div class="hero-content">
-      <span class="hero-eyebrow">Linha Premium</span>
       <h1 class="hero-title"> No Preto ou <br/><em> No branco</em><br/> A fé em cada canto </h1>
       <p class="hero-sub">Aproveite as peças mais procuradas da nossa coleção.</p>
       <div class="hero-cta">
@@ -1299,6 +1300,9 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     }
     @media(max-width:768px){.ivory-card{width:260px;}}
     @media(max-width:480px){.ivory-card{width:calc(85vw);max-width:300px;}}
+
+    /* No grid de busca, o card ocupa a largura da coluna em vez de 300px fixos */
+    .search-group-grid .ivory-card{width:100%;max-width:none;flex-shrink:1;scroll-snap-align:none;}
     .ivory-card:hover{
       transform:translateY(-5px);
       border-color:#d4b87a;
@@ -1644,7 +1648,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   <div id="search-results-section" style="display:none;">
     <div style="padding:0 48px 14px;font-size:12px;color:var(--muted);" id="search-results-label"></div>
     <div style="padding:0 48px 48px;">
-      <div id="search-results-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;"></div>
+      <div id="search-results-grid"></div>
     </div>
   </div>
 
@@ -1823,18 +1827,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 </section>
 
 <!-- PROMO BANNER -->
-<div class="promo-banner reveal">
-  <div class="promo-text">
-    <span class="promo-eyebrow">Temporada</span>
-    <h2 class="promo-title">Preços<br/><em>Especiais</em><br/>Selecionados</h2>
-    <p class="promo-sub">Peças cuidadosamente selecionadas com preços especiais. Qualidade atelier, acessível agora.</p>
-    <button class="btn-inv" onclick="catFilter('');sc('colecao')">Ver Catálogo</button>
-  </div>
-  <div class="promo-visual">
-    <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80&fit=crop" alt=""/>
-    <div class="promo-visual-num">%</div>
-  </div>
-</div>
+
 
 <!-- QUEM SOMOS -->
 <section class="quem-somos" id="quem-somos">
@@ -1983,8 +1976,8 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2025 Atelier. Todos os direitos reservados.</span>
-    <span>Pagamentos via <span style="color:var(--gold)">PIX</span> · Entrega expressa · João Pessoa – PB</span>
+    <span>© 2026. Todos os direitos reservados.</span>
+    <span>Pagamentos via <span style="color:var(--gold)">PIX</span> · Entrega expressa · Mamanguape-pb </span>
   </div>
 </footer>
 
@@ -2273,11 +2266,71 @@ function renderSearchResults() {
   }
 
   if (label) label.textContent = `${filteredList.length} resultado(s) para "${currentSearch}"`;
-  // Resultado de busca usa o card dourado também
-  if (grid) {
-    grid.innerHTML = filteredList.map(p => ivoryCardHTML(p, 'colecao')).join('');
-    bindIvoryCards(grid);
+
+  if (!grid) return;
+
+  // ── Agrupa resultados por coleção ──
+  const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+
+  // Mapa: slug-da-coleção -> { colecao, produtos[] }
+  const grupos = new Map();
+  const semColecao = [];
+
+  // Tenta casar um produto com uma das coleções carregadas
+  const acharColecao = (p) => {
+    const c = norm(p.categoria);
+    if (!c) return null;
+    // 1) Match direto pelo slug normalizado
+    let found = (allColecoes||[]).find(col => norm(col.slug) === c);
+    if (found) return found;
+    // 2) Match flexível usado pelas seções da home
+    if (c === 'cancao'              || c === 'colecao cancoes')
+      found = (allColecoes||[]).find(col => norm(col.slug) === 'cancoes');
+    else if (c === 'preto no branco' || c === 'pretonobranco')
+      found = (allColecoes||[]).find(col => norm(col.slug) === 'preto_branco' || norm(col.slug) === 'pretobranco');
+    else if (c === 'best_seller_premium' || c === 'best seller premium' || c === 'best seller')
+      found = (allColecoes||[]).find(col => norm(col.slug) === 'best_seller');
+    return found || null;
+  };
+
+  filteredList.forEach(p => {
+    const col = acharColecao(p);
+    if (!col) { semColecao.push(p); return; }
+    const key = col.slug;
+    if (!grupos.has(key)) grupos.set(key, { colecao: col, produtos: [] });
+    grupos.get(key).produtos.push(p);
+  });
+
+  // Ordena grupos pela ordem da coleção
+  const gruposOrdenados = [...grupos.values()]
+    .sort((a,b) => (a.colecao.ordem ?? 0) - (b.colecao.ordem ?? 0));
+
+  // ── Monta HTML: um bloco por coleção, cada um com seu grid ──
+  const blocoHTML = (titulo, icone, produtos, idx) => `
+    <div class="search-group" style="margin-bottom:${idx === 'last' ? '0' : '44px'};">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+        <span class="section-eyebrow" style="margin:0;">
+          <span class="mat" style="font-size:14px;">${icone}</span> Coleção
+        </span>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(20px,2.2vw,26px);font-weight:300;color:var(--ink);line-height:1;">${titulo}</div>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);letter-spacing:0.1em;">${produtos.length} ${produtos.length === 1 ? 'peça' : 'peças'}</span>
+      </div>
+      <div class="search-group-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 28px;justify-content:start;">
+        ${produtos.map(p => ivoryCardHTML(p, 'colecao')).join('')}
+      </div>
+    </div>`;
+
+  let html = '';
+  gruposOrdenados.forEach((g, i) => {
+    const isLast = i === gruposOrdenados.length - 1 && !semColecao.length;
+    html += blocoHTML(g.colecao.nome, g.colecao.icone || 'auto_awesome', g.produtos, isLast ? 'last' : i);
+  });
+  if (semColecao.length) {
+    html += blocoHTML('Outras peças', 'auto_awesome', semColecao, 'last');
   }
+
+  grid.innerHTML = html;
+  bindIvoryCards(grid);
 }
 
 // ── COLEÇÕES DINÂMICAS — carregadas do Supabase (com fallback localStorage) ──
@@ -3054,13 +3107,64 @@ function searchHandler(val) {
   }
 }
 
+// Busca ao vivo (enquanto digita) com debounce — desktop e mobile
+let __searchLiveTimer = null;
+function searchHandlerLive(val) {
+  clearTimeout(__searchLiveTimer);
+  const v = (val || '').trim();
+  __searchLiveTimer = setTimeout(() => {
+    currentSearch = v.toLowerCase();
+    applyFilter();
+    if (currentSearch) {
+      renderSearchResults();
+      // No desktop, rola suavemente até a seção de coleções quando há resultado
+      if (window.matchMedia('(min-width:1025px)').matches) {
+        const el = document.getElementById('colecao');
+        if (el) {
+          const top = el.getBoundingClientRect().top + window.scrollY - 88;
+          // Só rola se ainda não estiver visível
+          if (window.scrollY < top - 200) {
+            window.scrollTo({ top, behavior: 'smooth' });
+          }
+        }
+      }
+    } else {
+      const searchSec = document.getElementById('search-results-section');
+      if (searchSec) searchSec.style.display = 'none';
+      const cont = document.getElementById('colecoes-container');
+      if (cont) cont.style.display = '';
+      renderColecoes();
+    }
+  }, 220);
+}
+
 function applyFilter() {
   let list = [...allProducts];
-  if (currentSearch) list = list.filter(p =>
-    (p.nome      || '').toLowerCase().includes(currentSearch) ||
-    (p.categoria || '').toLowerCase().includes(currentSearch) ||
-    (p.descricao || '').toLowerCase().includes(currentSearch)
-  );
+  if (currentSearch) {
+    // Normaliza removendo acentos e deixando minúsculo
+    const norm = s => (s || '').toString().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // Divide a busca em palavras — cada palavra precisa aparecer em algum campo
+    const termos = norm(currentSearch).split(/\s+/).filter(Boolean);
+    if (!termos.length) { filteredList = list; return; }
+
+    list = list.filter(p => {
+      // Junta todos os campos textuais relevantes do produto num blob só
+      const campos = [
+        p.nome, p.categoria, p.descricao, p.tipo_tecido,
+        p.cor, p.cores, p.tags, p.slug, p.marca, p.subcategoria,
+        // Variações (cores/tamanhos podem ser arrays)
+        Array.isArray(p.cores)     ? p.cores.join(' ')     : '',
+        Array.isArray(p.tamanhos)  ? p.tamanhos.join(' ')  : '',
+        Array.isArray(p.tags)      ? p.tags.join(' ')      : '',
+        Array.isArray(p.variacoes) ? p.variacoes.map(v => `${v?.cor||''} ${v?.tamanho||''}`).join(' ') : '',
+      ].map(norm).join(' ');
+
+      // Todos os termos têm que bater
+      return termos.every(t => campos.includes(t));
+    });
+  }
   filteredList = list;
 }
 
@@ -6196,7 +6300,32 @@ function initScrollTop() {
   window.addEventListener('scroll', () => {
     btn.classList.toggle('vis', window.scrollY > 400);
     nav?.classList.toggle('scrolled', window.scrollY > 20);
+    updateActiveNavLink();
   }, { passive: true });
+  // Inicial
+  updateActiveNavLink();
+}
+
+// Marca o nav-link ativo conforme a seção atualmente visível
+function updateActiveNavLink() {
+  const links = document.querySelectorAll('.nav-bottom .nav-link[data-nav]');
+  if (!links.length) return;
+  const y = window.scrollY + 120; // offset para considerar nav fixa
+  const sections = {
+    'inicio'      : 0,
+    'colecao'     : document.getElementById('colecao')?.offsetTop ?? Infinity,
+    'best_seller' : (document.getElementById('colecao-best_seller')?.offsetTop) ?? Infinity,
+    'quem-somos'  : document.getElementById('quem-somos')?.offsetTop ?? Infinity,
+  };
+  // Define a seção ativa: a mais distante cujo topo já passou o ponto y
+  const order = ['inicio','colecao','best_seller','quem-somos'];
+  let active = 'inicio';
+  for (const key of order) {
+    if (y >= (sections[key] - 1)) active = key;
+  }
+  links.forEach(l => {
+    l.classList.toggle('active', l.dataset.nav === active);
+  });
 }
 
 // ════════════════════════════════════════════════════════════
