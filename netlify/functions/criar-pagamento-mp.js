@@ -7,6 +7,13 @@
 //  - Detecção robusta de cartão (não depende só de payment_type_id vindo do Brick).
 //  - 3DS 2.0 opcional em cartão para reduzir recusas por alto risco.
 //  - binary_mode desativado em cartão, conforme recomendação do MP para permitir Challenge 3DS.
+//  - [NOVO] Telefone aceito como string ou objeto sem quebrar.
+//  - [NOVO] Validação explícita de CPF com 11 dígitos antes de chamar o MP.
+//  - [NOVO] Bloqueio antecipado se credencial do backend for desconhecida ou
+//    se MERCADOPAGO_ACCESS_TOKEN estiver fora dos prefixos esperados.
+//  - [NOVO] Trava de installments=1 movida para ANTES do limparIndefinidos para evitar erro 4033.
+//  - [NOVO] Log do erro do MP inclui status HTTP, mensagem bruta e ambiente da credencial.
+//  - [NOVO] statement_descriptor higienizado (apenas A-Z 0-9 espaço, máx 22).
 
 const crypto = require('crypto');
 
@@ -17,12 +24,25 @@ const MP_CREDENTIAL_ENV = String(MP_ACCESS_TOKEN || '').startsWith('TEST-')
   : (String(MP_ACCESS_TOKEN || '').startsWith('APP_USR-') ? 'production' : 'unknown');
 
 function somenteNumeros(value) {
-  return String(value || '').replace(/\D/g, '');
+  // Aceita string, número ou null/undefined sem quebrar.
+  // Se vier objeto, retorna string vazia (não tenta serializar [object Object]).
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') return '';
+  return String(value).replace(/\D/g, '');
 }
 
 function limitarTexto(value, limite, fallback = '') {
   const texto = String(value || fallback || '').trim();
   return texto.length > limite ? texto.slice(0, limite) : texto;
+}
+
+function higienizarStatementDescriptor(value) {
+  // MP: máx 22 chars, apenas letras, números e espaço.
+  return String(value || 'BENEDICTUS')
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, '')
+    .trim()
+    .slice(0, 22) || 'BENEDICTUS';
 }
 
 const DDD_BR_VALIDOS = new Set([
@@ -69,6 +89,11 @@ function mensagemAmigavelMercadoPago(mpData) {
     return 'Pagamento recusado por análise de segurança do Mercado Pago. Em teste, use cartão de teste e titular APRO. Em produção, peça para o cliente tentar outro cartão ou autenticar quando solicitado.';
   }
 
+  // Erro 500 sem causa = quase sempre credencial cruzada ou indisponibilidade momentânea do MP.
+  if (/internal_error/i.test(message) || !message) {
+    return 'O Mercado Pago retornou um erro interno. Verifique se a Public Key e o Access Token são da mesma aplicação e do mesmo ambiente (ambos TEST ou ambos produção). Se estiver correto, tente novamente em alguns segundos.';
+  }
+
   return message || 'Erro ao processar pagamento no Mercado Pago.';
 }
 
@@ -109,7 +134,16 @@ function separarNome(nomeCompleto) {
 }
 
 function formatarTelefone(phoneRaw) {
-  let phone = somenteNumeros(phoneRaw);
+  // Aceita string ("83986555627"), número, objeto {area_code, number} ou nulo.
+  let phone;
+  if (phoneRaw && typeof phoneRaw === 'object' && !Array.isArray(phoneRaw)) {
+    // Veio {area_code, number} ou {ddd, numero} etc.
+    const ac = somenteNumeros(phoneRaw.area_code || phoneRaw.ddd || '');
+    const nb = somenteNumeros(phoneRaw.number || phoneRaw.numero || '');
+    phone = ac + nb;
+  } else {
+    phone = somenteNumeros(phoneRaw);
+  }
 
   if (!phone) {
     return { area_code: undefined, number: undefined };
@@ -298,7 +332,32 @@ exports.handler = async (event) => {
       };
     }
 
-    const body = JSON.parse(event.body || '{}');
+    // [NOVO] Bloqueio antecipado: se o token não começa com TEST- nem APP_USR-,
+    // ele está corrompido ou é de outro produto. Falha cedo com mensagem clara
+    // em vez de cair em internal_error 500 lá no MP.
+    if (MP_CREDENTIAL_ENV === 'unknown') {
+      console.error('MERCADOPAGO_ACCESS_TOKEN com prefixo inesperado. Deve começar com TEST- ou APP_USR-.');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'Credencial do Mercado Pago inválida no servidor. Verifique a variável MERCADOPAGO_ACCESS_TOKEN na Netlify (deve começar com TEST- em teste ou APP_USR- em produção).'
+        })
+      };
+    }
+
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ success: false, error: 'Corpo da requisição inválido (JSON malformado).' })
+      };
+    }
+
     const external_reference = limitarTexto(body?.pedido?.id || body.external_reference || `bnd-${Date.now()}`, 256);
     const transaction_amount = Number(Number(body.transaction_amount || body.amount || 0).toFixed(2));
 
@@ -322,10 +381,16 @@ exports.handler = async (event) => {
     const payer = body.payer || {};
     const shipping = body.shipping || {};
     const nome = separarNome(customer.name || `${payer.first_name || ''} ${payer.last_name || ''}`);
-    const telefone = formatarTelefone(customer.phone || payer.phone?.number || body.phone);
+    // Aceita telefone como string, número ou objeto {area_code, number}.
+    const telefone = formatarTelefone(
+      customer.phone ||
+      payer.phone ||
+      body.phone
+    );
 
     const payerEmail = payer.email || customer.email;
-    const payerCpf = payer.identification?.number || customer.cpf || body.identificationNumber;
+    const payerCpfRaw = payer.identification?.number || customer.cpf || body.identificationNumber;
+    const payerCpf = somenteNumeros(payerCpfRaw);
 
     if (!payerEmail) {
       return {
@@ -350,19 +415,26 @@ exports.handler = async (event) => {
       };
     }
 
-    // Cartão sem CPF tende a ser rejeitado pelo antifraude do MP.
-    if (isCartaoCredito && !somenteNumeros(payerCpf)) {
+    // [NOVO] Cartão exige CPF com 11 dígitos. Sem isso o MP costuma recusar por antifraude.
+    if (isCartaoCredito && payerCpf.length !== 11) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          error: 'CPF do titular é obrigatório para pagamento com cartão.'
+          error: 'CPF do titular é obrigatório e deve ter 11 dígitos para pagamento com cartão.'
         })
       };
     }
 
-    const installments = normalizarParcelas(body, transaction_amount);
+    let installments = normalizarParcelas(body, transaction_amount);
+    // [NOVO] Trava antes do limparIndefinidos: cartão SEM installments válido → força 1.
+    // Antes essa trava existia depois do payload já montado, mas o limparIndefinidos
+    // podia deletar o campo se viesse undefined, gerando erro 4033 do MP.
+    if (isCartaoCredito && (installments == null || !Number.isFinite(installments))) {
+      installments = 1;
+    }
+
     const additional_info = montarAdditionalInfo(body, transaction_amount, nome, telefone);
 
     // payment_type_id: garante que vai 'credit_card' mesmo se o Brick não enviar.
@@ -389,7 +461,7 @@ exports.handler = async (event) => {
         last_name: payer.last_name || nome.last_name,
         identification: {
           type: payer.identification?.type || 'CPF',
-          number: somenteNumeros(payerCpf)
+          number: payerCpf
         },
         phone: {
           area_code: telefone.area_code,
@@ -408,7 +480,7 @@ exports.handler = async (event) => {
       additional_info,
       external_reference,
       notification_url: `${SITE_URL}/.netlify/functions/mercadopago-webhook`,
-      statement_descriptor: 'BENEDICTUS',
+      statement_descriptor: higienizarStatementDescriptor('BENEDICTUS'),
       metadata: {
         pedido_id: external_reference,
         origem: 'benedictus_site',
@@ -419,22 +491,24 @@ exports.handler = async (event) => {
       }
     });
 
+    // [NOVO] Reaplica a trava de installments DEPOIS do limparIndefinidos por segurança.
+    // Se algum caminho deixou o campo cair, garante que cartão sempre tem installments.
+    if (isCartaoCredito && (payload.installments == null)) {
+      payload.installments = 1;
+      console.warn('installments ausente em cartão — forçado para 1.');
+    }
+
     console.log('Payload Mercado Pago:', JSON.stringify({
       ...payload,
       ambiente_credencial_backend: MP_CREDENTIAL_ENV,
       token: payload.token ? '[TOKEN_PRESENTE]' : undefined,
       payer: {
         ...payload.payer,
-        identification: payload.payer?.identification ? { type: payload.payer.identification.type, number: '[CPF_PRESENTE]' } : undefined
+        identification: payload.payer?.identification
+          ? { type: payload.payer.identification.type, number: '[CPF_PRESENTE]' }
+          : undefined
       }
     }));
-
-    // ÚLTIMA TRAVA: cartão SEM installments = MP retorna 4033 "Parcelas inválidas".
-    // Se por qualquer caminho o campo não ficou no payload, força 1 aqui.
-    if (isCartaoCredito && (payload.installments == null)) {
-      payload.installments = 1;
-      console.warn('installments ausente em cartão — forçado para 1.');
-    }
 
     // CHAVE DE IDEMPOTÊNCIA ÚNICA POR TENTATIVA.
     // Antes era o external_reference (mesmo do pedido) → causava cache da 1ª resposta
@@ -469,7 +543,9 @@ exports.handler = async (event) => {
         status: mpData.status,
         status_detail: mpData.status_detail,
         cause: mpData.cause,
-        codigoCausa
+        codigoCausa,
+        ambiente_credencial_backend: MP_CREDENTIAL_ENV,
+        raw: typeof mpText === 'string' ? mpText.slice(0, 500) : null
       }));
       return {
         statusCode: 502,

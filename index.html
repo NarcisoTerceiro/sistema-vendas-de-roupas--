@@ -1085,7 +1085,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 <!-- MOBILE SEARCH OVERLAY -->
 <div class="mobile-search-overlay" id="mobile-search-overlay">
   <span class="mat" style="color:var(--gold);font-size:22px;flex-shrink:0;">search</span>
-  <input id="mobile-search-input" type="text" placeholder="Buscar produtos..." onkeydown="if(event.key==='Enter'){searchHandler(this.value);if(this.value.trim())sc('colecao');}"/>
+  <input id="mobile-search-input" type="text" placeholder="Buscar produtos..." oninput="searchHandler(this.value)" onkeydown="if(event.key==='Enter'){searchHandler(this.value);if(this.value.trim())sc('colecao');}"/>
   <button class="mobile-search-close" onclick="closeMobileSearch()"><span class="mat">close</span></button>
 </div>
 
@@ -1116,7 +1116,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;">
       <div class="nav-search">
         <span class="mat">search</span>
-        <input id="search-input" type="text" placeholder="O que você está buscando?" onkeydown="if(event.key==='Enter')searchHandler(this.value)"/>
+        <input id="search-input" type="text" placeholder="O que você está buscando?" oninput="searchHandler(this.value)" onkeydown="if(event.key==='Enter'){searchHandler(this.value);if(this.value.trim())sc('colecao');}"/>
       </div>
       <div class="nav-icons">
         <button class="nav-icon-btn search-mobile-btn" onclick="openMobileSearch()" title="Buscar">
@@ -1139,10 +1139,10 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 
   </div>
   <div class="nav-bottom">
-    <button class="nav-link" onclick="window.scrollTo({top:0,behavior:'smooth'})">Início</button>
-    <button class="nav-link active cat-btn" data-cat="" onclick="catFilter('')">Coleções</button>
-    <button class="nav-link" onclick="scColecao('best_seller')">Best Seller</button>
-    <button class="nav-link" onclick="sc('quem-somos')">Quem Somos</button>
+    <button class="nav-link" onclick="setNavActive(this);window.scrollTo({top:0,behavior:'smooth'})">Início</button>
+    <button class="nav-link active cat-btn" data-cat="" onclick="setNavActive(this);catFilter('');sc('colecao')">Coleções</button>
+    <button class="nav-link" onclick="setNavActive(this);scColecao('best_seller')">Best Seller</button>
+    <button class="nav-link" onclick="setNavActive(this);sc('quem-somos')">Quem Somos</button>
   </div>
 </nav>
 
@@ -1177,7 +1177,6 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     <img src="IMG_5909.png" alt=""/>
     <div class="hero-overlay"></div>
     <div class="hero-content">
-      <span class="hero-eyebrow">Linha Premium</span>
       <h1 class="hero-title"> No Preto ou <br/><em> No branco</em><br/> A fé em cada canto </h1>
       <p class="hero-sub">Aproveite as peças mais procuradas da nossa coleção.</p>
       <div class="hero-cta">
@@ -1645,7 +1644,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   <div id="search-results-section" style="display:none;">
     <div style="padding:0 48px 14px;font-size:12px;color:var(--muted);" id="search-results-label"></div>
     <div style="padding:0 48px 48px;">
-      <div id="search-results-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;"></div>
+      <div id="search-results-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 28px;"></div>
     </div>
   </div>
 
@@ -2082,7 +2081,7 @@ const WHATSAPP_NUM  = '5583998015544';
 // ── Mercado Pago / Checkout Bricks ────────────────────────
 // Troque pelo Public Key da sua aplicação no Mercado Pago Developers.
 // IMPORTANTE: a Public Key pode ficar no front-end. O Access Token fica apenas na Netlify.
-const MERCADOPAGO_PUBLIC_KEY = 'TEST-59474a20-4658-4e6e-9d99-82e78f9ea9f0';
+const MERCADOPAGO_PUBLIC_KEY = 'APP_USR-825a3ca5-d0f0-49e8- aca8-e279f9169edc';
 const MERCADOPAGO_API_URL    = '/.netlify/functions/criar-pagamento-mp';
 const MERCADOPAGO_IS_TEST    = String(MERCADOPAGO_PUBLIC_KEY || '').startsWith('TEST-');
 let mercadoPagoBrickController = null;
@@ -2173,6 +2172,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateCartBadge();    // ← atualiza badge com itens salvos
   await loadColecoes();  // ← carrega coleções dinâmicas (Supabase + fallback)
   await loadProducts();
+  // Re-roda a deduplicação agora que os produtos estão carregados
+  // (assim a função `contarProdutos` consegue escolher a versão da coleção
+  //  que realmente tem peças associadas, em vez da duplicada vazia)
+  if (typeof inicializarEstadoColecoes === 'function') inicializarEstadoColecoes();
   renderColecao();       // monta carrosséis
   renderPromoCarousel();
   renderBestSellers();
@@ -2276,9 +2279,50 @@ function renderSearchResults() {
   }
 
   if (label) label.textContent = `${filteredList.length} resultado(s) para "${currentSearch}"`;
-  // Resultado de busca usa o card dourado também
+
+  // Agrupa os resultados pela coleção a que cada produto pertence
+  const grupos = new Map(); // chave: nome da coleção, valor: array de produtos
+  const SEM_COL = 'Outros produtos';
+  filteredList.forEach(p => {
+    const nomeCol = nomeColecaoDoProduto(p) || SEM_COL;
+    if (!grupos.has(nomeCol)) grupos.set(nomeCol, []);
+    grupos.get(nomeCol).push(p);
+  });
+
+  // Mantém a ordem definida em allColecoes; "Outros" sempre por último
+  const ordemNomes = (Array.isArray(allColecoes) ? allColecoes : [])
+    .slice()
+    .sort((a, b) => (a.ordem ?? 50) - (b.ordem ?? 50))
+    .map(c => c.nome);
+  const nomesOrdenados = [
+    ...ordemNomes.filter(n => grupos.has(n)),
+    ...[...grupos.keys()].filter(n => !ordemNomes.includes(n) && n !== SEM_COL),
+    ...(grupos.has(SEM_COL) ? [SEM_COL] : []),
+  ];
+
   if (grid) {
-    grid.innerHTML = filteredList.map(p => ivoryCardHTML(p, 'colecao')).join('');
+    grid.innerHTML = ''; // limpa o grid antigo
+    // Renderiza grupos como blocos sequenciais ocupando toda a largura
+    grid.style.display = 'block';
+    grid.style.gap = '0';
+    grid.innerHTML = nomesOrdenados.map((nomeCol, idx) => {
+      const itens = grupos.get(nomeCol) || [];
+      const cardsHTML = itens.map(p => ivoryCardHTML(p, 'colecao')).join('');
+      return `
+        <div class="search-group" style="margin-bottom:72px;${idx > 0 ? 'margin-top:24px;' : ''}">
+          <div class="search-group-header" style="display:flex;align-items:baseline;gap:14px;margin-bottom:28px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+            <span class="section-eyebrow" style="margin-bottom:0;">
+              <span class="mat" style="font-size:14px;">style</span> Coleção
+            </span>
+            <h3 style="font-family:'Cormorant Garamond',serif;font-size:clamp(20px,2.4vw,28px);font-weight:300;color:var(--ink);margin:0;letter-spacing:0.01em;">${esc(nomeCol)}</h3>
+            <span style="color:var(--muted);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;margin-left:auto;">${itens.length} ${itens.length === 1 ? 'peça' : 'peças'}</span>
+          </div>
+          <div class="search-group-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:48px 36px;">
+            ${cardsHTML}
+          </div>
+        </div>
+      `;
+    }).join('');
     bindIvoryCards(grid);
   }
 }
@@ -2335,21 +2379,99 @@ async function loadColecoes() {
 }
 
 function inicializarEstadoColecoes() {
-  // Garante que a coleção "Best Seller" esteja sempre presente como última,
-  // mesmo que venha do Supabase / cache sem ela.
-  const temBest = allColecoes.some(c => c.slug === 'best_seller');
-  if (!temBest) {
-    allColecoes.push({ slug: 'best_seller', nome: 'Best Seller Linha Premium', icone: 'workspace_premium', ordem: 99 });
-  } else {
-    // Força ordem alta e nome padrão pra sempre ficar por último com o título correto
-    allColecoes.forEach(c => {
-      if (c.slug === 'best_seller') {
-        c.ordem = 99;
-        c.nome  = 'Best Seller Linha Premium';
-        c.icone = c.icone || 'workspace_premium';
+  // Normaliza slug para comparação flexível (cancao, cancoes, canções → "cancoes")
+  const normSlug = s => (s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  // Detecta coleções já existentes pelas variações comuns de slug
+  const isCancoes = (c) => {
+    const s = normSlug(c.slug);
+    return s === 'cancoes' || s === 'cancao' || s === 'colecao_cancoes';
+  };
+  const isPretoBranco = (c) => {
+    const s = normSlug(c.slug);
+    return s === 'preto_branco' || s === 'pretobranco' || s === 'preto_no_branco';
+  };
+  const isBestSeller = (c) => {
+    const s = normSlug(c.slug);
+    return s === 'best_seller' || s === 'bestseller' || s === 'best_seller_premium';
+  };
+
+  // ── DEDUPLICAÇÃO: se o Supabase/cache retornou duas variações da mesma coleção
+  //    (ex.: "preto_branco" E "preto-no-branco"), mantém apenas UMA.
+  //    Prioriza a que tem mais produtos casando, ou a primeira encontrada.
+  const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const contarProdutos = (slug) => {
+    if (!Array.isArray(allProducts)) return 0;
+    const target = norm(slug);
+    return allProducts.filter(p => {
+      const c = norm(p.categoria);
+      if (c === target) return true;
+      // Aliases conhecidos
+      if (normSlug(slug) === 'cancoes')      return c === 'cancao' || c === 'colecao cancoes';
+      if (normSlug(slug) === 'preto_branco') return c === 'preto no branco' || c === 'pretonobranco';
+      if (normSlug(slug) === 'best_seller')  return c === 'best_seller_premium' || c === 'best seller premium' || c === 'best seller';
+      return false;
+    }).length;
+  };
+
+  const dedupGrupo = (detector, slugCanonico, nomeCanonico, iconeCanonico) => {
+    const duplicatas = allColecoes.filter(detector);
+    if (duplicatas.length <= 1) return;
+    // Escolhe a "melhor": a que tem mais produtos; em empate, a que tem slug exato canônico
+    let melhor = duplicatas[0];
+    let maxProds = contarProdutos(melhor.slug);
+    duplicatas.forEach(d => {
+      const n = contarProdutos(d.slug);
+      const isCan = normSlug(d.slug) === slugCanonico;
+      const melhorIsCan = normSlug(melhor.slug) === slugCanonico;
+      if (n > maxProds || (n === maxProds && isCan && !melhorIsCan)) {
+        melhor = d;
+        maxProds = n;
       }
     });
+    // Remove TODAS as outras
+    allColecoes = allColecoes.filter(c => !detector(c) || c === melhor);
+    // Normaliza a sobrevivente
+    melhor.slug  = slugCanonico;
+    melhor.nome  = melhor.nome  || nomeCanonico;
+    melhor.icone = melhor.icone || iconeCanonico;
+  };
+
+  dedupGrupo(isCancoes,      'cancoes',      'Coleção Canções',             'music_note');
+  dedupGrupo(isPretoBranco,  'preto_branco', 'Preto no Branco',             'invert_colors');
+  dedupGrupo(isBestSeller,   'best_seller',  'Best Seller Linha Premium',   'workspace_premium');
+
+  // Força ordem das coleções principais SEM duplicar:
+  // só adiciona se realmente não existir nenhuma variação dela.
+  const temCancoes = allColecoes.some(isCancoes);
+  if (!temCancoes) {
+    allColecoes.push({ slug: 'cancoes', nome: 'Coleção Canções', icone: 'music_note', ordem: 0 });
   }
+  const temPretoBranco = allColecoes.some(isPretoBranco);
+  if (!temPretoBranco) {
+    allColecoes.push({ slug: 'preto_branco', nome: 'Preto no Branco', icone: 'invert_colors', ordem: 1 });
+  }
+  const temBest = allColecoes.some(isBestSeller);
+  if (!temBest) {
+    allColecoes.push({ slug: 'best_seller', nome: 'Best Seller Linha Premium', icone: 'workspace_premium', ordem: 99 });
+  }
+
+  // Força a ORDEM das coleções pelas variações de slug — Canções SEMPRE primeiro.
+  allColecoes.forEach(c => {
+    if (isCancoes(c))     c.ordem = 0;
+    if (isPretoBranco(c)) c.ordem = 1;
+    if (isBestSeller(c)) {
+      c.ordem = 99;
+      c.nome  = 'Best Seller Linha Premium';
+      c.icone = c.icone || 'workspace_premium';
+    }
+  });
+
+  // Reordena o array conforme o campo `ordem` para garantir a sequência correta na tela
+  allColecoes.sort((a, b) => (a.ordem ?? 50) - (b.ordem ?? 50));
 
   // Garante que cada coleção tenha um estado de toggle (padrão: algodao)
   allColecoes.forEach(c => {
@@ -3043,10 +3165,18 @@ function catFilter(cat) {
 }
 
 function searchHandler(val) {
-  currentSearch = (val || '').toLowerCase().trim();
+  const novoTermo = (val || '').toLowerCase().trim();
+  const eraVazio  = !currentSearch;
+  currentSearch   = novoTermo;
   applyFilter();
   if (currentSearch) {
     renderSearchResults();
+    // Na primeira digitação, rola para a seção de Coleções (onde os resultados aparecem).
+    // No desktop usamos só na transição vazio→com-termo pra não atrapalhar o scroll a cada tecla.
+    if (eraVazio) {
+      const sec = document.getElementById('colecao');
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     if (window.matchMedia('(max-width:1024px)').matches) closeMobileSearch();
   } else {
     const searchSec = document.getElementById('search-results-section');
@@ -3059,12 +3189,70 @@ function searchHandler(val) {
 
 function applyFilter() {
   let list = [...allProducts];
-  if (currentSearch) list = list.filter(p =>
-    (p.nome      || '').toLowerCase().includes(currentSearch) ||
-    (p.categoria || '').toLowerCase().includes(currentSearch) ||
-    (p.descricao || '').toLowerCase().includes(currentSearch)
-  );
+  if (currentSearch) {
+    const q = currentSearch;
+    list = list.filter(p => {
+      const nome      = (p.nome      || '').toLowerCase();
+      const categoria = (p.categoria || '').toLowerCase();
+      const descricao = (p.descricao || '').toLowerCase();
+      // Busca também pelo nome amigável da coleção (ex.: "canções", "preto no branco")
+      const colNome = (nomeColecaoDoProduto(p) || '').toLowerCase();
+      return nome.includes(q)
+          || categoria.includes(q)
+          || descricao.includes(q)
+          || colNome.includes(q);
+    });
+
+    // Deduplica por (nome + coleção) — mostra apenas UM card por produto,
+    // preferindo a versão "Algodão" (o seletor no card permite trocar pra Premium).
+    const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+    const isAlgodao = (p) => {
+      const t = norm(p.tipo_tecido);
+      return t === 'algodao' || t === '100% algodao' || t === '100algodao' || t === 'algodão';
+    };
+    const isPremium = (p) => norm(p.tipo_tecido) === 'premium';
+
+    const porChave = new Map();
+    list.forEach(p => {
+      const chave = norm(p.nome) + '|' + norm(p.categoria);
+      const atual = porChave.get(chave);
+      if (!atual) { porChave.set(chave, p); return; }
+      // Substitui o atual se o novo for Algodão e o atual for Premium
+      if (isPremium(atual) && isAlgodao(p)) porChave.set(chave, p);
+    });
+    list = Array.from(porChave.values());
+  }
   filteredList = list;
+}
+
+// Dado um produto, retorna o nome amigável da coleção à qual ele pertence
+// (procura via slug normalizado em allColecoes, com fallback pelas regras de
+// filtrarProdutosColecao para slugs equivalentes).
+function nomeColecaoDoProduto(p) {
+  if (!p) return '';
+  const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const c = norm(p.categoria);
+  if (!c) return '';
+  const lista = Array.isArray(allColecoes) ? allColecoes : [];
+
+  // Match direto pelo slug
+  let found = lista.find(col => norm(col.slug) === c);
+  if (found) return found.nome;
+
+  // Aliases conhecidos
+  if (c === 'cancao' || c === 'colecao cancoes') {
+    found = lista.find(col => col.slug === 'cancoes');
+    if (found) return found.nome;
+  }
+  if (c === 'preto no branco' || c === 'pretonobranco') {
+    found = lista.find(col => col.slug === 'preto_branco');
+    if (found) return found.nome;
+  }
+  if (c === 'best_seller_premium' || c === 'best seller premium' || c === 'best seller') {
+    found = lista.find(col => col.slug === 'best_seller');
+    if (found) return found.nome;
+  }
+  return '';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -6030,6 +6218,79 @@ function sc(id) {
   const el = document.getElementById(id);
   if (!el) return;
   window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 88, behavior: 'smooth' });
+}
+
+// Marca o link da navbar clicado como ativo (e remove dos outros).
+// Usado pelos botões da navbar para mover o sublinhado dourado dinamicamente.
+// Marca também como "travado" por alguns segundos para o scrollspy não roubar
+// o destaque enquanto a rolagem suave acontece.
+function setNavActive(btn) {
+  if (!btn) return;
+  document.querySelectorAll('.nav-bottom .nav-link').forEach(l => l.classList.remove('active'));
+  btn.classList.add('active');
+  // Trava o scrollspy por 900ms (tempo da rolagem smooth + folga)
+  window.__navLock = Date.now() + 900;
+}
+
+// SCROLLSPY: detecta qual seção está visível e move o sublinhado dourado
+// automaticamente para o link correspondente da navbar.
+function initNavScrollspy() {
+  // Mapa: ID da seção → seletor do botão da navbar
+  const map = [
+    { sec: 'hero-slider', sel: '.nav-bottom .nav-link:nth-child(1)' }, // Início
+    { sec: 'colecao',     sel: '.nav-bottom .nav-link:nth-child(2)' }, // Coleções
+    // Best Seller é uma sub-seção dentro de #colecao (id="colecao-best_seller")
+    { sec: 'colecao-best_seller', sel: '.nav-bottom .nav-link:nth-child(3)' },
+    { sec: 'quem-somos',  sel: '.nav-bottom .nav-link:nth-child(4)' }, // Quem Somos
+  ];
+
+  function ativarPor(id) {
+    if (window.__navLock && Date.now() < window.__navLock) return; // trava após clique
+    const entry = map.find(m => m.sec === id);
+    if (!entry) return;
+    const btn = document.querySelector(entry.sel);
+    if (!btn) return;
+    document.querySelectorAll('.nav-bottom .nav-link').forEach(l => l.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Atualiza com base na seção mais visível no viewport
+  function atualizar() {
+    if (window.__navLock && Date.now() < window.__navLock) return;
+    const navH = 88;
+    const viewportRef = window.innerHeight * 0.35 + navH;
+    let melhor = null;
+    let melhorDist = Infinity;
+    map.forEach(({ sec }) => {
+      const el = document.getElementById(sec);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      // A seção precisa estar com algum pedaço visível
+      if (r.bottom < navH || r.top > window.innerHeight) return;
+      // Mede distância do topo da seção até o ponto de referência
+      const dist = Math.abs(r.top - viewportRef);
+      if (dist < melhorDist) { melhorDist = dist; melhor = sec; }
+    });
+    if (melhor) ativarPor(melhor);
+  }
+
+  // Throttle simples com requestAnimationFrame
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { atualizar(); ticking = false; });
+  }, { passive: true });
+  window.addEventListener('resize', atualizar, { passive: true });
+  // Primeira execução
+  setTimeout(atualizar, 200);
+}
+
+// Inicializa o scrollspy quando o DOM estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initNavScrollspy);
+} else {
+  initNavScrollspy();
 }
 
 // Navega até a coleção fazendo match flexível por slug.
