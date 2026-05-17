@@ -2,8 +2,30 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Benedictus Camisaria · Acesso Admin</title>
+
+<!-- Anti-cache HTTP (cinto e suspensório com o service worker) -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+
+<!-- ══ PWA (Android + iOS) ══ -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0a0f1e" media="(prefers-color-scheme: dark)"/>
+<meta name="theme-color" content="#eef1f7" media="(prefers-color-scheme: light)"/>
+<meta name="application-name" content="Benedictus Admin"/>
+<meta name="description" content="Painel administrativo da Benedictus Camisaria"/>
+<!-- iOS / Safari -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Benedictus Admin"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="apple-touch-icon" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
+<link rel="icon" type="image/png" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
+<link rel="shortcut icon" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
@@ -52,7 +74,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
 .logo-wrap img { height: var(--logo-h);width: auto;display: block;object-fit: contain; }
 
 /* LOGIN */
-#login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);transition:background .4s;}
+#login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));background:var(--bg);transition:background .4s;}
 .login-wrap{width:100%;max-width:420px;animation:fadeUp .7s ease both;position:relative;z-index:1;}
 .login-logo-area{text-align:center;margin-bottom:32px;display:flex;flex-direction:column;align-items:center;gap:16px;}
 .login-logo-area .logo-wrap{--logo-h:120px;}
@@ -180,6 +202,35 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
   .login-box{padding:22px 16px;}
   .login-input{font-size:16px;}
 }
+
+/* ══ BOTÃO INSTALAR PWA ══ */
+.pwa-install-row{display:none;justify-content:center;margin-top:14px;}
+.pwa-install-row.show{display:flex;}
+.pwa-install-btn{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--navy);border:none;border-radius:24px;padding:9px 18px;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .3s;box-shadow:0 4px 14px var(--sh-gold);}
+.pwa-install-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--sh-gold);}
+.pwa-install-btn .mat{font-size:15px;}
+
+/* Toast de atualização */
+.pwa-update-toast{position:fixed;left:50%;transform:translateX(-50%) translateY(-100px);top:14px;background:var(--surface);border:1px solid var(--gold);color:var(--ink);padding:11px 16px;border-radius:30px;font-size:11px;letter-spacing:0.08em;display:flex;align-items:center;gap:10px;z-index:10001;box-shadow:0 10px 30px var(--sh2);transition:transform .4s cubic-bezier(0.32,0.72,0,1);max-width:90%;}
+.pwa-update-toast.show{transform:translateX(-50%) translateY(0);}
+.pwa-update-toast .mat{color:var(--gold);font-size:16px;}
+
+/* Modal de instruções iOS */
+.pwa-ios-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;padding:0;animation:fadeIn .3s ease;}
+.pwa-ios-overlay.open{display:flex;}
+.pwa-ios-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 22px calc(22px + env(safe-area-inset-bottom));position:relative;animation:slideUp .4s cubic-bezier(0.32,0.72,0,1) both;border-top:2px solid var(--gold);}
+.pwa-ios-sheet::before{content:'';display:block;width:36px;height:4px;background:var(--border);border-radius:2px;position:absolute;top:9px;left:50%;transform:translateX(-50%);}
+.pwa-ios-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin:8px 0 4px;display:flex;align-items:center;gap:10px;}
+.pwa-ios-title .mat{color:var(--gold);font-size:24px;}
+.pwa-ios-sub{font-size:11px;color:var(--muted);letter-spacing:0.06em;margin-bottom:18px;}
+.pwa-ios-steps{display:flex;flex-direction:column;gap:14px;margin-bottom:18px;}
+.pwa-ios-step{display:flex;gap:12px;align-items:flex-start;}
+.pwa-ios-step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;}
+.pwa-ios-step-txt{font-size:13px;color:var(--ink2);line-height:1.5;flex:1;}
+.pwa-ios-step-txt .pwa-ico-inline{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);vertical-align:middle;margin:0 3px;}
+.pwa-ios-step-txt .pwa-ico-inline .mat{font-size:14px;color:var(--gold);}
+.pwa-ios-close{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--ink2);padding:12px;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;transition:all .25s;}
+.pwa-ios-close:hover{border-color:var(--gold);color:var(--gold);}
 </style>
 
 <!-- SDK do Supabase (necessário pra consultar a tabela admin_credenciais) -->
@@ -252,8 +303,56 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
         <span id="login-theme-txt">Modo Claro</span>
       </button>
     </div>
+
+    <!-- ══ BOTÃO INSTALAR APP (Android + iOS) ══ -->
+    <div class="pwa-install-row" id="pwa-install-row">
+      <button class="pwa-install-btn" id="pwa-install-btn" onclick="pwaInstall()">
+        <span class="mat">download</span>
+        <span>Instalar App</span>
+      </button>
+    </div>
   </div>
 </div>
+
+<!-- Toast de "nova versão" -->
+<div class="pwa-update-toast" id="pwa-update-toast">
+  <span class="mat">cached</span>
+  <span>Atualizando para a nova versão…</span>
+</div>
+
+<!-- ══ MODAL: Instruções de instalação iOS ══ -->
+<div class="pwa-ios-overlay" id="pwa-ios-overlay" onclick="if(event.target===this)pwaCloseIos()">
+  <div class="pwa-ios-sheet">
+    <div class="pwa-ios-title">
+      <span class="mat">add_to_home_screen</span>
+      Instalar no iPhone
+    </div>
+    <div class="pwa-ios-sub">Adicione o painel à tela de início em 3 passos</div>
+    <div class="pwa-ios-steps">
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-num">1</div>
+        <div class="pwa-ios-step-txt">
+          Toque no botão de compartilhar
+          <span class="pwa-ico-inline"><span class="mat">ios_share</span></span>
+          na barra do Safari.
+        </div>
+      </div>
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-num">2</div>
+        <div class="pwa-ios-step-txt">
+          Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>
+          <span class="pwa-ico-inline"><span class="mat">add_box</span></span>
+        </div>
+      </div>
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-num">3</div>
+        <div class="pwa-ios-step-txt">
+          Toque em <strong>Adicionar</strong> no canto superior direito. O ícone aparecerá na sua tela inicial.
+        </div>
+      </div>
+    </div>
+    <button class="pwa-ios-close" onclick="pwaCloseIos()">Entendi</button>
+  </div>
 
 <script>
 (function applyStoredTheme() {
@@ -489,7 +588,129 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('l-pass')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
   });
+
+  // Inicializa PWA (registro do service worker + botão de instalar)
+  pwaInit();
 });
+
+// ════════════════════════════════════════════════════════════
+//  PWA — Instalação + Auto-atualização (Android e iOS)
+// ════════════════════════════════════════════════════════════
+
+let _pwaDeferredPrompt = null;
+let _pwaReloadingForUpdate = false;
+
+function pwaIsStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+}
+
+function pwaIsIos() {
+  const ua = window.navigator.userAgent || '';
+  return /iphone|ipad|ipod/i.test(ua)
+      || (/macintosh/i.test(ua) && 'ontouchend' in document);
+}
+
+function pwaShowUpdateToast() {
+  const t = document.getElementById('pwa-update-toast');
+  if (!t) return;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function pwaInit() {
+  // Service worker (necessário pro PWA ser instalável)
+  if ('serviceWorker' in navigator) {
+    // Registra com updateViaCache='none' — força navegador a checar sw.js no servidor
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then((reg) => {
+        // 1) Verifica atualização imediatamente
+        reg.update().catch(() => {});
+
+        // 2) Verifica novamente toda vez que o app voltar pro foco
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+
+        // 3) Verifica de 30 em 30 minutos enquanto aberto
+        setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+
+        // 4) Quando um novo SW for instalado, pede pra ativar imediatamente
+        reg.addEventListener('updatefound', () => {
+          const novo = reg.installing;
+          if (!novo) return;
+          novo.addEventListener('statechange', () => {
+            if (novo.state === 'installed' && navigator.serviceWorker.controller) {
+              // Tem versão nova esperando — ativa já
+              novo.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+      })
+      .catch(() => { /* silencioso */ });
+
+    // 5) Quando o SW ativar nova versão → recarrega a página uma única vez
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (_pwaReloadingForUpdate) return;
+      _pwaReloadingForUpdate = true;
+      pwaShowUpdateToast();
+      setTimeout(() => window.location.reload(), 600);
+    });
+
+    // 6) Mensagem direta do SW também dispara recarga
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'SW_UPDATED' && !_pwaReloadingForUpdate) {
+        _pwaReloadingForUpdate = true;
+        pwaShowUpdateToast();
+        setTimeout(() => window.location.reload(), 600);
+      }
+    });
+  }
+
+  // Se já está instalado, não mostra botão de instalar
+  if (pwaIsStandalone()) return;
+
+  // Android / Chrome: captura o evento e exibe o botão personalizado
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _pwaDeferredPrompt = e;
+    document.getElementById('pwa-install-row')?.classList.add('show');
+  });
+
+  // Quando o usuário concluir a instalação no Android, esconde o botão
+  window.addEventListener('appinstalled', () => {
+    _pwaDeferredPrompt = null;
+    document.getElementById('pwa-install-row')?.classList.remove('show');
+  });
+
+  // iOS: mostra botão manualmente (Safari não dispara beforeinstallprompt)
+  if (pwaIsIos() && !pwaIsStandalone()) {
+    document.getElementById('pwa-install-row')?.classList.add('show');
+  }
+}
+
+async function pwaInstall() {
+  if (_pwaDeferredPrompt) {
+    try {
+      _pwaDeferredPrompt.prompt();
+      const { outcome } = await _pwaDeferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('pwa-install-row')?.classList.remove('show');
+      }
+    } catch (_) { /* ignora */ }
+    _pwaDeferredPrompt = null;
+    return;
+  }
+  if (pwaIsIos()) {
+    document.getElementById('pwa-ios-overlay')?.classList.add('open');
+    return;
+  }
+  document.getElementById('pwa-ios-overlay')?.classList.add('open');
+}
+
+function pwaCloseIos() {
+  document.getElementById('pwa-ios-overlay')?.classList.remove('open');
+}
 </script>
 </body>
 </html>

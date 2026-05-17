@@ -2,8 +2,29 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Benedictus Camisaria · Admin</title>
+
+<!-- Anti-cache HTTP (cinto e suspensório com o service worker) -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+
+<!-- ══ PWA (Android + iOS) ══ -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0a0f1e" media="(prefers-color-scheme: dark)"/>
+<meta name="theme-color" content="#eef1f7" media="(prefers-color-scheme: light)"/>
+<meta name="application-name" content="Benedictus Admin"/>
+<meta name="description" content="Painel administrativo da Benedictus Camisaria"/>
+<!-- iOS / Safari -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Benedictus Admin"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="apple-touch-icon" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
+<link rel="icon" type="image/png" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
+<link rel="shortcut icon" href="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png"/>
 
 <!-- ══════════════════════════════════════════════════════════
      GATE DE AUTENTICAÇÃO — bloqueia entrada direta na URL
@@ -104,7 +125,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
 
 /* APP */
 #app{display:none;min-height:100vh;position:relative;z-index:1;}
-.topbar{position:fixed;top:0;width:100%;height:88px;z-index:500;background:var(--nav-bg);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 2px 24px var(--sh);transition:background .4s,border-color .4s;gap:12px;}
+.topbar{position:fixed;top:0;width:100%;height:calc(88px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);z-index:500;background:var(--nav-bg);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding-left:calc(28px + env(safe-area-inset-left));padding-right:calc(28px + env(safe-area-inset-right));box-shadow:0 2px 24px var(--sh);transition:background .4s,border-color .4s;gap:12px;}
 .topbar-left{display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .topbar .logo-wrap{--logo-h:108px;}
 @media(max-width:640px){.topbar .logo-wrap{--logo-h:110px;}}
@@ -142,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color
 .sidebar-footer-txt{font-size:10px;color:var(--muted);line-height:1.8;}
 .sidebar-user-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:5px;vertical-align:middle;box-shadow:0 0 6px var(--success);}
 .layout{display:flex;padding-top:88px;min-height:100vh;}
-.main{margin-left:248px;flex:1;padding:36px;min-height:calc(100vh - 88px);}
+.main{margin-left:248px;flex:1;padding:36px;min-height:calc(100vh - 88px - env(safe-area-inset-top));}
 .page-header{margin-bottom:32px;}
 .page-eyebrow{font-size:8px;letter-spacing:0.6em;text-transform:uppercase;color:var(--gold);margin-bottom:9px;display:flex;align-items:center;gap:12px;}
 .page-eyebrow::before{content:'';display:block;width:22px;height:1px;background:var(--gold);}
@@ -495,14 +516,14 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
   .btn-add{width:100%;justify-content:center;}
 }
 @media(max-width:640px){
-  .main{padding:16px 12px 70px;overflow-x:hidden;max-width:100vw;}
-  .topbar{padding:0 12px;height:68px;}
+  .main{padding:16px 12px calc(70px + env(safe-area-inset-bottom));overflow-x:hidden;max-width:100vw;}
+  .topbar{padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right));height:calc(68px + env(safe-area-inset-top));}
   .topbar-left{gap:8px;}
   .topbar-right{gap:2px;}
   .topbar-btn span:not(.mat){display:none;}
   .topbar-btn{padding:7px;}
   .theme-toggle-btn{width:34px;height:34px;}
-  .sidebar{top:68px;}
+  .sidebar{top:calc(68px + env(safe-area-inset-top));}
   .page-header{margin-bottom:18px;}
   .page-title{font-size:24px;}
   .stats-grid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px;}
@@ -545,11 +566,49 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
   .cor-add-tab{padding:6px 10px;font-size:7px;}
 }
 @media(max-width:390px){
-  .main{padding:14px 10px 70px;}
+  .main{padding:14px 10px calc(70px + env(safe-area-inset-bottom));}
   .stats-grid,.quick-grid{gap:7px;}
   .stat-val{font-size:26px;}
   .page-title{font-size:22px;}
 }
+
+/* ══ BOTÃO INSTALAR PWA (Topbar) ══ */
+.pwa-install-topbtn{display:none;align-items:center;gap:6px;background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--navy);border:none;border-radius:20px;padding:7px 13px;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;transition:all .3s;box-shadow:0 3px 12px var(--sh-gold);white-space:nowrap;}
+.pwa-install-topbtn.show{display:inline-flex;}
+.pwa-install-topbtn:hover{transform:translateY(-1px);box-shadow:0 6px 18px var(--sh-gold);}
+.pwa-install-topbtn .mat{font-size:14px;}
+@media(max-width:640px){
+  .pwa-install-topbtn{padding:6px 9px;font-size:0;letter-spacing:0;gap:0;}
+  .pwa-install-topbtn .mat{font-size:16px;}
+  .pwa-install-topbtn span:not(.mat){display:none;}
+}
+
+/* Toast de atualização */
+.pwa-update-toast{position:fixed;left:50%;transform:translateX(-50%) translateY(-100px);top:14px;background:var(--surface);border:1px solid var(--gold);color:var(--ink);padding:11px 16px;border-radius:30px;font-size:11px;letter-spacing:0.08em;display:flex;align-items:center;gap:10px;z-index:10001;box-shadow:0 10px 30px var(--sh2);transition:transform .4s cubic-bezier(0.32,0.72,0,1);max-width:90%;}
+.pwa-update-toast.show{transform:translateX(-50%) translateY(0);}
+.pwa-update-toast .mat{color:var(--gold);font-size:16px;}
+
+/* Modal de instruções iOS */
+.pwa-ios-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;padding:0;animation:fadeIn .3s ease;}
+.pwa-ios-overlay.open{display:flex;}
+.pwa-ios-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 22px calc(22px + env(safe-area-inset-bottom));position:relative;animation:slideUp .4s cubic-bezier(0.32,0.72,0,1) both;border-top:2px solid var(--gold);}
+@media(min-width:641px){
+  .pwa-ios-overlay{align-items:center;padding:20px;}
+  .pwa-ios-sheet{border-radius:16px;border-top:none;border:1px solid var(--border);box-shadow:0 30px 80px var(--sh2);}
+}
+.pwa-ios-sheet::before{content:'';display:block;width:36px;height:4px;background:var(--border);border-radius:2px;position:absolute;top:9px;left:50%;transform:translateX(-50%);}
+@media(min-width:641px){.pwa-ios-sheet::before{display:none;}}
+.pwa-ios-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin:8px 0 4px;display:flex;align-items:center;gap:10px;}
+.pwa-ios-title .mat{color:var(--gold);font-size:24px;}
+.pwa-ios-sub{font-size:11px;color:var(--muted);letter-spacing:0.06em;margin-bottom:18px;}
+.pwa-ios-steps{display:flex;flex-direction:column;gap:14px;margin-bottom:18px;}
+.pwa-ios-step{display:flex;gap:12px;align-items:flex-start;}
+.pwa-ios-step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;}
+.pwa-ios-step-txt{font-size:13px;color:var(--ink2);line-height:1.5;flex:1;}
+.pwa-ios-step-txt .pwa-ico-inline{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);vertical-align:middle;margin:0 3px;}
+.pwa-ios-step-txt .pwa-ico-inline .mat{font-size:14px;color:var(--gold);}
+.pwa-ios-close{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--ink2);padding:12px;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;transition:all .25s;}
+.pwa-ios-close:hover{border-color:var(--gold);color:var(--gold);}
 </style>
 </head>
 <body>
@@ -568,6 +627,10 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
       <div class="topbar-badge">Admin</div>
     </div>
     <div class="topbar-right">
+      <button class="pwa-install-topbtn" id="pwa-install-topbtn" onclick="pwaInstall()" title="Instalar como aplicativo">
+        <span class="mat">download</span>
+        <span>Instalar App</span>
+      </button>
       <button class="theme-toggle-btn" onclick="toggleTheme()">
         <span class="mat" id="app-theme-icon">light_mode</span>
       </button>
@@ -1061,6 +1124,47 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
   <span class="mat" id="toast-icon">check_circle</span>
   <span id="toast-msg">OK</span>
 </div>
+
+<!-- Toast de "nova versão" -->
+<div class="pwa-update-toast" id="pwa-update-toast">
+  <span class="mat">cached</span>
+  <span>Atualizando para a nova versão…</span>
+</div>
+
+<!-- ══ MODAL: Instruções de instalação iOS ══ -->
+<div class="pwa-ios-overlay" id="pwa-ios-overlay" onclick="if(event.target===this)pwaCloseIos()">
+  <div class="pwa-ios-sheet">
+    <div class="pwa-ios-title">
+      <span class="mat">add_to_home_screen</span>
+      Instalar no iPhone
+    </div>
+    <div class="pwa-ios-sub">Adicione o painel à tela de início em 3 passos</div>
+    <div class="pwa-ios-steps">
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-num">1</div>
+        <div class="pwa-ios-step-txt">
+          Toque no botão de compartilhar
+          <span class="pwa-ico-inline"><span class="mat">ios_share</span></span>
+          na barra do Safari.
+        </div>
+      </div>
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-num">2</div>
+        <div class="pwa-ios-step-txt">
+          Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>
+          <span class="pwa-ico-inline"><span class="mat">add_box</span></span>
+        </div>
+      </div>
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-num">3</div>
+        <div class="pwa-ios-step-txt">
+          Toque em <strong>Adicionar</strong> no canto superior direito. O ícone aparecerá na sua tela inicial.
+        </div>
+      </div>
+    </div>
+    <button class="pwa-ios-close" onclick="pwaCloseIos()">Entendi</button>
+  </div>
+</div>
 <script> // ════════════════════════════════════════════════════════════
 //  BENEDICTUS CAMISARIA — Backend Admin v4.4
 //  Supabase + Auth local + Gestão completa de produtos
@@ -1190,6 +1294,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { fecharModal(); closeConfirm(); }
   });
+
+  // Inicializa PWA (registro do service worker + auto-atualização)
+  pwaInit();
 });
 
 // Tema aplicado imediatamente (antes do DOMContentLoaded)
@@ -2807,6 +2914,124 @@ function getFirstImage(p) {
     }
   }
   return null;
+}
+
+// ════════════════════════════════════════════════════════════
+//  PWA — Instalação + Auto-atualização (Android e iOS)
+// ════════════════════════════════════════════════════════════
+
+let _pwaDeferredPrompt = null;
+let _pwaReloadingForUpdate = false;
+
+function pwaIsStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+}
+
+function pwaIsIos() {
+  const ua = window.navigator.userAgent || '';
+  return /iphone|ipad|ipod/i.test(ua)
+      || (/macintosh/i.test(ua) && 'ontouchend' in document);
+}
+
+function pwaShowUpdateToast() {
+  const t = document.getElementById('pwa-update-toast');
+  if (!t) return;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function pwaInit() {
+  // Service worker (necessário pro PWA ser instalável)
+  if ('serviceWorker' in navigator) {
+    // Registra com updateViaCache='none' — força navegador a checar sw.js no servidor
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then((reg) => {
+        // 1) Verifica atualização imediatamente
+        reg.update().catch(() => {});
+
+        // 2) Verifica novamente toda vez que o app voltar pro foco
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+
+        // 3) Verifica de 30 em 30 minutos enquanto aberto
+        setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+
+        // 4) Quando um novo SW for instalado, pede pra ativar imediatamente
+        reg.addEventListener('updatefound', () => {
+          const novo = reg.installing;
+          if (!novo) return;
+          novo.addEventListener('statechange', () => {
+            if (novo.state === 'installed' && navigator.serviceWorker.controller) {
+              novo.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+      })
+      .catch(() => { /* silencioso */ });
+
+    // 5) Quando o SW ativar nova versão → recarrega a página uma única vez
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (_pwaReloadingForUpdate) return;
+      _pwaReloadingForUpdate = true;
+      pwaShowUpdateToast();
+      setTimeout(() => window.location.reload(), 600);
+    });
+
+    // 6) Mensagem direta do SW também dispara recarga
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'SW_UPDATED' && !_pwaReloadingForUpdate) {
+        _pwaReloadingForUpdate = true;
+        pwaShowUpdateToast();
+        setTimeout(() => window.location.reload(), 600);
+      }
+    });
+  }
+
+  // Se já está instalado, não mostra botão de instalar
+  if (pwaIsStandalone()) return;
+
+  // Android / Chrome: captura o evento e exibe o botão personalizado
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _pwaDeferredPrompt = e;
+    document.getElementById('pwa-install-topbtn')?.classList.add('show');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    _pwaDeferredPrompt = null;
+    document.getElementById('pwa-install-topbtn')?.classList.remove('show');
+    if (typeof showToast === 'function') showToast('App instalado com sucesso!');
+  });
+
+  // iOS: mostra botão manualmente
+  if (pwaIsIos() && !pwaIsStandalone()) {
+    document.getElementById('pwa-install-topbtn')?.classList.add('show');
+  }
+}
+
+async function pwaInstall() {
+  if (_pwaDeferredPrompt) {
+    try {
+      _pwaDeferredPrompt.prompt();
+      const { outcome } = await _pwaDeferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('pwa-install-topbtn')?.classList.remove('show');
+      }
+    } catch (_) { /* ignora */ }
+    _pwaDeferredPrompt = null;
+    return;
+  }
+  if (pwaIsIos()) {
+    document.getElementById('pwa-ios-overlay')?.classList.add('open');
+    return;
+  }
+  document.getElementById('pwa-ios-overlay')?.classList.add('open');
+}
+
+function pwaCloseIos() {
+  document.getElementById('pwa-ios-overlay')?.classList.remove('open');
 }</script>
 </body>
 </html>
