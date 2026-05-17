@@ -1,5 +1,7 @@
-# Configuração do Netlify
-# Este arquivo diz ao Netlify onde encontrar as Functions
+# ════════════════════════════════════════════════════════════
+#  Configuração do Netlify — Benedictus Camisaria
+#  Functions + PWA com auto-versionamento
+# ════════════════════════════════════════════════════════════
 
 [build]
   # Pasta onde estão os arquivos do site (raiz)
@@ -8,14 +10,64 @@
   # Pasta onde estão as Netlify Functions
   functions = "netlify/functions"
 
+  # Substitui o placeholder __BUILD_ID__ no sw.js do PWA pelo ID único deste deploy.
+  # Cada deploy gera um COMMIT_REF diferente → CACHE_VERSION muda sozinho
+  # → service worker se atualiza automaticamente nos celulares.
+  # Fallback: se COMMIT_REF estiver vazio (deploy manual sem git),
+  # usa a data/hora atual.
+  command = """
+    BUILD_ID="${COMMIT_REF:-$(date -u +%Y%m%d%H%M%S)}"
+    echo "Injetando BUILD_ID=$BUILD_ID no PWA"
+    sed -i "s|__BUILD_ID__|$BUILD_ID|g" pwa/sw.js
+    echo "PWA versionado com sucesso."
+  """
+
 [functions]
   # Versão do Node.js usada nas functions
   node_bundler = "esbuild"
 
-# Headers de segurança (opcional, mas recomendado)
+# ──────────────────────────────────────────────────────────
+#  Headers de segurança (aplicados ao site inteiro)
+# ──────────────────────────────────────────────────────────
+
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# ──────────────────────────────────────────────────────────
+#  PWA: anti-cache para forçar atualização imediata
+# ──────────────────────────────────────────────────────────
+
+# Service Worker: NUNCA cachear (precisa sempre buscar fresco)
+[[headers]]
+  for = "/pwa/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+    Service-Worker-Allowed = "/pwa/"
+
+# HTMLs do PWA: nunca cachear (código novo sempre chega)
+[[headers]]
+  for = "/pwa/admin.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/pwa/adminsenha.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Manifest: nunca cachear (mudanças de ícone/nome precisam aparecer)
+[[headers]]
+  for = "/pwa/manifest.json"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Content-Type = "application/manifest+json"
