@@ -1,6 +1,6 @@
 // netlify/functions/criar-picpay-checkout.js
 // Cria um checkout hospedado no PicPay Empresas e retorna a URL para o cliente pagar.
-// Mercado Pago permanece em standby; este arquivo é o fluxo principal de pagamento.
+// Mercado Pago permanec em standby; este arquivo é o fluxo principal de pagamento.
 
 const crypto = require('crypto');
 
