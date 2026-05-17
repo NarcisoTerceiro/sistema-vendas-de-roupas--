@@ -8,6 +8,12 @@ const SITE_URL = (process.env.SITE_URL || process.env.URL || 'https://benedictus
 const PICPAY_ENV = String(process.env.PICPAY_ENV || 'production').toLowerCase();
 const IS_SANDBOX = ['sandbox', 'test', 'testing', 'homolog', 'homologacao'].includes(PICPAY_ENV);
 
+// A conta atual retornou 403 no Gateway Checkout: "Missing required scope".
+// Por isso o fluxo principal passa a ser Payment Link. Se o PicPay liberar o
+// escopo de Gateway no futuro, defina PICPAY_INTEGRATION_MODE=gateway na Netlify.
+const PICPAY_INTEGRATION_MODE = String(process.env.PICPAY_INTEGRATION_MODE || 'payment_link').toLowerCase();
+const USE_GATEWAY_CHECKOUT = ['gateway', 'checkout', 'smart_checkout'].includes(PICPAY_INTEGRATION_MODE);
+
 // Gateway Checkout API. Mantém variáveis sobrescritíveis para adaptar rapidamente caso
 // o PicPay informe outro endpoint no painel/contrato da conta.
 const AUTH_URL = process.env.PICPAY_AUTH_URL || (IS_SANDBOX
@@ -188,12 +194,34 @@ function montarCheckoutPayload(body, merchantChargeId) {
 }
 
 function montarPaymentLinkPayload(body) {
-  const amount = Math.round(Number(body.amount));
+  const total = Math.round(Number(body.amount || 0));
+  const shippingAmount = Math.max(0, Math.round(Number(body?.shipping?.amount || 0)));
+  const delivery = Math.min(shippingAmount, Math.max(0, total - 1));
+  const product = Math.max(1, total - delivery);
+  const installments = Math.min(Math.max(Number(body.maxInstallmentNumber || 3), 1), 3);
+
+  // Formato oficial do PicPay Link de Pagamento:
+  // - charge.payment.methods usa BRCODE e CREDIT_CARD
+  // - charge.payment.brcode_arrangements habilita PICPAY e PIX dentro do BRCODE
+  // - charge.amounts separa produto e entrega em centavos
+  // - options é obrigatório para Pix/cartão/parcelamento
   return {
-    description: limitarTexto(body.description || 'Pedido Benedictus Camisaria', 255),
-    amount,
-    paymentMethods: ['PIX', 'CREDIT_CARD', 'WALLET'],
-    maxInstallmentNumber: Math.min(Math.max(Number(body.maxInstallmentNumber || 3), 1), 3)
+    charge: {
+      name: limitarTexto(body.description || 'Pedido Benedictus Camisaria', 80, 'Pedido Benedictus Camisaria'),
+      description: limitarTexto(body.description || 'Pedido Benedictus Camisaria', 255, 'Pedido Benedictus Camisaria'),
+      payment: {
+        methods: ['BRCODE', 'CREDIT_CARD'],
+        brcode_arrangements: ['PICPAY', 'PIX']
+      },
+      amounts: {
+        product,
+        delivery
+      }
+    },
+    options: {
+      allow_create_pix_key: true,
+      card_max_installment_number: installments
+    }
   };
 }
 
@@ -251,7 +279,8 @@ async function criarPaymentLink(body, merchantChargeId) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
-      Accept: 'application/json'
+      Accept: 'application/json',
+      'x-Idempotency-Key': merchantChargeId
     },
     body: JSON.stringify(payload)
   });
@@ -261,8 +290,31 @@ async function criarPaymentLink(body, merchantChargeId) {
   try { data = text ? JSON.parse(text) : {}; }
   catch { data = { message: text }; }
 
-  const paymentUrl = data.checkoutLink || data.paymentUrl || data.checkoutUrl || data.url || data.link;
-  const paymentLinkId = data.paymentLinkId || data.id || data.payment_link_id;
+  const paymentUrl =
+    data.checkoutLink ||
+    data.paymentUrl ||
+    data.checkoutUrl ||
+    data.url ||
+    data.link ||
+    data.data?.checkoutLink ||
+    data.data?.paymentUrl ||
+    data.data?.url ||
+    data.data?.link ||
+    data.charge?.checkoutLink ||
+    data.charge?.paymentUrl ||
+    data.charge?.url ||
+    data.charge?.link;
+
+  const paymentLinkId =
+    data.paymentLinkId ||
+    data.payment_link_id ||
+    data.id ||
+    data.data?.paymentLinkId ||
+    data.data?.payment_link_id ||
+    data.data?.id ||
+    data.charge?.paymentLinkId ||
+    data.charge?.payment_link_id ||
+    data.charge?.id;
 
   if (!res.ok || !paymentUrl) {
     const msg = data.message || data.error || `PicPay Payment Link HTTP ${res.status}`;
@@ -300,17 +352,19 @@ exports.handler = async (event) => {
     let result;
     let gatewayError = null;
 
-    try {
-      result = await criarCheckoutGateway(body, merchantChargeId);
-    } catch (err) {
-      gatewayError = err;
-      console.warn('Falha no Gateway Checkout PicPay. Tentando Payment Link:', JSON.stringify({
-        message: err.message,
-        statusCode: err.statusCode,
-        data: err.picpayData
-      }));
-
-      // Fallback para contas que estejam liberadas apenas para Link de Pagamento.
+    if (USE_GATEWAY_CHECKOUT) {
+      try {
+        result = await criarCheckoutGateway(body, merchantChargeId);
+      } catch (err) {
+        gatewayError = err;
+        console.warn('Falha no Gateway Checkout PicPay. Tentando Payment Link:', JSON.stringify({
+          message: err.message,
+          statusCode: err.statusCode,
+          data: err.picpayData
+        }));
+        result = await criarPaymentLink(body, merchantChargeId);
+      }
+    } else {
       result = await criarPaymentLink(body, merchantChargeId);
     }
 
@@ -322,6 +376,7 @@ exports.handler = async (event) => {
         ...result,
         webhookUrl: `${SITE_URL}/.netlify/functions/picpay-webhook`,
         environment: IS_SANDBOX ? 'sandbox' : 'production',
+        integrationMode: USE_GATEWAY_CHECKOUT ? 'gateway_checkout' : 'payment_link',
         gatewayFallbackReason: gatewayError ? gatewayError.message : null
       })
     };

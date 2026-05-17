@@ -8,6 +8,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const PICPAY_ENV = String(process.env.PICPAY_ENV || 'production').toLowerCase();
 const IS_SANDBOX = ['sandbox', 'test', 'testing', 'homolog', 'homologacao'].includes(PICPAY_ENV);
+const PICPAY_INTEGRATION_MODE = String(process.env.PICPAY_INTEGRATION_MODE || 'payment_link').toLowerCase();
+const USE_GATEWAY_CHECKOUT = ['gateway', 'checkout', 'smart_checkout'].includes(PICPAY_INTEGRATION_MODE);
 
 const AUTH_URL = process.env.PICPAY_AUTH_URL || (IS_SANDBOX
   ? 'https://checkout-api-sandbox.picpay.com/oauth2/token'
@@ -222,9 +224,32 @@ async function consultarPaymentLink(paymentLinkId) {
 
 function statusFromPaymentLinkPayload(data) {
   if (!data || typeof data !== 'object') return '';
-  const arr = Array.isArray(data) ? data : (Array.isArray(data.transactions) ? data.transactions : Array.isArray(data.data) ? data.data : []);
-  const tx = arr[0] || data.transaction || data.data?.transaction;
-  return clean(tx?.status || data.status || data.charge?.status || data.data?.status);
+
+  const root = data.data && typeof data.data === 'object' && !Array.isArray(data.data) ? data.data : data;
+  const arrays = [
+    Array.isArray(data) ? data : null,
+    Array.isArray(data.transactions) ? data.transactions : null,
+    Array.isArray(root.transactions) ? root.transactions : null,
+    Array.isArray(root.data) ? root.data : null,
+  ].filter(Boolean);
+
+  for (const arr of arrays) {
+    const tx = arr[0];
+    const found = clean(tx?.status || tx?.transactionStatus || tx?.paymentStatus || tx?.type);
+    if (found) return found;
+  }
+
+  const tx = root.transaction || data.transaction || root.payment || data.payment || root.charge || data.charge;
+  return clean(
+    tx?.status ||
+    tx?.transactionStatus ||
+    tx?.paymentStatus ||
+    root.status ||
+    root.chargeStatus ||
+    data.status ||
+    data.chargeStatus ||
+    data.type
+  );
 }
 
 async function consultarPicPayEAtualizar(pedido) {
@@ -233,17 +258,31 @@ async function consultarPicPayEAtualizar(pedido) {
   let rawStatus = '';
   let origem = '';
 
-  // Primeiro tenta Gateway Checkout usando o merchantChargeId/external_reference.
-  for (const id of ids) {
-    picpayData = await consultarChargeCheckout(id).catch((err) => {
-      console.warn('Falha ao consultar charge checkout PicPay:', err.message);
+  // A integração atual usa Link de Pagamento como principal. Evita consultar o
+  // Gateway Checkout quando a conta não possui o escopo liberado, porque isso
+  // gera 403 "Missing required scope" nos logs sem ajudar a confirmar o pedido.
+  if (!USE_GATEWAY_CHECKOUT && pedido.pix_charge_id) {
+    picpayData = await consultarPaymentLink(pedido.pix_charge_id).catch((err) => {
+      console.warn('Falha ao consultar payment link PicPay:', err.message);
       return null;
     });
-    rawStatus = statusFromPicPayPayload(picpayData);
-    if (rawStatus) { origem = 'consulta_checkout'; break; }
+    rawStatus = statusFromPaymentLinkPayload(picpayData);
+    if (rawStatus) origem = 'consulta_payment_link';
   }
 
-  // Se foi criado via Link de Pagamento, consulta o paymentLinkId salvo em pix_charge_id.
+  // Só tenta Gateway Checkout quando expressamente habilitado por variável de ambiente.
+  if (!rawStatus && USE_GATEWAY_CHECKOUT) {
+    for (const id of ids) {
+      picpayData = await consultarChargeCheckout(id).catch((err) => {
+        console.warn('Falha ao consultar charge checkout PicPay:', err.message);
+        return null;
+      });
+      rawStatus = statusFromPicPayPayload(picpayData);
+      if (rawStatus) { origem = 'consulta_checkout'; break; }
+    }
+  }
+
+  // Fallback final: consulta Payment Link pelo pix_charge_id.
   if (!rawStatus && pedido.pix_charge_id) {
     picpayData = await consultarPaymentLink(pedido.pix_charge_id).catch((err) => {
       console.warn('Falha ao consultar payment link PicPay:', err.message);
@@ -302,7 +341,8 @@ exports.handler = async (event) => {
       pagamento: pedido.pagamento,
       found: true,
       picpay_checked: !!consultaPicPay,
-      picpay_status: consultaPicPay?.picpayStatus || null
+      picpay_status: consultaPicPay?.picpayStatus || null,
+      integrationMode: USE_GATEWAY_CHECKOUT ? 'gateway_checkout' : 'payment_link'
     });
   } catch (err) {
     console.error('Erro pedido-status PicPay:', err);
