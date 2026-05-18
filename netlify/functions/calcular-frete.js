@@ -51,10 +51,12 @@ exports.handler = async (event) => {
 
     // ─── Configurações via ENV ───────────────────────────────
     const TOKEN      = process.env.FRENET_TOKEN;
-    const CEP_ORIGEM = (process.env.CEP_ORIGEM || "58280000").replace(/\D/g, "");
+    const CEP_ORIGEM = (process.env.CEP_ORIGEM || "58052130").replace(/\D/g, "");
     // ServiceCodes Correios na Frenet: 04014 = SEDEX, 04510 = PAC.
-    // Vazio = aceita todos os serviços que a Frenet retornar.
-    const SERVICOS  = (process.env.FRENET_SERVICOS || "04014,04510")
+    // Vazio (padrão) = aceita TODAS as transportadoras que a Frenet retornar
+    // (Correios, Jadlog, Loggi, Total Express, etc).
+    // Pra restringir, defina FRENET_SERVICOS no .env, ex: "04014,04510".
+    const SERVICOS  = (process.env.FRENET_SERVICOS || "")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -159,8 +161,10 @@ exports.handler = async (event) => {
 
     // Log detalhado para diagnóstico
     const bruto = data?.ShippingSevicesArray || data?.ShippingServicesArray || [];
+    console.log(`==> Frenet retornou ${bruto.length} servico(s) no total`);
+    console.log(`==> Filtro SERVICOS ativo: [${SERVICOS.join(", ") || "VAZIO - aceita tudo"}]`);
     bruto.forEach(s => console.log(
-      "Servico:", s.ServiceCode, "|", s.Carrier, "|",
+      "Servico:", s.ServiceCode, "|", s.Carrier, "|", s.ServiceDescription, "|",
       "Erro:", s.Error, "|", "Msg:", s.Msg, "|", "Preco:", s.ShippingPrice
     ));
 
@@ -180,8 +184,8 @@ exports.handler = async (event) => {
         // Remove sem preço válido
         const preco = parseFloat(String(s.ShippingPrice).replace(",", "."));
         if (!Number.isFinite(preco) || preco <= 0) return false;
-        // Filtra pelos ServiceCodes configurados (PAC/SEDEX por padrão).
-        // Se a lista estiver vazia, aceita tudo.
+        // Filtra pelos ServiceCodes configurados (se houver).
+        // Por padrão a lista é vazia, então aceita todas as transportadoras.
         if (setServicos.size > 0 && !setServicos.has(String(s.ServiceCode))) {
           return false;
         }
