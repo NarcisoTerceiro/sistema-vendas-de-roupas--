@@ -419,7 +419,7 @@ tbody td{padding:13px 16px;vertical-align:middle;font-size:13px;}
     <button class="theme-toggle-btn" onclick="toggleTheme()">
       <span class="mat" id="theme-icon">light_mode</span>
     </button>
-    <button class="topbar-btn topbar-btn-sair" onclick="window.location.href='index.html'">
+    <button class="topbar-btn topbar-btn-sair" onclick="window.location.href='admin.html'">
       <span class="mat">logout</span><span>Sair</span>
     </button>
   </div>
@@ -468,7 +468,7 @@ tbody td{padding:13px 16px;vertical-align:middle;font-size:13px;}
       </div>
       <div class="stat-card c-danger">
         <div class="stat-eyebrow">
-          <span class="mat">payments</span> Total (mês)
+          <span class="mat">payments</span> Total geral
           <button class="btn-zerar-total" id="btn-zerar-total" onclick="zerarTotal()" title="Zerar total exibido">
             <span class="mat">restart_alt</span> Zerar
           </button>
@@ -677,38 +677,31 @@ async function carregarPedidos() {
 //  STATS
 // ════════════════════════════════════════════════
 
-// Cache do offset do mês atual (em memória). Buscado no Supabase ao carregar
-// a página e atualizado sempre que o admin clica em "Zerar".
-// Salvo na tabela `config` do Supabase com chave tipo "total_offset_2026_4"
-// (formato: ano_mes onde mes é 0-11). Persiste entre dispositivos.
-let _offsetMesAtual = 0;
+// Data/hora do último "Zerar" feito pelo admin. Pedidos criados ANTES desse
+// momento não entram no total; pedidos criados DEPOIS, sim.
+// Se nunca foi zerado, fica null e o total mostra a soma de TODOS os pedidos.
+// Salvo na tabela `config` do Supabase com a chave "total_zerado_em".
+let _zeradoEm = null;
 
-// Gera a chave usada no banco pro mês/ano de uma data
-function chaveOffset(ano, mes) {
-  return `total_offset_${ano}_${mes}`;
-}
+// Chave usada no banco pro timestamp de zeramento
+const CHAVE_ZERAMENTO = 'total_zerado_em';
 
-// Busca no Supabase o offset salvo pro mês atual.
+// Busca no Supabase o timestamp do último zeramento.
 // Chamada uma vez quando a página carrega.
 async function carregarOffsetMes() {
   if (!db) return;
-  const agora = new Date();
-  const chave = chaveOffset(agora.getFullYear(), agora.getMonth());
   try {
     const { data, error } = await db
       .from('config')
       .select('valor')
-      .eq('chave', chave)
+      .eq('chave', CHAVE_ZERAMENTO)
       .maybeSingle();
-    // PGRST116 = "no rows" (mês ainda sem offset) — não é erro real
     if (error && error.code !== 'PGRST116') throw error;
-    _offsetMesAtual = parseFloat(data?.valor) || 0;
+    _zeradoEm = data?.valor || null;
   } catch (e) {
-    // Fallback: se o banco falhar, tenta ler do localStorage (compatibilidade
-    // com a versão antiga que só salvava local)
-    const chaveLocal = `bened_total_offset_${agora.getFullYear()}_${agora.getMonth()}`;
-    _offsetMesAtual = parseFloat(localStorage.getItem(chaveLocal)) || 0;
-    console.warn('Offset: usando fallback local —', e?.message || e);
+    // Fallback local
+    _zeradoEm = localStorage.getItem('bened_total_zerado_em') || null;
+    console.warn('Zeramento: usando fallback local —', e?.message || e);
   }
 }
 
@@ -722,68 +715,51 @@ function atualizarStats() {
     if (bg) bg.textContent = conta(s);
   });
 
-  // Total do mês (em pedidos não-cancelados)
-  const agora = new Date();
-  const mes   = agora.getMonth();
-  const ano   = agora.getFullYear();
-  const totalMes = todosOS
+  // Total geral: soma de TODOS os pedidos não-cancelados.
+  // Se houve "Zerar", só conta os criados depois desse momento.
+  const corte = _zeradoEm ? new Date(_zeradoEm).getTime() : 0;
+  const totalGeral = todosOS
     .filter(p => {
-      const d = new Date(p.created_at);
-      return d.getMonth() === mes
-          && d.getFullYear() === ano
-          && (p.status || 'pendente') !== 'cancelado';
+      if ((p.status || 'pendente') === 'cancelado') return false;
+      if (!corte) return true;
+      const t = new Date(p.created_at).getTime();
+      return t > corte;
     })
     .reduce((acc, p) => acc + (parseFloat(p.total) || 0), 0);
 
-  // Aplica o offset (zeramento manual) — vem do Supabase via _offsetMesAtual
-  const totalExibido = Math.max(0, totalMes - _offsetMesAtual);
-
   const el = document.getElementById('stat-total');
-  if (el) el.textContent = 'R$ ' + formatPrice(totalExibido);
+  if (el) el.textContent = 'R$ ' + formatPrice(totalGeral);
 }
 
-// Zera o total exibido do mês.
-// Não apaga pedidos; só salva no Supabase um "offset" igual ao total atual,
-// fazendo o card mostrar R$ 0,00. Pedidos novos depois disso somam normal.
+// Zera o total exibido.
+// Não apaga pedidos; só salva no banco o timestamp do zeramento.
+// A partir daí, o card só soma pedidos criados DEPOIS desse momento.
 async function zerarTotal() {
-  if (!confirm('Zerar o total exibido deste mês?\n\nOs pedidos não serão alterados. O zeramento é salvo no banco, então aparecerá em qualquer dispositivo.')) {
+  if (!confirm('Zerar o total exibido?\n\nOs pedidos não serão alterados. A partir de agora, o total só vai contar pedidos novos. O zeramento é salvo no banco, então vale em qualquer dispositivo.')) {
     return;
   }
 
-  // Calcula o total atual do mês
-  const agora = new Date();
-  const mes   = agora.getMonth();
-  const ano   = agora.getFullYear();
-  const totalMes = todosOS
-    .filter(p => {
-      const d = new Date(p.created_at);
-      return d.getMonth() === mes
-          && d.getFullYear() === ano
-          && (p.status || 'pendente') !== 'cancelado';
-    })
-    .reduce((acc, p) => acc + (parseFloat(p.total) || 0), 0);
+  const agoraISO = new Date().toISOString();
 
   const btn = document.getElementById('btn-zerar-total');
   if (btn) btn.disabled = true;
 
   try {
     // Upsert no Supabase: insere se não existir, atualiza se existir.
-    // A coluna `chave` é primary key, então o upsert resolve por ela.
     const { error } = await db
       .from('config')
       .upsert({
-        chave:         chaveOffset(ano, mes),
-        valor:         String(totalMes),
-        atualizado_em: new Date().toISOString(),
+        chave:         CHAVE_ZERAMENTO,
+        valor:         agoraISO,
+        atualizado_em: agoraISO,
       }, { onConflict: 'chave' });
     if (error) throw error;
 
     // Atualiza cache local e re-renderiza
-    _offsetMesAtual = totalMes;
-    // Também salva no localStorage como fallback se o Supabase cair depois
-    localStorage.setItem(`bened_total_offset_${ano}_${mes}`, String(totalMes));
+    _zeradoEm = agoraISO;
+    localStorage.setItem('bened_total_zerado_em', agoraISO);
     atualizarStats();
-    showToast('Total do mês zerado (salvo no banco).');
+    showToast('Total zerado (salvo no banco).');
   } catch (e) {
     showToast('Erro ao zerar no banco: ' + (e.message || e), 'err');
   } finally {

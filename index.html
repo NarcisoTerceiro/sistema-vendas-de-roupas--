@@ -1945,7 +1945,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <p class="footer-about">Uma maison dedicada à arte do essencial. Criamos experiências de moda com materiais de alta qualidade, pensadas para durar e para expressar.</p>
       <div class="footer-social">
         <div class="social-btn" onclick="window.open('https://wa.me/5583996636922','_blank')"><span class="mat" style="font-size:16px;">chat</span></div>
-        <div class="social-btn"><span class="mat" style="font-size:16px;">photo_camera</span></div>
+
         <div class="social-btn"><span class="mat" style="font-size:16px;">public</span></div>
       </div>
     </div>
@@ -1972,8 +1972,8 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2025 Atelier. Todos os direitos reservados.</span>
-    <span>Pagamentos via <span style="color:var(--gold)">PIX</span> · Entrega expressa · João Pessoa – PB</span>
+    <span>© 2026. Todos os direitos reservados.</span>
+    <span>Pagamentos via <span style="color:var(--gold)">PIX e Cartão </span> · Entrega expressa · Mamanguape- pb  </span>
   </div>
 </footer>
 
@@ -3225,13 +3225,13 @@ function searchHandler(val) {
   applyFilter();
   if (currentSearch) {
     renderSearchResults();
-    // Na primeira digitação, rola para a seção de Coleções (onde os resultados aparecem).
-    // No desktop usamos só na transição vazio→com-termo pra não atrapalhar o scroll a cada tecla.
+    // Na primeira digitação (vazio → com-termo), rola pra seção de resultados.
+    // No mobile NÃO fechamos a barra de busca — o usuário pode continuar
+    // digitando/corrigindo e fecha manualmente no botão X quando quiser.
     if (eraVazio) {
       const sec = document.getElementById('colecao');
       if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    if (window.matchMedia('(max-width:1024px)').matches) closeMobileSearch();
   } else {
     const searchSec = document.getElementById('search-results-section');
     if (searchSec) searchSec.style.display = 'none';
@@ -5269,6 +5269,20 @@ async function abrirCheckoutMercadoPago() {
                 statusEl.textContent = 'Pagamento aprovado. Seu pedido foi confirmado.';
               }
 
+              // 🔻 Decrementa estoque (cartão/débito via Mercado Pago)
+              //    Mesma trava _estoqueDecrementado do fluxo PIX pra evitar
+              //    decrementar duas vezes se o webhook também rodar.
+              try {
+                if (typeof decrementarEstoque === 'function' && !window._estoqueDecrementado) {
+                  const itens = cart.map(x => ({ id: x.produto.id, qty: x.qty }));
+                  await decrementarEstoque(itens);
+                  window._estoqueDecrementado = true;
+                  console.log('✅ Estoque decrementado (pagamento cartão aprovado)');
+                }
+              } catch (e) {
+                console.error('Erro decrementar estoque (cartão):', e);
+              }
+
               cart = [];
               saveCart();
               updateCartBadge();
@@ -5279,6 +5293,8 @@ async function abrirCheckoutMercadoPago() {
                 } else if (typeof exibirModalPedidoConfirmadoManual === 'function') {
                   exibirModalPedidoConfirmadoManual();
                 }
+                // Reseta a trava pra próxima compra
+                window._estoqueDecrementado = false;
               }, 800);
 
               return data.payment || data;
