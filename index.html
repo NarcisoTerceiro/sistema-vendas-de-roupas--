@@ -1012,7 +1012,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 </div>
 
 <!-- WA FLOAT -->
-<a class="wa-float" href="https://api.whatsapp.com/send?phone=5583998015544" onclick="var isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);if(isIOS){event.preventDefault();window.location.href='whatsapp://send?phone=5583998015544';}" target="_blank" title="WhatsApp">
+<a class="wa-float" href="https://api.whatsapp.com/send?phone=5583996636922" onclick="var isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);if(isIOS){event.preventDefault();window.location.href='whatsapp://send?phone=5583996636922';}" target="_blank" title="WhatsApp">
   <div class="wa-pulse"></div>
   <span class="mat">chat</span>
 </a>
@@ -1061,7 +1061,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <span class="mat">people</span>Quem Somos
     </div>
     <div class="mobile-nav-divider"></div>
-    <div class="mobile-nav-link" onclick="window.open('https://wa.me/5583998015544','_blank');closeMobile()">
+    <div class="mobile-nav-link" onclick="window.open('https://wa.me/5583996636922','_blank');closeMobile()">
       <span class="mat">support_agent</span>Atendimento
     </div>
     <div class="mobile-nav-divider"></div>
@@ -1955,7 +1955,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       </div>
       <p class="footer-about">Uma maison dedicada à arte do essencial. Criamos experiências de moda com materiais de alta qualidade, pensadas para durar e para expressar.</p>
       <div class="footer-social">
-        <div class="social-btn" onclick="window.open('https://wa.me/5583998015544','_blank')"><span class="mat" style="font-size:16px;">chat</span></div>
+        <div class="social-btn" onclick="window.open('https://wa.me/5583996636922','_blank')"><span class="mat" style="font-size:16px;">chat</span></div>
         <div class="social-btn"><span class="mat" style="font-size:16px;">photo_camera</span></div>
         <div class="social-btn"><span class="mat" style="font-size:16px;">public</span></div>
       </div>
@@ -1968,7 +1968,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     </div>
     <div>
       <span class="footer-col-title">Atendimento</span>
-      <span class="footer-link" onclick="window.open('https://wa.me/5583998015544','_blank')">WhatsApp</span>
+      <span class="footer-link" onclick="window.open('https://wa.me/5583996636922','_blank')">WhatsApp</span>
       <span class="footer-link" onclick="sc('quem-somos')">Quem Somos</span>
       <span class="footer-link">Trocas & Devoluções</span>
       <span class="footer-link">FAQ</span>
@@ -2076,7 +2076,7 @@ window.addEventListener('load', () => {
 // ── CONFIGURAÇÃO ─────────────────────────────────────────
 const SUPABASE_URL  = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
-const WHATSAPP_NUM  = '5583998015544';
+const WHATSAPP_NUM  = '5583996636922';
 
 // ── Mercado Pago / Checkout Bricks ────────────────────────
 // Troque pelo Public Key da sua aplicação no Mercado Pago Developers.
@@ -4192,8 +4192,8 @@ async function buscarCEP() {
 
     // 2. Taxa fixa para cidades atendidas localmente (sem consultar Frenet)
     const TAXAS_FIXAS = [
-      { cep: '58280000', cidade: 'Mamanguape', valor: 1, prazo: 1 },
-      { cep: '58297000', cidade: 'Rio Tinto',  valor: 1, prazo: 1 },
+      { cep: '58280000', cidade: 'Mamanguape', valor: 5, prazo: 1 },
+      { cep: '58297000', cidade: 'Rio Tinto',  valor: 8, prazo: 1 },
 
     ];
     const taxaFixa = TAXAS_FIXAS.find(t => t.cep === cepRaw);
