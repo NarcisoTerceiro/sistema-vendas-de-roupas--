@@ -1012,7 +1012,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 </div>
 
 <!-- WA FLOAT -->
-<a class="wa-float" href="https://api.whatsapp.com/send?phone=5583998015544" onclick="var isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);if(isIOS){event.preventDefault();window.location.href='whatsapp://send?phone=5583998015544';}" target="_blank" title="WhatsApp">
+<a class="wa-float" href="https://api.whatsapp.com/send?phone=5583996636922" onclick="var isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);if(isIOS){event.preventDefault();window.location.href='whatsapp://send?phone=5583996636922';}" target="_blank" title="WhatsApp">
   <div class="wa-pulse"></div>
   <span class="mat">chat</span>
 </a>
@@ -1061,7 +1061,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <span class="mat">people</span>Quem Somos
     </div>
     <div class="mobile-nav-divider"></div>
-    <div class="mobile-nav-link" onclick="window.open('https://wa.me/5583998015544','_blank');closeMobile()">
+    <div class="mobile-nav-link" onclick="window.open('https://wa.me/5583996636922','_blank');closeMobile()">
       <span class="mat">support_agent</span>Atendimento
     </div>
     <div class="mobile-nav-divider"></div>
@@ -1955,7 +1955,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       </div>
       <p class="footer-about">Uma maison dedicada à arte do essencial. Criamos experiências de moda com materiais de alta qualidade, pensadas para durar e para expressar.</p>
       <div class="footer-social">
-        <div class="social-btn" onclick="window.open('https://wa.me/5583998015544','_blank')"><span class="mat" style="font-size:16px;">chat</span></div>
+        <div class="social-btn" onclick="window.open('https://wa.me/5583996636922','_blank')"><span class="mat" style="font-size:16px;">chat</span></div>
         <div class="social-btn"><span class="mat" style="font-size:16px;">photo_camera</span></div>
         <div class="social-btn"><span class="mat" style="font-size:16px;">public</span></div>
       </div>
@@ -1968,7 +1968,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     </div>
     <div>
       <span class="footer-col-title">Atendimento</span>
-      <span class="footer-link" onclick="window.open('https://wa.me/5583998015544','_blank')">WhatsApp</span>
+      <span class="footer-link" onclick="window.open('https://wa.me/5583996636922','_blank')">WhatsApp</span>
       <span class="footer-link" onclick="sc('quem-somos')">Quem Somos</span>
       <span class="footer-link">Trocas & Devoluções</span>
       <span class="footer-link">FAQ</span>
@@ -2076,7 +2076,7 @@ window.addEventListener('load', () => {
 // ── CONFIGURAÇÃO ─────────────────────────────────────────
 const SUPABASE_URL  = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
-const WHATSAPP_NUM  = '5583998015544';
+const WHATSAPP_NUM  = '5583996636922';
 
 // ── Mercado Pago / Checkout Bricks ────────────────────────
 // Troque pelo Public Key da sua aplicação no Mercado Pago Developers.
@@ -2517,8 +2517,73 @@ function renderColecoes() {
   }
 
   cont.style.display = '';
-  // Ordena por campo `ordem` e renderiza dinamicamente
-  const lista = allColecoes.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+  // Normalizador local
+  const _norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+
+  // "Família" da coleção — agrupa variações da MESMA coleção (slugs/nomes diferentes
+  // mas que representam a mesma coisa). Ex: "preto_branco" e "colecao_preto_no_branco"
+  // viram a mesma família "preto_branco".
+  const familia = (c) => {
+    const s = _norm(c.slug);
+    const n = _norm(c.nome);
+    const txt = s + '_' + n;
+    if (txt.includes('preto') && txt.includes('branco')) return 'preto_branco';
+    if (txt.includes('cancao') || txt.includes('cancoes')) return 'cancoes';
+    if (txt.includes('best') && txt.includes('seller')) return 'best_seller';
+    if (txt.includes('santo')) return 'santos';
+    return s || n; // sem família conhecida → usa o próprio slug
+  };
+
+  // 1) Ordena por `ordem`
+  // 2) Deduplica: para cada família, mantém a variação que TEM produtos (ou a primeira se nenhuma tiver)
+  // 3) Filtra vazias (exceto best_seller, que é sempre exibida)
+  const ordenadas = allColecoes.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+
+  const porFamilia = new Map();
+  ordenadas.forEach(c => {
+    const fam = familia(c);
+    const qtd = filtrarProdutosColecao(c.slug).length;
+    if (!porFamilia.has(fam)) {
+      porFamilia.set(fam, { col: c, qtd });
+    } else {
+      // Se a nova tem produtos e a salva não, troca pela nova
+      const atual = porFamilia.get(fam);
+      if (qtd > atual.qtd) porFamilia.set(fam, { col: c, qtd });
+    }
+  });
+
+  // Ordem FIXA por família (ignora o campo `ordem` do banco para as principais).
+  // Quanto menor o número, mais cedo aparece. Famílias não listadas usam 50.
+  const ORDEM_FAMILIA = {
+    'cancoes':      0,   // Canções SEMPRE primeiro
+    'preto_branco': 1,   // Preto no Branco depois
+    'santos':       2,
+    'best_seller':  99,  // Best Seller SEMPRE por último
+  };
+  const pesoFamilia = (c) => {
+    const f = familia(c);
+    if (ORDEM_FAMILIA.hasOwnProperty(f)) return ORDEM_FAMILIA[f];
+    return (c.ordem ?? 50);
+  };
+
+  const lista = Array.from(porFamilia.values())
+    .filter(({ col, qtd }) => {
+      if (col.slug === 'best_seller' || familia(col) === 'best_seller') return true;
+      return qtd > 0; // só mostra se tem produto
+    })
+    .map(({ col }) => col)
+    .sort((a, b) => pesoFamilia(a) - pesoFamilia(b));
+
+  // Se após o filtro não sobrou nenhuma coleção, mostra mensagem
+  if (!lista.length) {
+    cont.innerHTML = `
+      <div style="text-align:center;padding:80px 20px;color:var(--muted);">
+        <span class="mat" style="font-size:52px;display:block;margin-bottom:16px;color:var(--muted2);">collections_bookmark</span>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;">Nenhuma coleção disponível</div>
+      </div>`;
+    return;
+  }
+
   cont.innerHTML = lista
     .map(c => buildColecaoSection(c.slug, c.nome, c.icone || 'auto_awesome'))
     .join('');
@@ -4127,8 +4192,8 @@ async function buscarCEP() {
 
     // 2. Taxa fixa para cidades atendidas localmente (sem consultar Frenet)
     const TAXAS_FIXAS = [
-      { cep: '58280000', cidade: 'Mamanguape', valor: 1, prazo: 1 },
-      { cep: '58297000', cidade: 'Rio Tinto',  valor: 1, prazo: 1 },
+      { cep: '58280000', cidade: 'Mamanguape', valor: 5, prazo: 1 },
+      { cep: '58297000', cidade: 'Rio Tinto',  valor: 8, prazo: 1 },
 
     ];
     const taxaFixa = TAXAS_FIXAS.find(t => t.cep === cepRaw);
