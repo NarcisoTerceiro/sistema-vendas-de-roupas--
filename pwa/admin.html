@@ -2571,7 +2571,11 @@ async function handleCorUpload(cor, sid, files) {
       const filename = `produtos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await db.storage
         .from('imagens')
-        .upload(filename, fileToUpload, { cacheControl: '3600', upsert: false });
+        .upload(filename, fileToUpload, {
+          // 1 ano de cache — nome do arquivo é único, atualizar foto gera URL nova
+          cacheControl: '31536000',
+          upsert: false
+        });
       if (error) throw error;
 
       const { data: urlData } = db.storage.from('imagens').getPublicUrl(filename);

@@ -1042,6 +1042,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <img 
         src="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png" 
         alt="Benedictus Camisaria" 
+        decoding="async" fetchpriority="high"
         style="height: 130px; width:auto;"
       />
     </div>
@@ -1111,6 +1112,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       <img 
         src="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png" 
         alt="Benedictus Camisaria" 
+        decoding="async" fetchpriority="high"
         style="height: 130px; width:auto;"
       />
     </div>
@@ -1204,7 +1206,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
   </div>
   <div class="feature-item">
     <div class="feature-icon"><span class="mat">qr_code_2</span></div>
-    <div><div class="feature-title">PIX & Cartão</div><div class="feature-sub">Pague como preferir</div></div>
+    <div><div class="feature-title">PIX & Cartão</div><div class="feature-sub"> Em até 3x sem juros no cartão </div></div>
   </div>
   <div class="feature-item">
     <div class="feature-icon"><span class="mat">verified</span></div>
@@ -1339,6 +1341,8 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
     .ivory-card__prices{display:flex;align-items:baseline;gap:8px;}
     .ivory-card__price-now{font-size:15px;font-weight:500;color:#f4efe8;}
     .ivory-card__price-was{font-size:12px;font-weight:300;color:#b0a898;text-decoration:line-through;}
+    .ivory-card__parcelas{font-size:11px;font-weight:400;color:#c4a97d;margin-top:4px;letter-spacing:0.02em;opacity:.9;}
+    [data-theme="light"] .ivory-card__parcelas{color:var(--gold,#a08050);}
 
     .ivory-card__sublabel{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px;}
     .ivory-card__colors{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
@@ -1832,7 +1836,7 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
 <section class="quem-somos" id="quem-somos">
   <div class="qs-grid">
     <div class="qs-visual reveal-left">
-      <img class="qs-img-main" src="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png" alt="Benedictus Camisaria" style="object-fit:contain;background:var(--bg2);padding:38px;"/>
+      <img class="qs-img-main" src="WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png" alt="Benedictus Camisaria" loading="lazy" decoding="async" style="object-fit:contain;background:var(--bg2);padding:38px;"/>
       <div class="qs-badge">
         <span class="qs-badge-num" id="anos-num">2026</span>
         <span class="qs-badge-txt">Ano de fundação</span>
@@ -2717,7 +2721,7 @@ function scrollColecao(id, dir) {
 function productCardHTML(p, inCarrossel = false) {
   const thumb   = getFirstImage(p);
   const imgHtml = thumb
-    ? `<img src="${esc(thumb)}" alt="${esc(p.nome)}" loading="lazy" onerror="this.style.display='none'">`
+    ? `<img src="${esc(thumb)}" alt="${esc(p.nome)}" loading="lazy" decoding="async" onerror="this.style.display='none'">`
     : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted2);flex-direction:column;gap:8px;">
          <span class="mat" style="font-size:48px;">checkroom</span>
          <span style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">Sem foto</span>
@@ -3080,11 +3084,11 @@ function ivoryCardHTML(p, tipo) {
     : getFirstImage(p);
 
   const imgHTML = imgUrl
-    ? `<img src="${esc(imgUrl)}" alt="${esc(p.nome)}" loading="lazy" onerror="this.style.display='none'">`
+    ? `<img src="${esc(imgUrl)}" alt="${esc(p.nome)}" loading="lazy" decoding="async" onerror="this.style.display='none'">`
     : `<div class="ivory-card__img-ph"><span class="mat">checkroom</span></div>`;
 
   const thumbHTML = imgUrl
-    ? `<img src="${esc(imgUrl)}" alt="${esc(p.nome)}" loading="lazy" onerror="this.style.display='none'">`
+    ? `<img src="${esc(imgUrl)}" alt="${esc(p.nome)}" loading="lazy" decoding="async" onerror="this.style.display='none'">`
     : `<div class="ivory-card__thumb-ph"><span class="mat">checkroom</span></div>`;
 
   const coresHTML = cores.length ? `
@@ -3182,6 +3186,7 @@ function ivoryCardHTML(p, tipo) {
           <span class="ivory-card__price-now">R$ ${formatPrice(p.preco)}</span>
           ${precoOrigHTML}
         </div>
+        <div class="ivory-card__parcelas">Em até 3x sem juros no cartão</div>
       </div>
     </div>
     ${fabricHTML}
@@ -3339,7 +3344,7 @@ function abrirVarModal(id, corPre) {
 
   const thumb = getFirstImage(p);
   document.getElementById('vm-img-wrap').innerHTML = thumb
-    ? `<img class="var-modal-img" src="${esc(thumb)}" alt="${esc(p.nome)}" onerror="this.style.display='none'">`
+    ? `<img class="var-modal-img" src="${esc(thumb)}" alt="${esc(p.nome)}" decoding="async" onerror="this.style.display='none'">`
     : `<div class="var-modal-img-ph"><span class="mat">checkroom</span></div>`;
 
   document.getElementById('vm-nome').textContent  = p.nome;
@@ -3677,7 +3682,7 @@ function renderCart() {
         <div class="cart-item" style="animation:fadeUp .3s ease ${i * 0.08}s both;">
           <div class="cart-item-img">
             ${thumb
-              ? `<img src="${esc(thumb)}" alt="${esc(x.produto.nome)}" style="width:100%;height:100%;object-fit:cover;">`
+              ? `<img src="${esc(thumb)}" alt="${esc(x.produto.nome)}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">`
               : `<span class="mat" style="font-size:28px;color:var(--muted2);">checkroom</span>`}
           </div>
           <div style="flex:1;min-width:0;">
