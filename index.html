@@ -1403,6 +1403,49 @@ footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:72px 48px 40px;
       50%{box-shadow:0 4px 18px rgba(200,169,110,.7),0 0 0 1px rgba(244,220,160,.85) inset,0 0 22px rgba(200,169,110,.5);}
     }
     .ivory-fabric.switching .ivory-fabric__pill{animation:ivoryFabricGlow .6s ease;}
+
+    /* ═══ EXPLICAÇÃO DA LINHA PREMIUM (abaixo do seletor) ═══ */
+    .ivory-premium-note{
+      display:none;
+    }
+    .ivory-fabric-block[data-active="premium"] .ivory-premium-note{
+      display:block;
+      margin-bottom:12px;
+    }
+    .ivory-premium-note__inner{
+      display:flex;
+      align-items:flex-start;
+      gap:7px;
+      padding:9px 12px;
+      border-radius:12px;
+      background:linear-gradient(135deg,rgba(200,169,110,.10) 0%,rgba(200,169,110,.04) 100%);
+      border:1px solid rgba(200,169,110,.22);
+      box-shadow:0 2px 10px rgba(0,0,0,.12);
+    }
+    .ivory-premium-note__icon{
+      font-family:'Material Symbols Outlined';
+      font-size:15px;
+      color:var(--gold);
+      flex-shrink:0;
+      margin-top:1px;
+    }
+    .ivory-premium-note__txt{
+      font-family:'DM Sans',sans-serif;
+      font-size:10.5px;
+      line-height:1.5;
+      letter-spacing:.02em;
+      color:rgba(200,169,110,.92);
+    }
+    .ivory-premium-note__txt b{
+      font-weight:600;
+      color:var(--gold);
+    }
+    [data-theme="light"] .ivory-premium-note__txt{color:#8a6d3a;}
+    [data-theme="light"] .ivory-premium-note__txt b{color:#9A7A45;}
+    @media(max-width:480px){
+      .ivory-premium-note__txt{font-size:10px;}
+      .ivory-premium-note__inner{padding:8px 10px;}
+    }
     .ivory-card.fabric-swapping .ivory-card__img-wrap img,
     .ivory-card.fabric-swapping .ivory-card__price-now,
     .ivory-card.fabric-swapping .ivory-card__price-was{opacity:.35;transition:opacity .22s ease;}
@@ -2971,6 +3014,9 @@ function bindIvoryCards(grid) {
           const siblingPid = fabricWrap.dataset.siblingPid;
           if (!siblingPid) {
             fabricWrap.classList.add('switching');
+            // mostra/esconde a explicação mesmo sem versão irmã
+            const blocoSemIrma = card.querySelector('.ivory-fabric-block');
+            if (blocoSemIrma) blocoSemIrma.dataset.active = novoTecido;
             setTimeout(() => fabricWrap.classList.remove('switching'), 600);
             if (typeof toast === 'function') {
               toast(novoTecido === 'premium'
@@ -2989,6 +3035,8 @@ function bindIvoryCards(grid) {
 
           // A pílula desliza IMEDIATAMENTE (mesmo enquanto o card faz fade)
           fabricWrap.dataset.active = novoTecido;
+          const blocoFabric = card.querySelector('.ivory-fabric-block');
+          if (blocoFabric) blocoFabric.dataset.active = novoTecido;
           fabricWrap.querySelectorAll('.ivory-fabric__btn').forEach(b => {
             const ativa = b.dataset.tecido === novoTecido;
             b.classList.toggle('active', ativa);
@@ -3122,6 +3170,7 @@ function ivoryCardHTML(p, tipo) {
 
   // ── Seletor de tecido dentro do card (só em coleção, quando o produto tem tipo_tecido)
   const fabricHTML = mostrarSeletorTecido ? `
+    <div class="ivory-fabric-block" data-active="${tecidoAtual}">
     <div class="ivory-card__sublabel ivory-fabric-label">
       <span class="mat">checkroom</span>Escolha o tipo de tecido
     </div>
@@ -3133,6 +3182,13 @@ function ivoryCardHTML(p, tipo) {
       <button type="button" class="ivory-fabric__btn ${tecidoAtual==='premium'?'active':''}" data-tecido="premium" role="tab" aria-selected="${tecidoAtual==='premium'}">
         <span class="mat">workspace_premium</span>Premium
       </button>
+    </div>
+    <div class="ivory-premium-note" aria-live="polite">
+      <div class="ivory-premium-note__inner">
+        <span class="ivory-premium-note__icon">auto_awesome</span>
+        <span class="ivory-premium-note__txt">Tecido <b>supermacio</b>, de <b>qualidade excelente</b> — toque aveludado, super confortável e com acabamento impecável. Você vai amar vestir, <b>compre já</b>!</span>
+      </div>
+    </div>
     </div>` : '';
 
   // ── Estado de estoque
