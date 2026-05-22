@@ -56,10 +56,19 @@ exports.handler = async (event) => {
     // Vazio (padrão) = aceita TODAS as transportadoras que a Frenet retornar
     // (Correios, Jadlog, Loggi, Total Express, etc).
     // Pra restringir, defina FRENET_SERVICOS no .env, ex: "04014,04510".
-    const SERVICOS  = (process.env.FRENET_SERVICOS || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    // FRENET_ACEITAR_TUDO=1 (ou "true") força mostrar TODAS as
+    // transportadoras, ignorando qualquer filtro de FRENET_SERVICOS.
+    // Útil pra garantir que ninguém "esqueceu" um filtro no .env.
+    const ACEITAR_TUDO = /^(1|true|sim)$/i.test(
+      String(process.env.FRENET_ACEITAR_TUDO || "")
+    );
+
+    const SERVICOS  = ACEITAR_TUDO
+      ? []
+      : (process.env.FRENET_SERVICOS || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
 
     if (!TOKEN) {
       return {
@@ -162,7 +171,17 @@ exports.handler = async (event) => {
     // Log detalhado para diagnóstico
     const bruto = data?.ShippingSevicesArray || data?.ShippingServicesArray || [];
     console.log(`==> Frenet retornou ${bruto.length} servico(s) no total`);
-    console.log(`==> Filtro SERVICOS ativo: [${SERVICOS.join(", ") || "VAZIO - aceita tudo"}]`);
+    console.log(
+      `==> Filtro SERVICOS ativo: [${SERVICOS.join(", ") || "VAZIO - aceita tudo"}]` +
+      (ACEITAR_TUDO ? " (FRENET_ACEITAR_TUDO ligado)" : "")
+    );
+    if (SERVICOS.length > 0) {
+      console.warn(
+        "==> ATENCAO: ha um filtro de servicos ativo. So passarao os codigos acima. " +
+        "Se voce quer TODAS as transportadoras, remova a variavel FRENET_SERVICOS " +
+        "ou defina FRENET_ACEITAR_TUDO=1 no Netlify."
+      );
+    }
     bruto.forEach(s => console.log(
       "Servico:", s.ServiceCode, "|", s.Carrier, "|", s.ServiceDescription, "|",
       "Erro:", s.Error, "|", "Msg:", s.Msg, "|", "Preco:", s.ShippingPrice
@@ -204,6 +223,11 @@ exports.handler = async (event) => {
         };
       })
       .sort((a, b) => a.valor - b.valor);
+
+    console.log(
+      `==> ${opcoes.length} opcao(oes) passaram no filtro: ` +
+      (opcoes.map((o) => o.empresa).join(", ") || "NENHUMA")
+    );
 
     return {
       statusCode: 200,
