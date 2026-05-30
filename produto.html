@@ -418,6 +418,12 @@ nav{position:sticky;top:0;z-index:1000;background:var(--nav-bg);border-bottom:1p
 .size-table th{background:var(--bg2);padding:9px 13px;text-align:left;font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:400;border-bottom:1px solid var(--border);}
 .size-table td{padding:9px 13px;border-bottom:1px solid var(--border2);color:var(--muted);}
 .size-table tr:last-child td{border-bottom:none;}
+.size-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.size-tab{flex:1;padding:9px 12px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;border-radius:4px;transition:all .25s;}
+.size-tab:hover{border-color:var(--gold);color:var(--gold);}
+.size-tab.active{background:var(--gold);border-color:var(--gold);color:var(--bg);}
+.size-pane{display:none;}
+.size-pane.active{display:block;}
 .modal-close2{position:absolute;top:14px;right:14px;background:var(--bg2);border:1px solid var(--border);border-radius:50%;width:34px;height:34px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .25s;}
 .modal-close2:hover{background:var(--gold);color:var(--bg);border-color:var(--gold);}
 
@@ -495,18 +501,33 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:28px 40p
   <div class="modal-box" onclick="event.stopPropagation()">
     <button class="modal-close2" onclick="closeSizeModal()"><span class="mat">close</span></button>
     <div class="modal-title">Guia de Tamanhos</div>
-    <table class="size-table">
-      <thead><tr><th>Tamanho</th><th>Busto (cm)</th><th>Cintura (cm)</th><th>Quadril (cm)</th></tr></thead>
-      <tbody>
-        <tr><td>PP</td><td>80–84</td><td>60–64</td><td>88–92</td></tr>
-        <tr><td>P</td><td>84–88</td><td>64–68</td><td>92–96</td></tr>
-        <tr><td>M</td><td>88–92</td><td>68–72</td><td>96–100</td></tr>
-        <tr><td>G</td><td>92–96</td><td>72–76</td><td>100–104</td></tr>
-        <tr><td>GG</td><td>96–102</td><td>76–82</td><td>104–110</td></tr>
-        <tr><td>XG</td><td>102–110</td><td>82–90</td><td>110–118</td></tr>
-      </tbody>
-    </table>
-    <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.7;">Em dúvida entre dois tamanhos, recomendamos o maior.</p>
+    <div class="size-tabs">
+      <button class="size-tab active" onclick="switchSizeTab(this,'sg-babylook')">Baby Look</button>
+      <button class="size-tab" onclick="switchSizeTab(this,'sg-basica')">Camisa Básica</button>
+    </div>
+
+    <div class="size-pane active" id="sg-babylook">
+      <table class="size-table">
+        <thead><tr><th>Tamanho</th><th>P</th><th>M</th><th>G</th><th>GG</th></tr></thead>
+        <tbody>
+          <tr><td>Comprimento</td><td>56 cm</td><td>60 cm</td><td>67 cm</td><td>70 cm</td></tr>
+          <tr><td>Largura</td><td>42 cm</td><td>44 cm</td><td>50 cm</td><td>53 cm</td></tr>
+          <tr><td>Cintura</td><td>38 cm</td><td>40 cm</td><td>46 cm</td><td>49 cm</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.7;"><b style="color:var(--ink);">Observação importante:</b> aconselhamos que você compare as medidas acima com uma camisa que já tenha. Pode haver uma diferença de até 2&nbsp;cm para mais ou para menos nos tamanhos.</p>
+    </div>
+
+    <div class="size-pane" id="sg-basica">
+      <table class="size-table">
+        <thead><tr><th>Tamanho</th><th>P</th><th>M</th><th>G</th><th>GG</th></tr></thead>
+        <tbody>
+          <tr><td>Comprimento</td><td>65 cm</td><td>67 cm</td><td>70 cm</td><td>75 cm</td></tr>
+          <tr><td>Largura</td><td>48 cm</td><td>52 cm</td><td>55 cm</td><td>58 cm</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.7;"><b style="color:var(--ink);">Observações importantes:</b> aconselhamos comparar com uma básica de sua referência. Pode haver diferença de até 2&nbsp;cm nos tamanhos.</p>
+    </div>
   </div>
 </div>
 <nav>
@@ -1454,6 +1475,12 @@ function comprarWA() {
 // ════════════════════════════════════════════════════════════
 function openSizeModal()  { document.getElementById('size-modal')?.classList.add('open');    document.body.style.overflow = 'hidden'; }
 function closeSizeModal() { document.getElementById('size-modal')?.classList.remove('open'); document.body.style.overflow = ''; }
+function switchSizeTab(btn, paneId){
+  document.querySelectorAll('.size-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.size-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(paneId)?.classList.add('active');
+}
 
 // ════════════════════════════════════════════════════════════
 //  ADICIONAR AO CARRINHO (página de detalhes)
