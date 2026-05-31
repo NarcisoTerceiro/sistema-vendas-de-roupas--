@@ -148,7 +148,9 @@ nav{position:sticky;top:0;z-index:1000;background:var(--nav-bg);border-bottom:1p
 .variation-label{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;}
 .variation-selected{font-size:12px;color:var(--ink);font-weight:500;letter-spacing:0;}
 .variation-required{font-size:9px;color:var(--danger);letter-spacing:0.1em;}
-.size-guide-link{font-size:10px;color:var(--gold);cursor:pointer;letter-spacing:0.1em;text-decoration:underline;text-underline-offset:3px;}
+.size-guide-link{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;color:var(--gold);cursor:pointer;padding:7px 13px;border:1px solid var(--gold);border-radius:999px;background:rgba(200,169,110,0.08);transition:all .25s;white-space:nowrap;}
+.size-guide-link .mat{font-size:14px;}
+.size-guide-link:hover{background:var(--gold);color:var(--bg);}
 .sizes-grid{display:flex;gap:8px;flex-wrap:wrap;}
 .size-btn{min-width:46px;height:46px;padding:0 10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .25s;border-radius:6px;font-weight:500;}
 .size-btn:hover{border-color:var(--gold);color:var(--gold);}
@@ -500,7 +502,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:28px 40p
 <div class="modal-overlay2" id="size-modal" onclick="closeSizeModal()">
   <div class="modal-box" onclick="event.stopPropagation()">
     <button class="modal-close2" onclick="closeSizeModal()"><span class="mat">close</span></button>
-    <div class="modal-title">Guia de Tamanhos</div>
+    <div class="modal-title">Tabela de Tamanhos</div>
     <div class="size-tabs">
       <button class="size-tab active" onclick="switchSizeTab(this,'sg-babylook')">Baby Look</button>
       <button class="size-tab" onclick="switchSizeTab(this,'sg-basica')">Camisa Básica</button>
@@ -622,7 +624,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:28px 40p
         <div id="size-section" class="variation-section" style="display:none;">
           <div class="variation-header">
             <div class="variation-label"><span class="mat" style="font-size:14px;">straighten</span>Tamanho<span class="variation-required" id="size-required" style="display:none;">*obrigatório</span></div>
-            <div style="display:flex;align-items:center;gap:12px;"><span class="variation-selected" id="selected-size-name"></span><span class="size-guide-link" onclick="openSizeModal()">Guia</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span class="variation-selected" id="selected-size-name"></span><span class="size-guide-link" onclick="openSizeModal()"><span class="mat">straighten</span>Tabela de Tamanhos</span></div>
           </div>
           <div class="sizes-grid" id="sizes-wrap"></div>
         </div>
