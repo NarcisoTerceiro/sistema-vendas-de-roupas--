@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Notificações · Benedictus Camisaria</title>
+
+<!-- ══ AUTH GATE (mesmo do admin) ══ -->
+<script>
+(function authGate(){
+  try{
+    if(sessionStorage.getItem('bened_auth')!=='1'){
+      document.documentElement.style.display='none';
+      window.location.replace('adminsenha.html?expired=1');
+    }
+  }catch(e){ window.location.replace('adminsenha.html'); }
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+[data-theme="dark"]{
+  --bg:#0a0f1e;--bg2:#0f1624;--navy:#141c30;--navy2:#1a2540;--navy3:#1f2d4e;
+  --ink:#f2ede5;--ink2:#e0d9ce;--muted:#8a90a2;--muted2:#545d70;
+  --gold:#c8a96e;--gold2:#a08050;--gold3:#e8c98e;--gold4:#f2daa2;
+  --surface:#141c30;--surface2:#1a2540;--surface3:#1f2d4e;
+  --nav-bg:rgba(10,15,30,0.97);--border:rgba(200,169,110,0.18);--border2:rgba(200,169,110,0.09);
+  --sh:rgba(0,0,0,0.65);--sh2:rgba(0,0,0,0.85);--sh-gold:rgba(200,169,110,0.18);
+  --danger:#e05555;--danger-dim:rgba(224,85,85,0.12);--success:#6dbf7e;--success-dim:rgba(109,191,126,0.1);
+  --warn:#c8a046;--warn-dim:rgba(200,160,70,0.1);
+}
+[data-theme="light"]{
+  --bg:#eef1f7;--bg2:#e4e8f2;--navy:#161e33;--navy2:#1e2a42;--navy3:#243050;
+  --ink:#161e33;--ink2:#243050;--muted:#5a6480;--muted2:#8a90aa;
+  --gold:#9a7440;--gold2:#7a5830;--gold3:#c8a96e;--gold4:#b89050;
+  --surface:#ffffff;--surface2:#f4f6fc;--surface3:#e8edf8;
+  --nav-bg:rgba(255,255,255,0.97);--border:rgba(22,30,51,0.14);--border2:rgba(22,30,51,0.07);
+  --sh:rgba(22,30,51,0.1);--sh2:rgba(22,30,51,0.18);--sh-gold:rgba(154,116,64,0.18);
+  --danger:#c84040;--danger-dim:rgba(200,64,64,0.08);--success:#3a8e4e;--success-dim:rgba(58,142,78,0.08);
+  --warn:#b08030;--warn-dim:rgba(176,128,48,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s;overflow-x:hidden;}
+[data-theme="dark"] body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 10% 0%,rgba(20,28,48,0.95) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 90% 100%,rgba(200,169,110,0.04) 0%,transparent 60%);}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px;}
+.mat{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200;font-size:20px;line-height:1;display:inline-block;vertical-align:middle;}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;width:100%;height:calc(72px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);z-index:500;background:var(--nav-bg);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding-left:24px;padding-right:24px;box-shadow:0 2px 24px var(--sh);gap:12px;}
+.tb-left{display:flex;align-items:center;gap:14px;}
+.tb-brand{font-family:'Cormorant Garamond',serif;font-size:21px;letter-spacing:.04em;color:var(--ink);}
+.tb-brand b{color:var(--gold);font-weight:600;}
+.tb-tag{font-size:8px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);}
+.tbtn{background:var(--surface2);border:1px solid var(--border);color:var(--ink2);padding:9px 14px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;font-family:'DM Sans';border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .3s;}
+.tbtn:hover{color:var(--gold3);border-color:var(--gold2);transform:translateY(-1px);}
+.tbtn .mat{font-size:16px;}
+
+/* LAYOUT */
+.wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:calc(96px + env(safe-area-inset-top)) 24px 64px;}
+.page-head{margin-bottom:26px;}
+.page-head h1{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:38px;letter-spacing:.02em;line-height:1.05;}
+.page-head h1 .mat{font-size:32px;color:var(--gold);margin-right:8px;}
+.page-head p{color:var(--muted);font-size:13px;margin-top:6px;max-width:640px;line-height:1.6;}
+
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;align-items:start;}
+@media(max-width:980px){.grid{grid-template-columns:1fr;}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;position:relative;overflow:hidden;}
+[data-theme="dark"] .card{background:linear-gradient(160deg,var(--navy) 0%,var(--bg2) 120%);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.55;}
+.card-label{font-size:8px;letter-spacing:.5em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.card-label::before{content:'';width:14px;height:1px;background:var(--gold);}
+
+/* STATS */
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
+.stat{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;}
+[data-theme="dark"] .stat{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);}
+.stat .n{font-family:'Cormorant Garamond',serif;font-size:34px;color:var(--gold3);line-height:1;}
+.stat .l{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-top:7px;}
+.stat .mat{position:absolute;right:14px;top:14px;font-size:26px;color:var(--gold2);opacity:.45;}
+
+/* FORM */
+label.f{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px;}
+label.f:first-of-type{margin-top:0;}
+.inp,textarea.inp,select.inp{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:9px;color:var(--ink);font-family:'DM Sans';font-size:14px;font-weight:300;padding:12px 14px;transition:border-color .25s,box-shadow .25s;}
+[data-theme="light"] .inp,[data-theme="light"] textarea.inp,[data-theme="light"] select.inp{background:var(--surface2);}
+.inp:focus,textarea.inp:focus,select.inp:focus{outline:none;border-color:var(--gold2);box-shadow:0 0 0 3px var(--sh-gold);}
+textarea.inp{resize:vertical;min-height:96px;line-height:1.6;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:520px){.row2{grid-template-columns:1fr;}}
+.hint{font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5;}
+
+/* TEMPLATE CHIPS */
+.chips{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{background:var(--bg2);border:1px solid var(--border);color:var(--ink2);padding:9px 14px;border-radius:30px;font-size:11px;letter-spacing:.03em;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .25s;font-weight:400;}
+[data-theme="light"] .chip{background:var(--surface2);}
+.chip:hover{border-color:var(--gold2);color:var(--gold3);}
+.chip.active{background:rgba(200,169,110,.12);border-color:var(--gold);color:var(--gold3);}
+.chip .mat{font-size:15px;}
+
+/* BUTTONS */
+.btn-primary{width:100%;background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 100%);color:#1a1208;border:none;padding:15px;font-size:11px;letter-spacing:.28em;text-transform:uppercase;font-weight:600;font-family:'DM Sans';border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .3s;box-shadow:0 8px 24px var(--sh-gold);margin-top:20px;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px var(--sh-gold);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);padding:9px 14px;font-size:10px;letter-spacing:.15em;text-transform:uppercase;border-radius:8px;cursor:pointer;transition:all .25s;font-family:'DM Sans';font-weight:500;}
+.btn-ghost:hover{color:var(--gold3);border-color:var(--gold2);}
+
+/* PREVIEW */
+.preview-frame{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;max-height:560px;overflow:auto;}
+[data-theme="light"] .preview-frame{background:#dfe3ee;}
+.preview-mail{background:#0d1322;border-radius:10px;overflow:hidden;font-family:Georgia,'Times New Roman',serif;}
+
+/* RECIPIENT LIST */
+.rec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;}
+.rec-search{flex:1;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--ink);font-family:'DM Sans';font-size:12px;padding:9px 12px;}
+[data-theme="light"] .rec-search{background:var(--surface2);}
+.rec-search:focus{outline:none;border-color:var(--gold2);}
+.rec-list{max-height:300px;overflow:auto;border:1px solid var(--border2);border-radius:10px;}
+.rec-item{display:flex;align-items:center;gap:11px;padding:10px 14px;border-bottom:1px solid var(--border2);font-size:13px;cursor:pointer;transition:background .2s;}
+.rec-item:last-child{border-bottom:none;}
+.rec-item:hover{background:var(--surface2);}
+.rec-item input{accent-color:var(--gold);width:16px;height:16px;cursor:pointer;flex-shrink:0;}
+.rec-item .em{color:var(--ink2);word-break:break-all;}
+.rec-item .nm{color:var(--muted);font-size:11px;}
+.rec-tag{font-size:8px;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:20px;border:1px solid var(--border);color:var(--muted);margin-left:auto;flex-shrink:0;}
+.rec-empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:13px;}
+
+/* TOAST + STATUS */
+.status{margin-top:16px;padding:13px 16px;border-radius:10px;font-size:12.5px;line-height:1.6;display:none;align-items:flex-start;gap:10px;}
+.status.show{display:flex;}
+.status.ok{background:var(--success-dim);border:1px solid var(--success);color:var(--success);}
+.status.err{background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);}
+.status.info{background:var(--warn-dim);border:1px solid var(--warn);color:var(--warn);}
+.status .mat{font-size:18px;flex-shrink:0;margin-top:1px;}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.loading-pill{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="tb-left">
+    <button class="tbtn" onclick="window.location.href='admin.html'" title="Voltar ao painel">
+      <span class="mat">arrow_back</span> Painel
+    </button>
+    <div>
+      <div class="tb-brand">Benedictus <b>Notificações</b></div>
+      <div class="tb-tag">Disparo de promoções</div>
+    </div>
+  </div>
+  <button class="tbtn" onclick="toggleTheme()" title="Tema">
+    <span class="mat" id="theme-icon">light_mode</span>
+  </button>
+</header>
+
+<main class="wrap">
+  <div class="page-head">
+    <h1><span class="mat">campaign</span>Enviar notificações</h1>
+    <p>Dispare promoções, lançamentos e avisos para <b>todos os e-mails cadastrados</b> da loja
+       (clientes, perfis e quem já comprou). Escolha um modelo, ajuste o texto e envie.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><span class="mat">group</span><div class="n" id="st-total">—</div><div class="l">E-mails na base</div></div>
+    <div class="stat"><span class="mat">check_circle</span><div class="n" id="st-sel">0</div><div class="l">Selecionados p/ envio</div></div>
+    <div class="stat"><span class="mat">mark_email_read</span><div class="n" id="st-sent">0</div><div class="l">Enviados nesta sessão</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- ════ COLUNA ESQUERDA: COMPOSITOR ════ -->
+    <section class="card">
+      <div class="card-label">Mensagem</div>
+
+      <label class="f">Modelo pronto</label>
+      <div class="chips" id="chips">
+        <button class="chip active" data-tpl="promo"><span class="mat">sell</span>Promoção</button>
+        <button class="chip" data-tpl="comprejaa"><span class="mat">shopping_bag</span>Compre já</button>
+        <button class="chip" data-tpl="lancamento"><span class="mat">auto_awesome</span>Lançamento</button>
+      </div>
+
+      <label class="f">Assunto do e-mail</label>
+      <input class="inp" id="f-assunto" placeholder="Ex.: 🔥 Promoção exclusiva — só hoje!"/>
+
+      <label class="f">Título (aparece grande no e-mail)</label>
+      <input class="inp" id="f-titulo" placeholder="Ex.: Coleção com até 40% OFF"/>
+
+      <label class="f">Mensagem</label>
+      <textarea class="inp" id="f-msg" placeholder="Escreva sua mensagem... Use {{nome}} para chamar a pessoa pelo nome."></textarea>
+      <div class="hint">Dica: escreva <b>{{nome}}</b> e ele será trocado pelo primeiro nome de cada cliente.</div>
+
+      <div class="row2">
+        <div>
+          <label class="f">Texto do botão</label>
+          <input class="inp" id="f-cta" value="COMPRE JÁ"/>
+        </div>
+        <div>
+          <label class="f">Link do botão</label>
+          <input class="inp" id="f-link" value="https://benedictuscamisaria.com.br/" placeholder="https://benedictuscamisaria.com.br/"/>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-enviar" onclick="enviar()">
+        <span class="mat">send</span> <span id="btn-txt">Enviar para selecionados</span>
+      </button>
+
+      <div class="status" id="status"></div>
+    </section>
+
+    <!-- ════ COLUNA DIREITA: PREVIEW + DESTINATÁRIOS ════ -->
+    <div style="display:flex;flex-direction:column;gap:22px;">
+      <section class="card">
+        <div class="card-label">Pré-visualização</div>
+        <div class="preview-frame">
+          <div class="preview-mail" id="preview"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-label">Destinatários</div>
+        <div class="rec-head">
+          <input class="rec-search" id="rec-search" placeholder="Buscar e-mail ou nome..." oninput="renderRecs()"/>
+          <button class="btn-ghost" onclick="toggleAll(true)">Marcar todos</button>
+          <button class="btn-ghost" onclick="toggleAll(false)">Limpar</button>
+        </div>
+        <div class="rec-list" id="rec-list">
+          <div class="rec-empty"><span class="loading-pill"><span class="spin"></span> Carregando base de e-mails...</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+// ════ CONFIG ════
+const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoam5waGFoYmJyc3FrY2dxZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzYyOTUsImV4cCI6MjA5Mzc1MjI5NX0.xFDIAjl87UMxYAWaOIueozwH8C6sfy-3oU4-TfhNqWY';
+const FN_URL = '/.netlify/functions/enviar-notificacoes';
+
+// Logo exibida no topo do e-mail (PNG transparente do site oficial)
+const LOGO_URL = 'https://benedictuscamisaria.com.br/WhatsApp_Image_2026-04-24_at_07.27.00__1_-removebg-preview.png';
+
+let db = null;
+try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
+
+let destinatarios = [];          // [{email,nome,origem}]
+const selecionados = new Set();  // emails marcados
+let enviadosSessao = 0;
+
+// ════ TEMA ════
+function aplicarTema(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-icon').textContent = t==='dark' ? 'light_mode' : 'dark_mode';
+  try{ localStorage.setItem('bened_admin_theme', t); }catch(e){}
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  aplicarTema(cur==='dark'?'light':'dark');
+}
+try{ aplicarTema(localStorage.getItem('bened_admin_theme') || 'dark'); }catch(e){}
+
+// ════ MODELOS PRONTOS ════
+const TEMPLATES = {
+  promo: {
+    assunto:'🔥 Promoção exclusiva da Benedictus — aproveite!',
+    titulo:'Promoção exclusiva',
+    msg:'Olá, {{nome}}! Preparamos uma seleção especial de camisas com descontos imperdíveis. Aproveite enquanto durar o estoque.',
+    cta:'APROVEITAR AGORA'
+  },
+  comprejaa: {
+    assunto:'🛍️ Compre já e garanta a sua — Benedictus',
+    titulo:'Sua camisa está esperando',
+    msg:'{{nome}}, as peças mais desejadas voltaram ao estoque. Garanta a sua antes que esgote.',
+    cta:'COMPRE JÁ'
+  },
+  lancamento: {
+    assunto:'✨ Novidade na Benedictus — nova coleção no ar',
+    titulo:'Nova coleção chegou',
+    msg:'{{nome}}, acabou de chegar: nossa nova coleção de camisas, com tecidos selecionados e modelagem impecável. Seja um dos primeiros a vestir.',
+    cta:'VER A COLEÇÃO'
+  }
+};
+
+function aplicarTemplate(tpl){
+  const t = TEMPLATES[tpl]; if(!t) return;
+  document.getElementById('f-assunto').value = t.assunto;
+  document.getElementById('f-titulo').value  = t.titulo;
+  document.getElementById('f-msg').value     = t.msg;
+  document.getElementById('f-cta').value     = t.cta;
+  atualizarPreview();
+}
+document.getElementById('chips').addEventListener('click', (e)=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  b.classList.add('active');
+  aplicarTemplate(b.dataset.tpl);
+});
+
+// ════ MONTA O HTML DO E-MAIL (e-mail-safe, inline) ════
+function escapeHtml(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function montarEmailHtml(){
+  const titulo = escapeHtml(document.getElementById('f-titulo').value || 'Benedictus Camisaria');
+  const msg    = escapeHtml(document.getElementById('f-msg').value || '').replace(/\n/g,'<br/>');
+  const cta    = escapeHtml(document.getElementById('f-cta').value || 'COMPRE JÁ');
+  const link   = (document.getElementById('f-link').value || 'https://benedictuscamisaria.com.br/').trim();
+
+  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#0a0f1e;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0f1e;padding:28px 12px;">
+<tr><td align="center">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#0d1322;border:1px solid rgba(200,169,110,.2);border-radius:14px;overflow:hidden;">
+    <tr><td align="center" style="padding:28px 40px 8px;">
+      <img src="${LOGO_URL}" alt="Benedictus Camisaria" width="170" style="width:170px;max-width:60%;height:auto;display:block;margin:0 auto;border:0;"/>
+      <div style="font-family:Georgia,serif;font-size:13px;letter-spacing:6px;color:#c8a96e;text-transform:uppercase;margin-top:12px;">Benedictus Camisaria</div>
+      <div style="width:48px;height:1px;background:#c8a96e;margin:14px auto 0;"></div>
+    </td></tr>
+    <tr><td align="center" style="padding:26px 40px 6px;">
+      <div style="font-family:Georgia,serif;font-size:30px;line-height:1.2;color:#f2ede5;">${titulo}</div>
+    </td></tr>
+    <tr><td align="center" style="padding:8px 44px 18px;">
+      <div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7;color:#c2c7d4;">${msg}</div>
+    </td></tr>
+    <tr><td align="center" style="padding:6px 40px 34px;">
+      <a href="${link}" style="display:inline-block;background:#c8a96e;color:#1a1208;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:2.5px;text-decoration:none;padding:15px 38px;border-radius:8px;">${cta}</a>
+    </td></tr>
+    <tr><td style="padding:0 40px;"><div style="height:1px;background:rgba(200,169,110,.15);"></div></td></tr>
+    <tr><td align="center" style="padding:18px 40px 30px;">
+      <div style="font-family:Arial,sans-serif;font-size:11px;color:#6b7286;line-height:1.6;">
+        Benedictus Camisaria · Você recebeu este e-mail por estar cadastrado em nossa loja.<br/>
+        © ${new Date().getFullYear()} Benedictus Camisaria. Todos os direitos reservados.
+      </div>
+    </td></tr>
+  </table>
+</td></tr></table></body></html>`;
+}
+
+function atualizarPreview(){
+  // mostra o nome de exemplo "Cliente" no preview
+  const html = montarEmailHtml().replace(/\{\{\s*nome\s*\}\}/gi,'Cliente');
+  document.getElementById('preview').innerHTML = html;
+}
+['f-titulo','f-msg','f-cta','f-link'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', atualizarPreview);
+});
+
+// ════ CARREGAR DESTINATÁRIOS ════
+async function carregarEmails(){
+  // 1) tenta pela function (service role — pega a base inteira ignorando RLS)
+  try{
+    const r = await fetch(FN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'listar'})});
+    if(r.ok){
+      const j = await r.json();
+      if(Array.isArray(j.destinatarios) && j.destinatarios.length){
+        destinatarios = j.destinatarios; finalizarCarga(); return;
+      }
+    }
+  }catch(e){ /* function indisponível em dev local — cai no fallback */ }
+
+  // 2) fallback: lê direto do Supabase no navegador (depende do RLS permitir)
+  if(db){
+    try{
+      const [p,c,pe] = await Promise.all([
+        db.from('profiles').select('email,nome'),
+        db.from('clientes').select('email,nome'),
+        db.from('pedidos').select('cliente_email,user_email,cliente_nome')
+      ]);
+      const mapa = new Map();
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const add=(email,nome,origem)=>{
+        email=(email||'').trim().toLowerCase(); if(!re.test(email))return;
+        nome=(nome||'').trim();
+        if(!mapa.has(email)) mapa.set(email,{email,nome,origem});
+        else if(nome && !mapa.get(email).nome) mapa.get(email).nome=nome;
+      };
+      (p?.data||[]).forEach(l=>add(l.email,l.nome,'cadastro'));
+      (c?.data||[]).forEach(l=>add(l.email,l.nome,'cliente'));
+      (pe?.data||[]).forEach(l=>{ add(l.cliente_email,l.cliente_nome,'pedido'); add(l.user_email,l.cliente_nome,'pedido'); });
+      destinatarios = Array.from(mapa.values()).sort((a,b)=>a.email.localeCompare(b.email));
+    }catch(e){ destinatarios=[]; }
+  }
+  finalizarCarga();
+}
+
+function finalizarCarga(){
+  destinatarios.forEach(d=>selecionados.add(d.email)); // todos marcados por padrão
+  document.getElementById('st-total').textContent = destinatarios.length;
+  renderRecs();
+  atualizarContagem();
+  if(!destinatarios.length){
+    mostrarStatus('info','book',
+      'Nenhum e-mail encontrado. Verifique se a function <b>enviar-notificacoes</b> está publicada e se a variável <b>SUPABASE_SERVICE_ROLE_KEY</b> está configurada na Netlify (o RLS costuma bloquear a leitura direta no navegador).');
+  }
+}
+
+const tagLabel = o => ({cadastro:'CADASTRO',cliente:'CLIENTE',pedido:'PEDIDO'}[o]||'');
+
+function renderRecs(){
+  const q = (document.getElementById('rec-search').value||'').toLowerCase().trim();
+  const lista = destinatarios.filter(d=>!q || d.email.includes(q) || (d.nome||'').toLowerCase().includes(q));
+  const box = document.getElementById('rec-list');
+  if(!lista.length){ box.innerHTML = '<div class="rec-empty">Nenhum destinatário.</div>'; return; }
+  box.innerHTML = lista.map(d=>`
+    <label class="rec-item">
+      <input type="checkbox" ${selecionados.has(d.email)?'checked':''} onchange="toggleOne('${d.email.replace(/'/g,"")}',this.checked)"/>
+      <span>
+        <span class="em">${escapeHtml(d.email)}</span>
+        ${d.nome?`<br/><span class="nm">${escapeHtml(d.nome)}</span>`:''}
+      </span>
+      <span class="rec-tag">${tagLabel(d.origem)}</span>
+    </label>`).join('');
+}
+function toggleOne(email,on){ on?selecionados.add(email):selecionados.delete(email); atualizarContagem(); }
+function toggleAll(on){
+  const q=(document.getElementById('rec-search').value||'').toLowerCase().trim();
+  destinatarios.filter(d=>!q||d.email.includes(q)||(d.nome||'').toLowerCase().includes(q))
+    .forEach(d=>on?selecionados.add(d.email):selecionados.delete(d.email));
+  renderRecs(); atualizarContagem();
+}
+function atualizarContagem(){ document.getElementById('st-sel').textContent = selecionados.size; }
+
+// ════ STATUS ════
+function mostrarStatus(tipo,icone,texto){
+  const s=document.getElementById('status');
+  s.className='status show '+tipo;
+  s.innerHTML=`<span class="mat">${icone}</span><span>${texto}</span>`;
+}
+
+// ════ ENVIAR ════
+async function enviar(){
+  const assunto = document.getElementById('f-assunto').value.trim();
+  if(!assunto){ mostrarStatus('err','error','Preencha o assunto do e-mail.'); return; }
+  if(!document.getElementById('f-msg').value.trim()){ mostrarStatus('err','error','Escreva a mensagem.'); return; }
+
+  const lista = destinatarios.filter(d=>selecionados.has(d.email));
+  if(!lista.length){ mostrarStatus('err','error','Selecione ao menos um destinatário.'); return; }
+
+  if(!confirm(`Enviar "${assunto}" para ${lista.length} e-mail(s)?`)) return;
+
+  const btn=document.getElementById('btn-enviar'), txt=document.getElementById('btn-txt');
+  btn.disabled=true; txt.innerHTML='<span class="spin"></span> Enviando...';
+  mostrarStatus('info','schedule',`Disparando para ${lista.length} destinatário(s)...`);
+
+  try{
+    const r = await fetch(FN_URL,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ action:'enviar', assunto, html:montarEmailHtml(), destinatarios:lista })
+    });
+    const j = await r.json();
+    if(!r.ok){ throw new Error(j.erro || ('Erro '+r.status)); }
+
+    enviadosSessao += (j.enviados||0);
+    document.getElementById('st-sent').textContent = enviadosSessao;
+
+    if(j.sucesso){
+      mostrarStatus('ok','check_circle',`Pronto! ${j.enviados} e-mail(s) enviados com sucesso.`);
+    }else{
+      mostrarStatus('info','warning',`${j.enviados} de ${j.total} enviados. ${(j.falhas||[]).length} lote(s) falharam — confira os logs da função.`);
+    }
+  }catch(e){
+    mostrarStatus('err','error','Falha no envio: '+e.message+
+      '<br/><span style="opacity:.8;">Confirme GMAIL_USER e GMAIL_APP_PASSWORD (Senha de App) nas variáveis da Netlify.</span>');
+  }finally{
+    btn.disabled=false; txt.textContent='Enviar para selecionados';
+  }
+}
+
+// ════ INIT ════
+aplicarTemplate('promo');
+carregarEmails();
+</script>
+</body>
+</html>

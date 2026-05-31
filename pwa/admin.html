@@ -678,6 +678,9 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
         <button class="sidebar-item" onclick="window.location.href='pedidosadmin.html'">
   <span class="mat">receipt_long</span> Pedidos
 </button>
+        <button class="sidebar-item" onclick="window.location.href='notificacoes.html'">
+  <span class="mat">campaign</span> Notificações
+</button>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
@@ -1190,13 +1193,11 @@ tbody tr:hover .prod-thumb{transform:scale(1.06);}
   }
 })();
 
-// Quando o usuário sair da página (fechar aba, navegar pra outro site),
-// força logout pra próxima visita exigir login novamente.
-window.addEventListener('pagehide', () => {
-  sessionStorage.removeItem('bened_auth');
-  sessionStorage.removeItem('bened_auth_time');
-  sessionStorage.removeItem('bened_auth_user');
-});
+// O sessionStorage já se apaga sozinho quando a aba/navegador é fechado,
+// então o login expira naturalmente a cada nova sessão — sem precisar de
+// um handler de 'pagehide'. (O 'pagehide' anterior disparava ao navegar
+// para outra página do painel, como Notificações/Pedidos, e apagava o
+// login no meio do caminho, jogando o usuário de volta pra tela de senha.)
 
 // ── CONFIGURAÇÃO SUPABASE ─────────────────────────────────
 const SUPABASE_URL = 'https://lhjnphahbbrsqkcgqdta.supabase.co';
